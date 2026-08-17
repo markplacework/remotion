@@ -1,10 +1,10 @@
 import "./index.css";
-import { MyComposition } from "./Composition";
+import { WapiAdComposition } from "./Composition";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
-      <MyComposition />
+      <WapiAdComposition />
     </>
   );
 };

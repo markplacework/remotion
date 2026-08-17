@@ -1,25 +1,21 @@
-import { CalculateMetadataFunction, Composition } from "remotion";
+import { Composition } from "remotion";
+import {
+  WapiAd,
+  WAPI_AD_DURATION,
+  WAPI_AD_FPS,
+  WAPI_AD_HEIGHT,
+  WAPI_AD_WIDTH,
+} from "./WapiAd";
 
-type Props = {};
-
-const calculateMetadata: CalculateMetadataFunction<Props> = () => {
-  return {};
-};
-
-export const MyComposition = () => {
+export const WapiAdComposition = () => {
   return (
     <Composition
-      id="MyComp"
-      component={MyComponent}
-      durationInFrames={60}
-      fps={30}
-      width={1280}
-      height={720}
-      calculateMetadata={calculateMetadata}
+      id="WapiAd"
+      component={WapiAd}
+      durationInFrames={WAPI_AD_DURATION}
+      fps={WAPI_AD_FPS}
+      width={WAPI_AD_WIDTH}
+      height={WAPI_AD_HEIGHT}
     />
   );
-};
-
-export const MyComponent: React.FC<Props> = () => {
-  return null;
 };
