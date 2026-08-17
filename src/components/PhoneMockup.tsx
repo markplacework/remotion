@@ -11,10 +11,12 @@ type Props = {
 };
 
 /**
- * A premium, realistic phone shell built entirely from CSS (gradients,
- * shadows, a highlight sweep) — no external mockup images. The real Wapi
- * page renders inside the screen cutout via WapiIframe, scaled to fit
- * exactly.
+ * A premium, high-end 2026-flagship-style phone shell built entirely from
+ * CSS (gradients, layered shadows, a highlight sweep) — no external mockup
+ * images. Ultra-thin bezels, a titanium-style beveled frame, camera
+ * control + action button details, and a soft contact shadow for that
+ * "floating product shot" look. The real Wapi page renders inside the
+ * screen cutout via WapiIframe, scaled to fit exactly.
  */
 export const PhoneMockup: React.FC<Props> = ({
   width,
@@ -24,101 +26,155 @@ export const PhoneMockup: React.FC<Props> = ({
   sheenPosition = 0.3,
 }) => {
   const height = width * 2.162;
-  const bezel = width * 0.032;
-  const bodyRadius = width * 0.135;
-  const screenRadius = bodyRadius - bezel * 0.55;
+  const bezel = width * 0.017;
+  const bodyRadius = width * 0.125;
+  const screenRadius = bodyRadius - bezel * 0.4;
   const screenWidth = width - bezel * 2;
   const screenHeight = height - bezel * 2;
   const scale = screenWidth / WAPI_VIEWPORT_WIDTH;
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width,
-        height,
-        borderRadius: bodyRadius,
-        background:
-          "linear-gradient(155deg, #3a3d3f 0%, #101213 22%, #0a0b0c 55%, #232527 82%, #3a3d3f 100%)",
-        boxShadow:
-          "0 60px 120px -20px rgba(0,0,0,0.75), 0 20px 45px -10px rgba(0,0,0,0.55), inset 0 0 0 1.5px rgba(255,255,255,0.08)",
-        padding: bezel,
-      }}
-    >
-      {/* Screen */}
+    <div style={{ position: "relative", width, height }}>
+      {/* Soft contact shadow grounding the phone against the backdrop */}
+      <div
+        style={{
+          position: "absolute",
+          left: "8%",
+          right: "8%",
+          bottom: -height * 0.05,
+          height: height * 0.09,
+          borderRadius: "50%",
+          background: "radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%)",
+          filter: "blur(4px)",
+        }}
+      />
+
+      {/* Titanium frame */}
       <div
         style={{
           position: "relative",
-          width: screenWidth,
-          height: screenHeight,
-          borderRadius: screenRadius,
-          overflow: "hidden",
-          background: "#000",
-          boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.6)",
+          width,
+          height,
+          borderRadius: bodyRadius,
+          background:
+            "linear-gradient(150deg, #55585b 0%, #2a2c2e 12%, #131415 30%, #0a0a0b 50%, #17191a 66%, #3d4042 85%, #57595c 100%)",
+          boxShadow:
+            "0 70px 130px -24px rgba(0,0,0,0.8), 0 24px 50px -12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 0.5px 0.5px rgba(255,255,255,0.35)",
+          padding: bezel,
         }}
       >
-        <WapiIframe src={src} scale={scale} onReady={onReady} driveFrame={driveFrame} />
-
-        {/* Glass reflection sweep */}
+        {/* Inner bevel ring — separates frame from screen with a hairline of depth */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            inset: bezel * 0.35,
+            borderRadius: bodyRadius - bezel * 0.35,
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.65), inset 0 1px 1.5px rgba(0,0,0,0.5)",
             pointerEvents: "none",
-            background: `linear-gradient(115deg, rgba(255,255,255,0) ${
-              sheenPosition * 100 - 22
-            }%, rgba(255,255,255,0.16) ${sheenPosition * 100}%, rgba(255,255,255,0) ${
-              sheenPosition * 100 + 22
-            }%)`,
-            mixBlendMode: "overlay",
           }}
         />
 
-        {/* Subtle top/bottom vignette to sell depth against the screen glass */}
+        {/* Screen */}
+        <div
+          style={{
+            position: "relative",
+            width: screenWidth,
+            height: screenHeight,
+            borderRadius: screenRadius,
+            overflow: "hidden",
+            background: "#000",
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.7)",
+          }}
+        >
+          <WapiIframe src={src} scale={scale} onReady={onReady} driveFrame={driveFrame} />
+
+          {/* Glass reflection sweep */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background: `linear-gradient(115deg, rgba(255,255,255,0) ${
+                sheenPosition * 100 - 24
+              }%, rgba(255,255,255,0.05) ${sheenPosition * 100 - 8}%, rgba(255,255,255,0.22) ${
+                sheenPosition * 100
+              }%, rgba(255,255,255,0.05) ${sheenPosition * 100 + 8}%, rgba(255,255,255,0) ${
+                sheenPosition * 100 + 24
+              }%)`,
+              mixBlendMode: "overlay",
+            }}
+          />
+
+          {/* Subtle top/bottom vignette to sell depth against the screen glass */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              boxShadow: "inset 0 3px 10px rgba(0,0,0,0.35), inset 0 -3px 10px rgba(0,0,0,0.25)",
+            }}
+          />
+        </div>
+
+        {/* ── Right edge: power button + camera control ── */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            boxShadow: "inset 0 3px 10px rgba(0,0,0,0.35), inset 0 -3px 10px rgba(0,0,0,0.25)",
+            right: -2.5,
+            top: height * 0.165,
+            width: 3.5,
+            height: height * 0.052,
+            borderRadius: 2,
+            background: "linear-gradient(90deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: -2.5,
+            top: height * 0.235,
+            width: 3.5,
+            height: height * 0.028,
+            borderRadius: 2,
+            background: "linear-gradient(90deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+
+        {/* ── Left edge: action button + volume rocker ── */}
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.1,
+            width: 3.5,
+            height: height * 0.022,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.15,
+            width: 3.5,
+            height: height * 0.045,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.205,
+            width: 3.5,
+            height: height * 0.045,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
           }}
         />
       </div>
-
-      {/* Side button details */}
-      <div
-        style={{
-          position: "absolute",
-          right: -2,
-          top: height * 0.19,
-          width: 3,
-          height: height * 0.07,
-          borderRadius: 2,
-          background: "linear-gradient(#4a4d4f, #1a1c1d)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: -2,
-          top: height * 0.14,
-          width: 3,
-          height: height * 0.035,
-          borderRadius: 2,
-          background: "linear-gradient(#4a4d4f, #1a1c1d)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: -2,
-          top: height * 0.19,
-          width: 3,
-          height: height * 0.06,
-          borderRadius: 2,
-          background: "linear-gradient(#4a4d4f, #1a1c1d)",
-        }}
-      />
     </div>
   );
 };

@@ -8304,10 +8304,27 @@ window.__wapiDirector = (function () {
     dt.items.add(file);
     input.files = dt.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    // handleProductImg() reads the file via FileReader (async) — give it a
-    // beat to finish before the caller moves on.
+    // handleProductImg() reads the file via FileReader, then (async, via
+    // the shim) "uploads" it and re-renders with the final src — poll for
+    // that instead of guessing a fixed delay, so this is correct
+    // regardless of how fast/slow the render environment is.
+    return waitUntil(function () {
+      var img = document.querySelector("#modalImgsGrid img");
+      return !!(img && img.getAttribute("src"));
+    });
+  }
+
+  function waitUntil(predicate, timeoutMs) {
+    var start = Date.now();
+    var limit = timeoutMs || 2000;
     return new Promise(function (resolve) {
-      setTimeout(resolve, 60);
+      (function poll() {
+        if (predicate() || Date.now() - start > limit) {
+          resolve();
+          return;
+        }
+        setTimeout(poll, 16);
+      })();
     });
   }
 
@@ -8316,6 +8333,20 @@ window.__wapiDirector = (function () {
     products.length = 0;
     if (typeof renderProducts === "function") renderProducts();
     if (typeof renderCategories === "function") renderCategories();
+  }
+
+  // The real toast/save-indicator are timer-driven (CSS class + setTimeout
+  // auto-hide). Since Remotion re-runs replay() on every rendered video
+  // frame, calling the real functions unconditionally would re-trigger
+  // those timers dozens of times a second — the toast never gets to finish
+  // its own animation, so it looks like flickering/broken UI in the final
+  // video. Silencing them here only affects this scripted demo; it doesn't
+  // touch how toasts behave for a real user.
+  if (typeof showToast === "function") {
+    showToast = function () {};
+  }
+  if (typeof debouncedSave === "function") {
+    debouncedSave = function () {};
   }
 
   var demoImageDataUrl = null;

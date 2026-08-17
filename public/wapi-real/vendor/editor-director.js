@@ -65,6 +65,20 @@ window.__wapiDirector = (function () {
     if (typeof renderCategories === "function") renderCategories();
   }
 
+  // The real toast/save-indicator are timer-driven (CSS class + setTimeout
+  // auto-hide). Since Remotion re-runs replay() on every rendered video
+  // frame, calling the real functions unconditionally would re-trigger
+  // those timers dozens of times a second — the toast never gets to finish
+  // its own animation, so it looks like flickering/broken UI in the final
+  // video. Silencing them here only affects this scripted demo; it doesn't
+  // touch how toasts behave for a real user.
+  if (typeof showToast === "function") {
+    showToast = function () {};
+  }
+  if (typeof debouncedSave === "function") {
+    debouncedSave = function () {};
+  }
+
   var demoImageDataUrl = null;
   var demoImageFile = null;
 
