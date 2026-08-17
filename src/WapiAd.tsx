@@ -1,4 +1,4 @@
-import { AbsoluteFill, Sequence } from "remotion";
+import { AbsoluteFill, Audio, interpolate, Sequence, staticFile } from "remotion";
 import { HookScene } from "./scenes/HookScene";
 import { ProblemScene } from "./scenes/ProblemScene";
 import { OrderScene } from "./scenes/OrderScene";
@@ -7,30 +7,12 @@ import { CtaScene } from "./scenes/CtaScene";
 import { Vignette } from "./components/Vignette";
 import { Grain } from "./components/Grain";
 import { COLORS, SCENE_DURATION } from "./theme";
+import { CTA_DING, MUSIC, TRANSITION_TICK, VOICE_OVER } from "./audio/soundDesign";
 
 export const WAPI_AD_FPS = 30;
 export const WAPI_AD_DURATION = SCENE_DURATION * 5;
 export const WAPI_AD_WIDTH = 1080;
 export const WAPI_AD_HEIGHT = 1920;
-
-// Uncomment once you've added files to public/audio/ (see
-// src/audio/soundDesign.ts and public/audio/README.md for the cue sheet).
-//
-// import { Audio } from "remotion";
-// import { SOUND_CUES } from "./audio/soundDesign";
-//
-// <Audio src={staticFile(SOUND_CUES.music.file)} volume={SOUND_CUES.music.volume} />
-// <Sequence from={SOUND_CUES.whatsappNotification.from}>
-//   <Audio src={staticFile(SOUND_CUES.whatsappNotification.file)} volume={SOUND_CUES.whatsappNotification.volume} />
-// </Sequence>
-// {SOUND_CUES.whoosh.cues.map((cue) => (
-//   <Sequence key={cue} from={cue}>
-//     <Audio src={staticFile(SOUND_CUES.whoosh.file)} volume={SOUND_CUES.whoosh.volume} />
-//   </Sequence>
-// ))}
-// <Sequence from={SOUND_CUES.ctaChime.from}>
-//   <Audio src={staticFile(SOUND_CUES.ctaChime.file)} volume={SOUND_CUES.ctaChime.volume} />
-// </Sequence>
 
 export const WapiAd: React.FC = () => {
   return (
@@ -52,6 +34,33 @@ export const WapiAd: React.FC = () => {
       </Sequence>
       <Vignette />
       <Grain />
+
+      <Audio
+        src={staticFile(MUSIC.file)}
+        volume={(f) =>
+          MUSIC.volume *
+          interpolate(f, [0, 20, WAPI_AD_DURATION - 20, WAPI_AD_DURATION], [0, 1, 1, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })
+        }
+      />
+
+      {VOICE_OVER.map((line) => (
+        <Sequence key={line.file} from={line.from}>
+          <Audio src={staticFile(line.file)} volume={() => 1} />
+        </Sequence>
+      ))}
+
+      {TRANSITION_TICK.cues.map((cue) => (
+        <Sequence key={cue} from={cue}>
+          <Audio src={staticFile(TRANSITION_TICK.file)} volume={() => TRANSITION_TICK.volume} />
+        </Sequence>
+      ))}
+
+      <Sequence from={CTA_DING.from}>
+        <Audio src={staticFile(CTA_DING.file)} volume={() => CTA_DING.volume} />
+      </Sequence>
     </AbsoluteFill>
   );
 };
