@@ -1,0 +1,134 @@
+// ── DIRECTOR (inyectado por el proyecto de video) ──
+// Reproduce de forma determinística, a partir de CERO en cada llamada, la
+// demo de "agregar un producto" usando exclusivamente las funciones reales
+// de este editor (openAddModal/saveProduct/etc.), nunca lógica inventada.
+// Esto permite que Remotion pida cualquier frame en cualquier orden y el
+// resultado visual sea siempre el correcto para ese frame.
+window.__wapiDirector = (function () {
+  function setValue(id, value) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function typedSlice(full, progress01) {
+    var n = Math.round(full.length * Math.max(0, Math.min(1, progress01)));
+    return full.slice(0, n);
+  }
+
+  function dataUrlToFile(dataUrl, filename) {
+    return fetch(dataUrl)
+      .then(function (res) {
+        return res.blob();
+      })
+      .then(function (blob) {
+        return new File([blob], filename, { type: blob.type || "image/jpeg" });
+      });
+  }
+
+  function dispatchProductImage(file) {
+    var input = document.getElementById("productImgInput");
+    if (!input) return Promise.resolve();
+    var dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    // handleProductImg() reads the file via FileReader, then (async, via
+    // the shim) "uploads" it and re-renders with the final src — poll for
+    // that instead of guessing a fixed delay, so this is correct
+    // regardless of how fast/slow the render environment is.
+    return waitUntil(function () {
+      var img = document.querySelector("#modalImgsGrid img");
+      return !!(img && img.getAttribute("src"));
+    });
+  }
+
+  function waitUntil(predicate, timeoutMs) {
+    var start = Date.now();
+    var limit = timeoutMs || 2000;
+    return new Promise(function (resolve) {
+      (function poll() {
+        if (predicate() || Date.now() - start > limit) {
+          resolve();
+          return;
+        }
+        setTimeout(poll, 16);
+      })();
+    });
+  }
+
+  function resetToEmpty() {
+    if (typeof closeProductModal === "function") closeProductModal();
+    products.length = 0;
+    if (typeof renderProducts === "function") renderProducts();
+    if (typeof renderCategories === "function") renderCategories();
+  }
+
+  var demoImageDataUrl = null;
+  var demoImageFile = null;
+
+  // steps: ordered list of { at: frameThreshold, run: async fn }
+  async function replay(frame, cues, businessData) {
+    resetToEmpty();
+
+    if (frame < cues.openModal) return;
+    if (typeof openAddModal === "function") openAddModal();
+
+    var nameProgress = clamp01((frame - cues.openModal) / (cues.nameDone - cues.openModal));
+    setValue("inputName", typedSlice(businessData.demoProduct.name, nameProgress));
+
+    if (frame >= cues.nameDone) {
+      var priceProgress = clamp01((frame - cues.nameDone) / (cues.priceDone - cues.nameDone));
+      setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress || 1));
+    }
+
+    if (frame >= cues.priceDone && cues.pickImage != null && frame >= cues.pickImage) {
+      if (!demoImageFile) {
+        demoImageDataUrl = await fetch(businessData.demoProduct.img)
+          .then(function (r) {
+            return r.blob();
+          })
+          .then(function (blob) {
+            return new Promise(function (resolve) {
+              var reader = new FileReader();
+              reader.onload = function () {
+                resolve(reader.result);
+              };
+              reader.readAsDataURL(blob);
+            });
+          });
+        demoImageFile = await dataUrlToFile(demoImageDataUrl, "producto.jpg");
+      }
+      await dispatchProductImage(demoImageFile);
+    }
+
+    if (frame >= cues.category) {
+      setValue("inputCat", businessData.demoProduct.category);
+    }
+
+    if (frame >= cues.saved) {
+      if (typeof saveProduct === "function") saveProduct();
+    }
+
+    if (frame >= cues.bulkLoad) {
+      var already = products.map(function (p) {
+        return p.name;
+      });
+      businessData.products.forEach(function (p) {
+        if (already.indexOf(p.name) === -1) {
+          products.push(Object.assign({}, p));
+        }
+      });
+      if (typeof renderProducts === "function") renderProducts();
+      if (typeof renderCategories === "function") renderCategories();
+    }
+  }
+
+  function clamp01(n) {
+    if (Number.isNaN(n)) return 0;
+    return Math.max(0, Math.min(1, n));
+  }
+
+  return { replay: replay };
+})();
