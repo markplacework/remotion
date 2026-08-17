@@ -1,10 +1,16 @@
 export const FPS = 30;
 
-// 15s exact: Presentación 3s, Editor 4s, Catálogo 5s, CTA 3s.
-export const SCENE_1_HOOK = 3 * FPS;
-export const SCENE_2_EDITOR = 4 * FPS;
-export const SCENE_3_CATALOG = 5 * FPS;
-export const SCENE_4_CTA = 3 * FPS;
+// 20s exact: Presentación 3.5s, Editor 7s, Catálogo 6s, CTA 3.5s.
+// Editor gets the biggest share — it's the scene with the most real
+// interaction to follow (open modal, type, pick photo, category, save).
+export const SCENE_1_HOOK = 3.5 * FPS;
+export const SCENE_2_EDITOR = 7 * FPS;
+export const SCENE_3_CATALOG = 6 * FPS;
+export const SCENE_4_CTA = 3.5 * FPS;
+
+// Each scene crossfades into the next over this many frames (with a brief
+// motion-blur whip on the outgoing scene) instead of cutting hard.
+export const TRANSITION_FRAMES = 12;
 
 export const TOTAL_DURATION =
   SCENE_1_HOOK + SCENE_2_EDITOR + SCENE_3_CATALOG + SCENE_4_CTA;

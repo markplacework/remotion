@@ -3,6 +3,7 @@ import { HookScene } from "./scenes/HookScene";
 import { EditorScene } from "./scenes/EditorScene";
 import { CatalogScene } from "./scenes/CatalogScene";
 import { CtaScene } from "./scenes/CtaScene";
+import { SceneTransition } from "./components/SceneTransition";
 import {
   COLORS,
   SCENE_1_HOOK,
@@ -10,6 +11,7 @@ import {
   SCENE_3_CATALOG,
   SCENE_4_CTA,
   TOTAL_DURATION,
+  TRANSITION_FRAMES,
   VIDEO_WIDTH,
   VIDEO_HEIGHT,
   FPS,
@@ -28,16 +30,24 @@ export const WapiVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.black }}>
       <Sequence durationInFrames={SCENE_1_HOOK}>
-        <HookScene />
+        <SceneTransition durationInFrames={SCENE_1_HOOK} transitionFrames={TRANSITION_FRAMES}>
+          <HookScene />
+        </SceneTransition>
       </Sequence>
       <Sequence from={s2} durationInFrames={SCENE_2_EDITOR}>
-        <EditorScene />
+        <SceneTransition durationInFrames={SCENE_2_EDITOR} transitionFrames={TRANSITION_FRAMES}>
+          <EditorScene />
+        </SceneTransition>
       </Sequence>
       <Sequence from={s3} durationInFrames={SCENE_3_CATALOG}>
-        <CatalogScene />
+        <SceneTransition durationInFrames={SCENE_3_CATALOG} transitionFrames={TRANSITION_FRAMES}>
+          <CatalogScene />
+        </SceneTransition>
       </Sequence>
       <Sequence from={s4} durationInFrames={SCENE_4_CTA}>
-        <CtaScene />
+        <SceneTransition durationInFrames={SCENE_4_CTA} transitionFrames={TRANSITION_FRAMES}>
+          <CtaScene />
+        </SceneTransition>
       </Sequence>
     </AbsoluteFill>
   );

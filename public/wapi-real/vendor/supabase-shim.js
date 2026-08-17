@@ -40,7 +40,10 @@
       msg_cart: "",
       beneficios: [],
       horarios: [],
-      customcolors: null,
+      // headerColor deliberately omitted — applyCatalogColors() bails out
+      // right after reading it if it's missing, leaving Wapi's own default
+      // theme untouched. Only promoBanner is real customization here.
+      customcolors: DATA.promoBanner ? { promoBanner: DATA.promoBanner } : null,
       plan: "lifetime",
       status: "active",
       expires_at: null,

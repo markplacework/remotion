@@ -7,9 +7,9 @@
   "portadas": [
     "/business/burger-house/portadas/portada-2.jpg",
     "/business/burger-house/portadas/portada-3.jpg",
-    "/business/burger-house/portadas/portada-1.jpg",
-    "/business/burger-house/portadas/portada-4.jpg"
+    "/business/burger-house/portadas/portada-1.jpg"
   ],
+  "promoBanner": "/business/burger-house/portadas/portada-4.jpg",
   "categories": ["Burgers", "Papas", "Combos"],
   "demoProduct": {
     "id": "burger-clasica",

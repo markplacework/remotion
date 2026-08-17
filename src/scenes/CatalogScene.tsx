@@ -21,11 +21,15 @@ export const CatalogScene: React.FC = () => {
           src={CATALOG_URL}
           sheenPosition={0.55}
           driveFrame={(win, frame) => {
-            const y = interpolate(frame, [20, SCENE_3_CATALOG - 10], [0, 520], {
+            // Scroll all the way to the real bottom (footer + the footer
+            // promo banner, if the business set one) rather than a fixed
+            // pixel distance, so this adapts to any business's page length.
+            const maxScroll = Math.max(0, win.document.body.scrollHeight - win.innerHeight);
+            const progress = interpolate(frame, [25, SCENE_3_CATALOG - 20], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             });
-            win.scrollTo(0, y);
+            win.scrollTo(0, maxScroll * progress);
           }}
         />
       </Camera>
