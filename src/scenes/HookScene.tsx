@@ -5,18 +5,18 @@ import { PhoneMockup } from "../components/PhoneMockup";
 import { AdText } from "../components/AdText";
 import { ACTIVE_BUSINESS } from "../business";
 import { SCENE_1_HOOK } from "../theme";
+import { CatalogWindow, stopPortadaAutoplay } from "./catalogWindow";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
-
-type CatalogWindow = Window & { _goPortada?: (index: number) => void };
 
 // Cycles through the real top portadas carousel (3 slides) so each banner
 // gets its moment on screen, ending on the last one with a clear hold
 // instead of cutting away mid-swipe. The separate footer promo banner is
-// shown later, in the catalog scene's scroll.
+// shown later, in the catalog scene's scroll. Paced to match the video's
+// own slow, deliberate camera movement rather than a quick flip.
 function portadaIndexForFrame(frame: number): number {
-  if (frame < 20) return 0;
-  if (frame < 55) return 1;
+  if (frame < 30) return 0;
+  if (frame < 80) return 1;
   return 2;
 }
 
@@ -33,6 +33,7 @@ export const HookScene: React.FC = () => {
           width={640}
           src={CATALOG_URL}
           sheenPosition={0.25}
+          onReady={stopPortadaAutoplay}
           driveFrame={(win, frame) => {
             (win as CatalogWindow)._goPortada?.(portadaIndexForFrame(frame));
           }}

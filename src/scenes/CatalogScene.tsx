@@ -4,6 +4,7 @@ import { Camera } from "../components/Camera";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { ACTIVE_BUSINESS } from "../business";
 import { SCENE_3_CATALOG } from "../theme";
+import { stopPortadaAutoplay } from "./catalogWindow";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 
@@ -20,6 +21,7 @@ export const CatalogScene: React.FC = () => {
           width={640}
           src={CATALOG_URL}
           sheenPosition={0.55}
+          onReady={stopPortadaAutoplay}
           driveFrame={(win, frame) => {
             // Scroll all the way to the real bottom (footer + the footer
             // promo banner, if the business set one) rather than a fixed

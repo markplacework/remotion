@@ -1,16 +1,17 @@
-// Frame thresholds (local to Scene 2, 0-209 / 7s) driving the real
+// Frame thresholds (local to Scene 2, 0-329 / 11s) driving the real
 // editor's "add one product" demo — see
 // public/wapi-real/vendor/editor-director.js.
 //
-// Spaced out with a deliberate pause after each beat (type name → pause →
-// price → pause → photo → pause → category → pause → save → hold → bulk
-// load → hold) so every step reads clearly instead of blurring together.
+// Follows the modal's real top-to-bottom order (foto → nombre → precio →
+// descripción → categoría → guardar) with a deliberate pause after each
+// beat so every field reads clearly before the next one starts.
 export const EDITOR_CUES = {
-  openModal: 22,
-  nameDone: 85,
-  priceDone: 95,
-  pickImage: 118,
-  category: 150,
-  saved: 175,
-  bulkLoad: 192,
+  openModal: 28,
+  pickImage: 60,
+  nameDone: 130,
+  priceDone: 145,
+  descDone: 185,
+  category: 215,
+  saved: 250,
+  bulkLoad: 275,
 };

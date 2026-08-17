@@ -8352,22 +8352,15 @@ window.__wapiDirector = (function () {
   var demoImageDataUrl = null;
   var demoImageFile = null;
 
-  // steps: ordered list of { at: frameThreshold, run: async fn }
+  // Follows the modal's real top-to-bottom order: foto → nombre → precio →
+  // descripción → categoría → guardar.
   async function replay(frame, cues, businessData) {
     resetToEmpty();
 
     if (frame < cues.openModal) return;
     if (typeof openAddModal === "function") openAddModal();
 
-    var nameProgress = clamp01((frame - cues.openModal) / (cues.nameDone - cues.openModal));
-    setValue("inputName", typedSlice(businessData.demoProduct.name, nameProgress));
-
-    if (frame >= cues.nameDone) {
-      var priceProgress = clamp01((frame - cues.nameDone) / (cues.priceDone - cues.nameDone));
-      setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress || 1));
-    }
-
-    if (frame >= cues.priceDone && cues.pickImage != null && frame >= cues.pickImage) {
+    if (frame >= cues.pickImage) {
       if (!demoImageFile) {
         demoImageDataUrl = await fetch(businessData.demoProduct.img)
           .then(function (r) {
@@ -8385,6 +8378,24 @@ window.__wapiDirector = (function () {
         demoImageFile = await dataUrlToFile(demoImageDataUrl, "producto.jpg");
       }
       await dispatchProductImage(demoImageFile);
+    }
+
+    if (frame >= cues.pickImage) {
+      var nameProgress = clamp01((frame - cues.pickImage) / (cues.nameDone - cues.pickImage));
+      setValue("inputName", typedSlice(businessData.demoProduct.name, nameProgress));
+    }
+
+    if (frame >= cues.nameDone) {
+      var priceProgress = clamp01((frame - cues.nameDone) / (cues.priceDone - cues.nameDone));
+      setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress || 1));
+    }
+
+    if (frame >= cues.priceDone) {
+      // The description is much longer than the name — reveal it briskly
+      // (it's still visibly "typing", just not at the same reading pace)
+      // instead of eating the whole scene on one field.
+      var descProgress = clamp01((frame - cues.priceDone) / (cues.descDone - cues.priceDone));
+      setValue("inputDesc", typedSlice(businessData.demoProduct.desc || "", descProgress));
     }
 
     if (frame >= cues.category) {

@@ -5,6 +5,7 @@ import { PhoneMockup } from "../components/PhoneMockup";
 import { AdText } from "../components/AdText";
 import { ACTIVE_BUSINESS } from "../business";
 import { COLORS, SCENE_4_CTA } from "../theme";
+import { stopPortadaAutoplay } from "./catalogWindow";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 const FONT_STACK = '"Helvetica Neue", Helvetica, Arial, sans-serif';
@@ -42,7 +43,12 @@ export const CtaScene: React.FC = () => {
 
       <AbsoluteFill style={{ opacity: 0.35, filter: "blur(1px)" }}>
         <Camera from={{ scale: 0.62, y: 40 }} to={{ scale: 0.68, y: 20 }} durationInFrames={SCENE_4_CTA}>
-          <PhoneMockup width={560} src={CATALOG_URL} sheenPosition={0.5} />
+          <PhoneMockup
+            width={560}
+            src={CATALOG_URL}
+            sheenPosition={0.5}
+            onReady={stopPortadaAutoplay}
+          />
         </Camera>
       </AbsoluteFill>
 

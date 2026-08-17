@@ -1,10 +1,10 @@
 export const FPS = 30;
 
-// 20s exact: Presentación 3.5s, Editor 7s, Catálogo 6s, CTA 3.5s.
-// Editor gets the biggest share — it's the scene with the most real
-// interaction to follow (open modal, type, pick photo, category, save).
-export const SCENE_1_HOOK = 3.5 * FPS;
-export const SCENE_2_EDITOR = 7 * FPS;
+// 25s exact: Presentación 4.5s, Editor 11s, Catálogo 6s, CTA 3.5s.
+// Editor gets the biggest share — it walks through every field (foto,
+// nombre, precio, descripción, categoría, guardar), not just a couple.
+export const SCENE_1_HOOK = 4.5 * FPS;
+export const SCENE_2_EDITOR = 11 * FPS;
 export const SCENE_3_CATALOG = 6 * FPS;
 export const SCENE_4_CTA = 3.5 * FPS;
 
