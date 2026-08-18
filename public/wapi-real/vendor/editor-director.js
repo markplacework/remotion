@@ -97,6 +97,19 @@ window.__wapiDirector = (function () {
     });
   }
 
+  // The banner shown just before the footer ("portada inferior" — a
+  // single image, no carousel, separate real feature from the portadas
+  // above it). Same real upload input (#promoBannerInput ->
+  // handlePromoBannerUpload) and the same compressImage()-through-a-canvas
+  // wait as the portada upload above.
+  function dispatchPromoBannerImage(file) {
+    return dispatchFileTo("promoBannerInput", file).then(function () {
+      return waitUntil(function () {
+        return !!document.querySelector("#promoBannerSection .promo-banner-editor-preview img");
+      }, 4000);
+    });
+  }
+
   // The real .modal has a real CSS entrance animation (slideUp 0.3s) that
   // retriggers every time it goes display:none -> flex. resetToEmpty()
   // below closes (hides) both modals at the top of every single replay()
@@ -228,6 +241,16 @@ window.__wapiDirector = (function () {
     if (typeof dClose === "function") dClose();
   }
 
+  // dst.pb (the promo banner / "portada inferior") is loaded straight
+  // from the shim's customcolors on page load, same as
+  // businessInstagram/etc. above — so it needs the same reset-to-empty
+  // treatment for the demo to show it going from nothing to added.
+  function resetPromoBanner() {
+    if (typeof dst === "undefined") return;
+    dst.pb = null;
+    if (typeof renderPromoBannerEditor === "function") renderPromoBannerEditor();
+  }
+
   function waitUntil(predicate, timeoutMs) {
     var start = Date.now();
     var limit = timeoutMs || 2000;
@@ -282,6 +305,7 @@ window.__wapiDirector = (function () {
     if (typeof renderPortadas === "function") renderPortadas();
 
     resetColors();
+    resetPromoBanner();
   }
 
   // The real toast/save-indicator are timer-driven (CSS class + setTimeout
@@ -302,12 +326,14 @@ window.__wapiDirector = (function () {
   var demoLogoFile = null;
   var demoPortadaFile = null;
   var demoPortadaUrl = null;
+  var demoPromoBannerFile = null;
 
-  // Order: logo → descripción del negocio → portada → (foto → nombre →
-  // precio → descripción → categoría → guardar de UN producto) → resto de
-  // productos ya cargados → personalizar colores (encabezado + footer,
-  // ciclando por presets reales). Every step uses the editor's own real
-  // functions — nothing here recreates or fakes its UI.
+  // Order: logo → descripción del negocio → portada (superior) → banner
+  // antes del footer (inferior) → (foto → nombre → precio → descripción →
+  // categoría → guardar de UN producto) → resto de productos ya cargados →
+  // personalizar colores (encabezado + footer, ciclando por presets
+  // reales). Every step uses the editor's own real functions — nothing
+  // here recreates or fakes its UI.
   async function replay(frame, cues, businessData) {
     // The supabase shim hands back businessData.portadas as the exact
     // same array object the editor's own `portadas` variable then points
@@ -350,6 +376,13 @@ window.__wapiDirector = (function () {
       await dispatchPortadaImage(demoPortadaFile);
     }
 
+    if (frame >= cues.promoBannerUpload) {
+      if (!demoPromoBannerFile) {
+        demoPromoBannerFile = await urlToFile(businessData.promoBanner, "banner.jpg");
+      }
+      await dispatchPromoBannerImage(demoPromoBannerFile);
+    }
+
     if (frame < cues.openModal) return;
     if (typeof openAddModal === "function") openAddModal();
     killModalAnimation("productModal");
@@ -373,7 +406,7 @@ window.__wapiDirector = (function () {
 
     if (frame >= cues.priceStart) {
       var priceProgress = clamp01((frame - cues.priceStart) / (cues.priceDone - cues.priceStart));
-      setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress || 1));
+      setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress));
     }
 
     if (frame >= cues.descStart) {
