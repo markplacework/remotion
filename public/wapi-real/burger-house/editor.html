@@ -8331,21 +8331,30 @@ window.__wapiDirector = (function () {
   function dispatchProductImage(file) {
     return dispatchFileTo("productImgInput", file).then(function () {
       // handleProductImg() reads the file via FileReader, then (async, via
-      // the shim) "uploads" it and re-renders with the final src — poll
-      // for that instead of guessing a fixed delay, so this is correct
-      // regardless of how fast/slow the render environment is.
+      // the shim) "uploads" it and swaps the <img> src a second time —
+      // from the FileReader's data: URL to the shim's blob: URL. Waiting
+      // for just "any src" can catch either one depending on real-world
+      // timing, and since each rendered frame replays this from scratch,
+      // two nearby frames landing on different src values (same picture,
+      // different element/paint) reads as a flicker/shake in the final
+      // video. Wait specifically for the blob: swap, so every frame
+      // settles on the exact same final state.
       return waitUntil(function () {
         var img = document.querySelector("#modalImgsGrid img");
-        return !!(img && img.getAttribute("src"));
+        var src = img && img.getAttribute("src");
+        return !!(src && src.indexOf("blob:") === 0);
       });
     });
   }
 
   function dispatchLogoImage(file) {
     return dispatchFileTo("logoInput", file).then(function () {
+      // Same two-stage src swap (preview data: URL, then the shim's
+      // blob: URL) as the product image above — wait for the final one.
       return waitUntil(function () {
         var img = document.getElementById("logoImgEl");
-        return !!(img && img.getAttribute("src"));
+        var src = img && img.getAttribute("src");
+        return !!(src && src.indexOf("blob:") === 0);
       });
     });
   }
