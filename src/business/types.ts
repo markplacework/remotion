@@ -13,9 +13,10 @@ export type BusinessData = {
   tagline: string;
   wa_number: string;
   logo: string;
-  /** Kept to a single entry on purpose — Wapi's real carousel/autoplay
-   * only activates when there's more than one, so this is how the video
-   * gets one fixed, stable portada with zero custom carousel logic. */
+  /** Wapi's own real carousel/autoplay activates automatically once this
+   * has more than one entry — deliberately left untouched (no custom
+   * carousel code anywhere in this project); whatever it does natively
+   * during a render is what ends up in the video. */
   portadas: string[];
   /** Single banner shown just before the footer — a separate real Wapi
    * feature from the top portadas carousel (customcolors.promoBanner). */
