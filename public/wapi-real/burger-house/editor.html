@@ -8382,6 +8382,18 @@ window.__wapiDirector = (function () {
     if (inner) inner.style.animation = "none";
   }
 
+  // Video-only presentational tweak: the "Agregar Producto" modal reads a
+  // touch large inside the phone mockup, so it's scaled down uniformly
+  // (both axes together, from its own center — the overlay already keeps
+  // it centered) — nothing inside it is stretched or squashed, only
+  // smaller. Purely a rendering-time transform on the real markup/CSS;
+  // doesn't change the modal's real size for an actual user.
+  var PRODUCT_MODAL_SCALE = 0.85;
+  function scaleProductModal() {
+    var inner = document.querySelector("#productModal .modal");
+    if (inner) inner.style.transform = "scale(" + PRODUCT_MODAL_SCALE + ")";
+  }
+
   // Same problem, different CSS mechanism: #dPanel (the color-customizer
   // sheet) slides in via `transition: transform 0.3s` on a class toggle
   // instead of a keyframe `animation` on a display toggle — but the effect
@@ -8598,6 +8610,7 @@ window.__wapiDirector = (function () {
     if (frame < cues.openModal) return;
     if (typeof openAddModal === "function") openAddModal();
     killModalAnimation("productModal");
+    scaleProductModal();
 
     if (frame >= cues.pickImage) {
       if (!demoImageFile) {
