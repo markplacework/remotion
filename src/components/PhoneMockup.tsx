@@ -1,43 +1,42 @@
-import { Easing, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { WAPI_VIEWPORT_HEIGHT, WAPI_VIEWPORT_WIDTH } from "../theme";
+import { Easing, interpolate, useCurrentFrame } from "remotion";
+import { WAPI_VIEWPORT_WIDTH } from "../theme";
 import { WapiIframe } from "./WapiIframe";
 
 type Props = {
-  /** Rendered width in px — height follows the mockup photo's own aspect ratio. */
   width: number;
   src: string;
   onReady?: (win: Window) => void;
   driveFrame?: (win: Window, frame: number) => void | Promise<void>;
+  /** 0-1 highlight sweep position for the glass reflection — a fixed
+   * position per scene, not animated over time. */
+  sheenPosition?: number;
 };
 
-// The client's own mockup photo (public/mockup/phone-frame.png), used
-// exactly as provided — no generated/alternate device. 1024x1536 native.
-const IMAGE_ASPECT = 1024 / 1536;
-const MOCKUP_SRC = staticFile("/mockup/phone-frame.png");
-
-// The screen cutout's rect within that photo, measured directly off the
-// image (see the project notes for how — pixel sampling of where the
-// bezel ends and the true display area begins), as fractions of the
-// photo's own width/height so it scales cleanly at any render size.
-const SCREEN_RECT = { left: 0.2002, top: 0.03255, width: 0.5957, height: 0.9199 };
-// Rough match for the screen's own rounded corners, as a fraction of the
-// cutout's width, so the real UI's square corners don't spill onto the
-// photographed bezel curve.
-const SCREEN_CORNER_RADIUS = 0.08;
-
-/** Height, in px, of the mockup photo at a given rendered width. */
-export const mockupHeightFor = (width: number) => width / IMAGE_ASPECT;
+/** Height, in px, of the mockup at a given rendered width. */
+export const mockupHeightFor = (width: number) => width * 2.162;
 
 /**
- * The client's real mockup photo, used unmodified — same device, same
- * perspective, same proportions in every scene. Only an extremely subtle
- * settle-in at the start of each shot; once placed, it does not move,
- * zoom, or rotate. The real Wapi page renders into the screen cutout,
- * scaled to cover it (never stretched/distorted) and cropped to fit.
+ * A premium, high-end flagship-style phone shell built entirely from CSS
+ * (gradients, layered shadows, a fixed highlight sweep) — no external
+ * mockup image. Completely static: one brief settle-in when a shot
+ * starts, then it holds rigid — no zoom, pan, or rotation. The real Wapi
+ * page renders inside the screen cutout, scaled to fit exactly.
  */
-export const PhoneMockup: React.FC<Props> = ({ width, src, onReady, driveFrame }) => {
+export const PhoneMockup: React.FC<Props> = ({
+  width,
+  src,
+  onReady,
+  driveFrame,
+  sheenPosition = 0.3,
+}) => {
   const frame = useCurrentFrame();
   const height = mockupHeightFor(width);
+  const bezel = width * 0.017;
+  const bodyRadius = width * 0.125;
+  const screenRadius = bodyRadius - bezel * 0.4;
+  const screenWidth = width - bezel * 2;
+  const screenHeight = height - bezel * 2;
+  const scale = screenWidth / WAPI_VIEWPORT_WIDTH;
 
   const settle = interpolate(frame, [0, 14], [0, 1], {
     extrapolateLeft: "clamp",
@@ -47,61 +46,147 @@ export const PhoneMockup: React.FC<Props> = ({ width, src, onReady, driveFrame }
   const entranceScale = interpolate(settle, [0, 1], [0.985, 1]);
   const entranceOpacity = interpolate(settle, [0, 1], [0, 1]);
 
-  const screenLeft = width * SCREEN_RECT.left;
-  const screenTop = height * SCREEN_RECT.top;
-  const screenWidth = width * SCREEN_RECT.width;
-  const screenHeight = height * SCREEN_RECT.height;
-
-  // "Cover" the cutout (never letterbox, never stretch): scale by
-  // whichever axis needs more, then center and crop the overflow.
-  const scale = Math.max(screenWidth / WAPI_VIEWPORT_WIDTH, screenHeight / WAPI_VIEWPORT_HEIGHT);
-  const contentWidth = WAPI_VIEWPORT_WIDTH * scale;
-  const contentHeight = WAPI_VIEWPORT_HEIGHT * scale;
-
   return (
-    <div
-      style={{
-        position: "relative",
-        width,
-        height,
-        opacity: entranceOpacity,
-        transform: `scale(${entranceScale})`,
-      }}
-    >
-      {/* The photo's own screen area is an opaque photographed-off black
-          rectangle, not a transparent cutout — so the frame image goes
-          UNDERNEATH, and the real screen content paints over just the
-          screen rect on top of it, leaving the rest of the photo (bezel,
-          buttons, glass edge) visible around it. */}
-      <Img
-        src={MOCKUP_SRC}
-        alt=""
-        style={{ position: "absolute", inset: 0, width, height, pointerEvents: "none" }}
-      />
-
+    <div style={{ position: "relative", width, height, opacity: entranceOpacity, transform: `scale(${entranceScale})` }}>
+      {/* Soft contact shadow grounding the phone against the backdrop */}
       <div
         style={{
           position: "absolute",
-          left: screenLeft,
-          top: screenTop,
-          width: screenWidth,
-          height: screenHeight,
-          overflow: "hidden",
-          borderRadius: screenWidth * SCREEN_CORNER_RADIUS,
-          background: "#000",
+          left: "8%",
+          right: "8%",
+          bottom: -height * 0.05,
+          height: height * 0.09,
+          borderRadius: "50%",
+          background: "radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%)",
+          filter: "blur(4px)",
+        }}
+      />
+
+      {/* Titanium frame */}
+      <div
+        style={{
+          position: "relative",
+          width,
+          height,
+          borderRadius: bodyRadius,
+          background:
+            "linear-gradient(150deg, #55585b 0%, #2a2c2e 12%, #131415 30%, #0a0a0b 50%, #17191a 66%, #3d4042 85%, #57595c 100%)",
+          boxShadow:
+            "0 70px 130px -24px rgba(0,0,0,0.8), 0 24px 50px -12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 0.5px 0.5px rgba(255,255,255,0.35)",
+          padding: bezel,
         }}
       >
+        {/* Inner bevel ring — separates frame from screen with a hairline of depth */}
         <div
           style={{
             position: "absolute",
-            left: (screenWidth - contentWidth) / 2,
-            top: (screenHeight - contentHeight) / 2,
-            width: contentWidth,
-            height: contentHeight,
+            inset: bezel * 0.35,
+            borderRadius: bodyRadius - bezel * 0.35,
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.65), inset 0 1px 1.5px rgba(0,0,0,0.5)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Screen */}
+        <div
+          style={{
+            position: "relative",
+            width: screenWidth,
+            height: screenHeight,
+            borderRadius: screenRadius,
+            overflow: "hidden",
+            background: "#000",
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.7)",
           }}
         >
           <WapiIframe src={src} scale={scale} onReady={onReady} driveFrame={driveFrame} />
+
+          {/* Glass reflection sweep */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background: `linear-gradient(115deg, rgba(255,255,255,0) ${
+                sheenPosition * 100 - 24
+              }%, rgba(255,255,255,0.05) ${sheenPosition * 100 - 8}%, rgba(255,255,255,0.22) ${
+                sheenPosition * 100
+              }%, rgba(255,255,255,0.05) ${sheenPosition * 100 + 8}%, rgba(255,255,255,0) ${
+                sheenPosition * 100 + 24
+              }%)`,
+              mixBlendMode: "overlay",
+            }}
+          />
+
+          {/* Subtle top/bottom vignette to sell depth against the screen glass */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              boxShadow: "inset 0 3px 10px rgba(0,0,0,0.35), inset 0 -3px 10px rgba(0,0,0,0.25)",
+            }}
+          />
         </div>
+
+        {/* Right edge: power button + camera control */}
+        <div
+          style={{
+            position: "absolute",
+            right: -2.5,
+            top: height * 0.165,
+            width: 3.5,
+            height: height * 0.052,
+            borderRadius: 2,
+            background: "linear-gradient(90deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: -2.5,
+            top: height * 0.235,
+            width: 3.5,
+            height: height * 0.028,
+            borderRadius: 2,
+            background: "linear-gradient(90deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+
+        {/* Left edge: action button + volume rocker */}
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.1,
+            width: 3.5,
+            height: height * 0.022,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.15,
+            width: 3.5,
+            height: height * 0.045,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: -2.5,
+            top: height * 0.205,
+            width: 3.5,
+            height: height * 0.045,
+            borderRadius: 2,
+            background: "linear-gradient(270deg, #1a1c1d, #5a5d60 45%, #1a1c1d)",
+          }}
+        />
       </div>
     </div>
   );

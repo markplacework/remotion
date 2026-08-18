@@ -1,12 +1,12 @@
 import { AbsoluteFill, Sequence } from "remotion";
-import { HookScene } from "./scenes/HookScene";
+import { IntroScene } from "./scenes/IntroScene";
 import { EditorScene } from "./scenes/EditorScene";
 import { CatalogScene } from "./scenes/CatalogScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 import { SceneTransition } from "./components/SceneTransition";
 import {
   COLORS,
-  SCENE_HOOK,
+  SCENE_INTRO,
   SCENE_EDITOR,
   SCENE_CATALOG,
   SCENE_CIERRE,
@@ -23,15 +23,15 @@ export const WAPI_VIDEO_WIDTH = VIDEO_WIDTH;
 export const WAPI_VIDEO_HEIGHT = VIDEO_HEIGHT;
 
 export const WapiVideo: React.FC = () => {
-  const s2 = SCENE_HOOK;
+  const s2 = SCENE_INTRO;
   const s3 = s2 + SCENE_EDITOR;
   const s4 = s3 + SCENE_CATALOG;
 
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.black }}>
-      <Sequence durationInFrames={SCENE_HOOK}>
-        <SceneTransition durationInFrames={SCENE_HOOK} transitionFrames={TRANSITION_FRAMES}>
-          <HookScene />
+      <Sequence durationInFrames={SCENE_INTRO}>
+        <SceneTransition durationInFrames={SCENE_INTRO} transitionFrames={TRANSITION_FRAMES}>
+          <IntroScene />
         </SceneTransition>
       </Sequence>
       <Sequence from={s2} durationInFrames={SCENE_EDITOR}>

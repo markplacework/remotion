@@ -1,21 +1,15 @@
 import { AbsoluteFill, interpolate, staticFile } from "remotion";
 import { Backdrop } from "../components/Backdrop";
-import { PhoneMockup, mockupHeightFor } from "../components/PhoneMockup";
-import { TextBeat } from "../components/TextBeat";
+import { PhoneMockup } from "../components/PhoneMockup";
 import { ACTIVE_BUSINESS } from "../business";
-import { SCENE_CATALOG, VIDEO_HEIGHT } from "../theme";
+import { SCENE_CATALOG } from "../theme";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 
-const PHONE_WIDTH = 560;
-const PHONE_HEIGHT = mockupHeightFor(PHONE_WIDTH);
-const PHONE_TOP = (VIDEO_HEIGHT - PHONE_HEIGHT) / 2;
-const PHONE_BOTTOM = PHONE_TOP + PHONE_HEIGHT;
-
 /**
- * The mockup itself never moves here — revealing the full published page
- * (logo, portada, categories, products, footer) is done by scrolling the
- * real page's own content inside the screen, not by moving the phone.
+ * Mockup only — no caption. The phone itself never moves; revealing the
+ * full published page (logo, portada, categories, products, footer) is
+ * done by scrolling the real page's own content inside the screen.
  */
 export const CatalogScene: React.FC = () => {
   return (
@@ -23,8 +17,9 @@ export const CatalogScene: React.FC = () => {
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhoneMockup
-          width={PHONE_WIDTH}
+          width={760}
           src={CATALOG_URL}
+          sheenPosition={0.55}
           driveFrame={(win, frame) => {
             // Scroll all the way to the real bottom (footer + the footer
             // promo banner, if the business set one) rather than a fixed
@@ -38,12 +33,6 @@ export const CatalogScene: React.FC = () => {
           }}
         />
       </AbsoluteFill>
-      <TextBeat
-        top={PHONE_BOTTOM + 90}
-        fontSize={40}
-        window={[10, 28, 68, 85]}
-        lines={[[{ text: "Tu " }, { text: "catálogo", accent: true }, { text: ", publicado." }]]}
-      />
     </AbsoluteFill>
   );
 };
