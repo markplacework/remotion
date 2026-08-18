@@ -23,16 +23,18 @@ export const EDITOR_CUES = {
   // meant to read like an actual demo, not a quick cut. Each field below
   // has its own start cue with a real still pause after the previous
   // field settles — not just typing running straight into the next
-  // field — so the whole thing reads as deliberate, not rushed.
-  nameStart: 375,
-  nameDone: 485,
-  priceStart: 505,
-  priceDone: 545,
-  descStart: 570,
-  descDone: 730,
-  category: 760,
-  saved: 805,
-  bulkLoad: 845,
+  // field — so the whole thing reads as deliberate, not rushed. Trimmed
+  // ~20% off every segment here (typing + holds) on request — this part
+  // read as too slow — while keeping the same still-pause structure.
+  nameStart: 371,
+  nameDone: 461,
+  priceStart: 477,
+  priceDone: 507,
+  descStart: 527,
+  descDone: 657,
+  category: 681,
+  saved: 717,
+  bulkLoad: 749,
   // Real "Personalizar colores" panel (colorsFab -> dOpen), cycling through
   // real predefined presets (COLOR_PRESETS / applyColorPreset in the
   // source app) for header + footer. Starts once the loaded catalog has
@@ -44,8 +46,8 @@ export const EDITOR_CUES = {
   // It closes again before the preset cycle plays, so what's on screen for
   // the rest of the beat is the real page itself changing color live, not
   // the settings sheet.
-  colorsOpen: 885,
-  colorsPanelClose: 915,
+  colorsOpen: 789,
+  colorsPanelClose: 819,
   // Verde is already the active preset once the panel closes (it's the
   // app's own default), so it just holds, fully visible, before the first
   // live transition starts.

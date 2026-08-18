@@ -6,12 +6,13 @@ export const FPS = 30;
 // grew on request to show the full setup, not just one product, and again
 // twice more to slow the product-load walkthrough down to a genuinely
 // unhurried pace, once more to add the real color-customization demo
-// after the products load, and once more to add the promo-banner upload
-// alongside the top portada). Comes out to ~55.5s: Intro (text only,
-// gancho) 4s, Editor real (mockup only — logo, descripción, portada
-// superior, banner inferior, cargar un producto, ver todos cargados,
-// personalizar colores) 42s, Catálogo publicado (mockup only) 5.5s,
-// Cierre (text only) 4s.
+// after the products load, once more to add the promo-banner upload
+// alongside the top portada, and then trimmed back down ~20% on request
+// where the single-product walkthrough felt too slow). Comes out to
+// ~52.5s: Intro (text only, gancho) 4s, Editor real (mockup only — logo,
+// descripción, portada superior, banner inferior, cargar un producto,
+// ver todos cargados, personalizar colores) 39s, Catálogo publicado
+// (mockup only) 5.5s, Cierre (text only) 4s.
 //
 // Text and mockup never share a scene — every scene is either pure copy
 // on a plain background or the product on its own with no caption.
@@ -21,7 +22,7 @@ export const SCENE_INTRO = 4 * FPS;
 // comes back — these two stay defined since that file still imports them.
 export const SHOWCASE_IMAGE_COUNT = 4;
 export const SHOWCASE_SEGMENT_FRAMES = 40;
-export const SCENE_EDITOR = 42 * FPS;
+export const SCENE_EDITOR = 39 * FPS;
 export const SCENE_CATALOG = 5.5 * FPS;
 export const SCENE_CIERRE = 4 * FPS;
 
