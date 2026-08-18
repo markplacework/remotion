@@ -152,6 +152,16 @@ window.__wapiDirector = (function () {
     var footerTaglineEl = document.getElementById("footerTagline");
     if (footerTaglineEl) footerTaglineEl.textContent = "";
 
+    // The shim's catalog row now carries the real instagram/facebook/
+    // tiktok values (so the real catalog page can show them), which means
+    // the editor's own load path pre-fills businessInstagram/etc. from it
+    // immediately — same reset-from-empty treatment as the tagline above,
+    // so the demo still shows them going from nothing to added.
+    if (typeof businessInstagram !== "undefined") businessInstagram = "";
+    if (typeof businessFacebook !== "undefined") businessFacebook = "";
+    if (typeof businessTiktok !== "undefined") businessTiktok = "";
+    if (typeof updateFooterExtras === "function") updateFooterExtras();
+
     if (typeof portadas !== "undefined" && Array.isArray(portadas)) portadas.length = 0;
     if (typeof renderPortadas === "function") renderPortadas();
   }
@@ -202,6 +212,12 @@ window.__wapiDirector = (function () {
       killModalAnimation("businessModal");
       var descProgress = clamp01((frame - cues.descOpen) / (cues.descTyped - cues.descOpen));
       setValue("inputTagline", typedSlice(businessData.tagline, descProgress));
+    }
+
+    if (frame >= cues.descTyped) {
+      if (businessData.instagram) setValue("inputInstagram", businessData.instagram);
+      if (businessData.facebook) setValue("inputFacebook", businessData.facebook);
+      if (businessData.tiktok) setValue("inputTiktok", businessData.tiktok);
     }
 
     if (frame >= cues.descSaved) {

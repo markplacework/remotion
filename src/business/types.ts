@@ -13,14 +13,21 @@ export type BusinessData = {
   tagline: string;
   wa_number: string;
   logo: string;
-  /** Wapi's own real carousel/autoplay activates automatically once this
-   * has more than one entry — deliberately left untouched (no custom
-   * carousel code anywhere in this project); whatever it does natively
-   * during a render is what ends up in the video. */
+  /** Kept to a single entry — one portada on top (fixed), separate from
+   * the promoBanner below (the "portada inferior"). Wapi's own real
+   * carousel/autoplay would activate automatically past one entry, but
+   * this project never adds custom carousel code either way. */
   portadas: string[];
-  /** Single banner shown just before the footer — a separate real Wapi
-   * feature from the top portadas carousel (customcolors.promoBanner). */
+  /** Banner shown just before the footer — the "portada inferior",
+   * a separate real Wapi feature from the top portadas carousel
+   * (customcolors.promoBanner). */
   promoBanner: string;
+  /** Optional — same fields as the real editor's "Datos del negocio"
+   * modal. Handles only, no leading @ or URL (the real app normalizes
+   * them for display/links). */
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
   categories: string[];
   /** Product used for the scripted "add one product" editor demo. */
   demoProduct: Product;

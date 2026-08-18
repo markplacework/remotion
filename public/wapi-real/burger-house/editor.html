@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="../vendor/fonts.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WapiLink — Editor</title>
-<script>window.__WAPI_BUSINESS_DATA__ = {"slug":"burger-house","business_name":"Burger House","tagline":"Las mejores burgers, a tu manera","wa_number":"5491123456789","logo":"../../business/burger-house/logo.jpg","portadas":["../../business/burger-house/portadas/portada-2.jpg","../../business/burger-house/portadas/portada-1.jpg"],"promoBanner":"../../business/burger-house/portadas/portada-4.jpg","categories":["Burgers","Papas","Combos"],"demoProduct":{"id":"burger-clasica","name":"Burger Clásica","price":"","desc":"Carne vacuna a la parrilla, cheddar fundido, lechuga, tomate, cebolla y nuestra salsa especial en pan brioche.","img":"../../business/burger-house/products/burger-clasica.jpg","category":"Burgers"},"products":[{"id":"burger-clasica","name":"Burger Clásica","price":"","desc":"Carne vacuna a la parrilla, cheddar fundido, lechuga, tomate, cebolla y nuestra salsa especial en pan brioche.","img":"../../business/burger-house/products/burger-clasica.jpg","category":"Burgers"},{"id":"burger-bacon-bbq","name":"Burger Bacon BBQ","price":"","desc":"Doble carne, doble cheddar, bacon crocante, cebolla caramelizada y nuestra irresistible salsa BBQ.","img":"../../business/burger-house/products/burger-bacon-bbq.jpg","category":"Burgers"},{"id":"papas-cheddar-bacon","name":"Papas Cheddar & Bacon","price":"","desc":"Papas doradas y crocantes, cubiertas con cheddar fundido y abundante bacon crocante.","img":"../../business/burger-house/products/papas-cheddar-bacon.jpg","category":"Papas"},{"id":"combo-burger-house","name":"Combo Burger House","price":"","desc":"Nuestra Burger Clásica acompañada de papas doradas y una bebida fría. El combo perfecto para disfrutar completo.","img":"../../business/burger-house/products/combo-burger-house.jpg","category":"Combos"}]};</script>
+<script>window.__WAPI_BUSINESS_DATA__ = {"slug":"burger-house","business_name":"Burger House","tagline":"Las mejores burgers, a tu manera","wa_number":"5491123456789","logo":"../../business/burger-house/logo.jpg","portadas":["../../business/burger-house/portadas/portada-2.jpg"],"promoBanner":"../../business/burger-house/portadas/portada-4.jpg","instagram":"burgerhouse.ok","facebook":"burgerhouseok","tiktok":"burgerhouse.ok","categories":["Burgers","Papas","Combos"],"demoProduct":{"id":"burger-clasica","name":"Burger Clásica","price":"9800","desc":"Carne vacuna a la parrilla, cheddar fundido, lechuga, tomate, cebolla y nuestra salsa especial en pan brioche.","img":"../../business/burger-house/products/burger-clasica.jpg","category":"Burgers"},"products":[{"id":"burger-clasica","name":"Burger Clásica","price":"9800","desc":"Carne vacuna a la parrilla, cheddar fundido, lechuga, tomate, cebolla y nuestra salsa especial en pan brioche.","img":"../../business/burger-house/products/burger-clasica.jpg","category":"Burgers"},{"id":"burger-bacon-bbq","name":"Burger Bacon BBQ","price":"12500","desc":"Doble carne, doble cheddar, bacon crocante, cebolla caramelizada y nuestra irresistible salsa BBQ.","img":"../../business/burger-house/products/burger-bacon-bbq.jpg","category":"Burgers"},{"id":"papas-cheddar-bacon","name":"Papas Cheddar & Bacon","price":"6900","desc":"Papas doradas y crocantes, cubiertas con cheddar fundido y abundante bacon crocante.","img":"../../business/burger-house/products/papas-cheddar-bacon.jpg","category":"Papas"},{"id":"combo-burger-house","name":"Combo Burger House","price":"16900","desc":"Nuestra Burger Clásica acompañada de papas doradas y una bebida fría. El combo perfecto para disfrutar completo.","img":"../../business/burger-house/products/combo-burger-house.jpg","category":"Combos"}]};</script>
 <script src="../vendor/supabase-shim.js"></script>
 
 <!-- Librería QR embebida (sin dependencias externas, MIT - kazuhikoarase/qrcode-generator) -->
@@ -8422,6 +8422,16 @@ window.__wapiDirector = (function () {
     var footerTaglineEl = document.getElementById("footerTagline");
     if (footerTaglineEl) footerTaglineEl.textContent = "";
 
+    // The shim's catalog row now carries the real instagram/facebook/
+    // tiktok values (so the real catalog page can show them), which means
+    // the editor's own load path pre-fills businessInstagram/etc. from it
+    // immediately — same reset-from-empty treatment as the tagline above,
+    // so the demo still shows them going from nothing to added.
+    if (typeof businessInstagram !== "undefined") businessInstagram = "";
+    if (typeof businessFacebook !== "undefined") businessFacebook = "";
+    if (typeof businessTiktok !== "undefined") businessTiktok = "";
+    if (typeof updateFooterExtras === "function") updateFooterExtras();
+
     if (typeof portadas !== "undefined" && Array.isArray(portadas)) portadas.length = 0;
     if (typeof renderPortadas === "function") renderPortadas();
   }
@@ -8472,6 +8482,12 @@ window.__wapiDirector = (function () {
       killModalAnimation("businessModal");
       var descProgress = clamp01((frame - cues.descOpen) / (cues.descTyped - cues.descOpen));
       setValue("inputTagline", typedSlice(businessData.tagline, descProgress));
+    }
+
+    if (frame >= cues.descTyped) {
+      if (businessData.instagram) setValue("inputInstagram", businessData.instagram);
+      if (businessData.facebook) setValue("inputFacebook", businessData.facebook);
+      if (businessData.tiktok) setValue("inputTiktok", businessData.tiktok);
     }
 
     if (frame >= cues.descSaved) {
