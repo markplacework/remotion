@@ -31,7 +31,7 @@ export const PhoneMockup: React.FC<Props> = ({
 }) => {
   const frame = useCurrentFrame();
   const height = mockupHeightFor(width);
-  const bezel = width * 0.017;
+  const bezel = width * 0.032;
   const bodyRadius = width * 0.125;
   const screenRadius = bodyRadius - bezel * 0.4;
   const screenWidth = width - bezel * 2;
@@ -70,9 +70,9 @@ export const PhoneMockup: React.FC<Props> = ({
           height,
           borderRadius: bodyRadius,
           background:
-            "linear-gradient(150deg, #55585b 0%, #2a2c2e 12%, #131415 30%, #0a0a0b 50%, #17191a 66%, #3d4042 85%, #57595c 100%)",
+            "linear-gradient(150deg, #626568 0%, #2e3032 10%, #141516 28%, #0a0a0b 50%, #18191b 68%, #45484a 86%, #64676a 100%)",
           boxShadow:
-            "0 70px 130px -24px rgba(0,0,0,0.8), 0 24px 50px -12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 0.5px 0.5px rgba(255,255,255,0.35)",
+            "0 70px 130px -24px rgba(0,0,0,0.8), 0 24px 50px -12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 1px rgba(255,255,255,0.4), inset 0 -1px 1px rgba(0,0,0,0.5)",
           padding: bezel,
         }}
       >

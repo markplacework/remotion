@@ -3,13 +3,13 @@ export const FPS = 30;
 // Not a forced exact duration — each scene gets whatever length its beat
 // actually needs to read clearly at a natural pace (brief: 20-25s is the
 // target, up to ~30s is fine if it keeps things clear). Comes out to
-// ~28.5s: Intro (text only, gancho+solución) 6s, Editor real (mockup
-// only — intro + cargar un producto + ver todos cargados) 13s, Catálogo
-// publicado (mockup only) 5.5s, Cierre (text only) 4s.
+// ~26.5s: Intro (text only, gancho) 4s, Editor real (mockup only — intro
+// + cargar un producto + ver todos cargados) 13s, Catálogo publicado
+// (mockup only) 5.5s, Cierre (text only) 4s.
 //
 // Text and mockup never share a scene — every scene is either pure copy
 // on a plain background or the product on its own with no caption.
-export const SCENE_INTRO = 6 * FPS;
+export const SCENE_INTRO = 4 * FPS;
 export const SCENE_EDITOR = 13 * FPS;
 export const SCENE_CATALOG = 5.5 * FPS;
 export const SCENE_CIERRE = 4 * FPS;
