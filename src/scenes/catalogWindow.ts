@@ -1,19 +1,26 @@
 export type CatalogWindow = Window & {
   _goPortada?: (index: number) => void;
-  _nextPortada?: () => void;
+  __realGoPortada?: (index: number) => void;
 };
 
 /**
- * The real catalog page auto-advances its top carousel on a real
- * setInterval(3000ms). During rendering that runs on real wall-clock time
- * while we're driving the same carousel from the (much slower, frame-by-
- * frame) video timeline — the two fight over `_goPortada`, which looked
- * like glitchy/erratic slide-jumping in the rendered video. Neutralizing
- * the auto-advance leaves our explicit per-frame calls as the only thing
- * moving the carousel.
+ * The real catalog page auto-advances its top carousel via
+ * setInterval(_nextPortada, 3000). Reassigning `_nextPortada` doesn't stop
+ * it — setInterval captured that function *reference* at schedule time, so
+ * a later reassignment never reaches the already-running timer. What DOES
+ * work: `_nextPortada`'s body calls `_goPortada` by identifier, resolved
+ * live on every tick (normal JS scoping, not a captured reference) — and
+ * `_goPortada` is a top-level `function` declaration, so it really is
+ * `window._goPortada`, reassignable from here. Blocking it there kills the
+ * auto-timer's effect entirely; we keep a copy of the original to drive
+ * the carousel ourselves.
  */
-export function stopPortadaAutoplay(win: Window): void {
-  (win as CatalogWindow)._nextPortada = () => {};
+function killPortadaAutoplay(win: Window): void {
+  const cw = win as CatalogWindow;
+  if (!cw.__realGoPortada && cw._goPortada) {
+    cw.__realGoPortada = cw._goPortada;
+  }
+  cw._goPortada = () => {};
 }
 
 /**
@@ -29,9 +36,14 @@ export function stopPortadaAutoplay(win: Window): void {
  * of seconds, a clean instant cut looks intentional rather than a bug.
  */
 export function driveCatalogCarousel(win: Window, index: number): void {
-  const cw = win as CatalogWindow;
-  cw._nextPortada = () => {};
+  killPortadaAutoplay(win);
   const track = win.document.getElementById("portadasTrack");
   if (track) track.style.transition = "none";
-  cw._goPortada?.(index);
+  (win as CatalogWindow).__realGoPortada?.(index);
+}
+
+/** For scenes that just need the real timer neutralized and never touch
+ * the carousel index themselves (it stays wherever it loaded). */
+export function stopPortadaAutoplay(win: Window): void {
+  killPortadaAutoplay(win);
 }
