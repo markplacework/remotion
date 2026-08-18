@@ -3,12 +3,13 @@ export const FPS = 30;
 // Not a forced exact duration — each scene gets whatever length its beat
 // actually needs to read clearly at a natural pace (brief: 20-25s is the
 // target, up to ~30s is fine if it keeps things clear). Comes out to
-// ~28.5s: Gancho+Solución 6.5s, Editor real (intro + cargar un producto +
-// ver todos cargados) 13s, Catálogo publicado 5.5s, Cierre 3.5s.
+// ~29s: Gancho+Solución 6.5s, Editor real (intro + cargar un producto +
+// ver todos cargados) 13s, Catálogo publicado 5.5s, Cierre 4s (logo +
+// tagline + CTA, each needs a beat of its own).
 export const SCENE_HOOK = 6.5 * FPS;
 export const SCENE_EDITOR = 13 * FPS;
 export const SCENE_CATALOG = 5.5 * FPS;
-export const SCENE_CIERRE = 3.5 * FPS;
+export const SCENE_CIERRE = 4 * FPS;
 
 // Each scene crossfades into the next over this many frames (with a brief
 // motion-blur whip on the outgoing scene) instead of cutting hard.

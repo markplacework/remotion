@@ -1,9 +1,9 @@
 import { AbsoluteFill, staticFile } from "remotion";
 import { Backdrop } from "../components/Backdrop";
-import { Camera } from "../components/Camera";
-import { PhoneMockup } from "../components/PhoneMockup";
+import { PhoneMockup, mockupHeightFor } from "../components/PhoneMockup";
+import { TextBeat } from "../components/TextBeat";
 import { ACTIVE_BUSINESS } from "../business";
-import { SCENE_EDITOR } from "../theme";
+import { VIDEO_HEIGHT } from "../theme";
 import { EDITOR_CUES } from "./editorCues";
 
 declare global {
@@ -20,20 +20,30 @@ declare global {
 
 const EDITOR_URL = staticFile(`/wapi-real/${ACTIVE_BUSINESS.slug}/editor.html`);
 
+const PHONE_WIDTH = 560;
+const PHONE_HEIGHT = mockupHeightFor(PHONE_WIDTH);
+const PHONE_TOP = (VIDEO_HEIGHT - PHONE_HEIGHT) / 2;
+const PHONE_BOTTOM = PHONE_TOP + PHONE_HEIGHT;
+
 export const EditorScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
-      <Camera from={{ scale: 0.9, y: 12 }} to={{ scale: 0.97, y: 0 }} durationInFrames={SCENE_EDITOR}>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhoneMockup
-          width={620}
+          width={PHONE_WIDTH}
           src={EDITOR_URL}
-          sheenPosition={0.7}
           driveFrame={async (win, frame) => {
             await win.__wapiDirector?.replay(frame, EDITOR_CUES, win.__WAPI_BUSINESS_DATA__);
           }}
         />
-      </Camera>
+      </AbsoluteFill>
+      <TextBeat
+        top={PHONE_BOTTOM + 90}
+        fontSize={40}
+        window={[10, 28, 68, 85]}
+        lines={[[{ text: "Cargá tu " }, { text: "catálogo", accent: true }, { text: " en minutos." }]]}
+      />
     </AbsoluteFill>
   );
 };

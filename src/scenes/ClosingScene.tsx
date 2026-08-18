@@ -1,71 +1,97 @@
 import { AbsoluteFill, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Backdrop } from "../components/Backdrop";
-import { Camera } from "../components/Camera";
-import { PhoneMockup } from "../components/PhoneMockup";
+import { PhoneMockup, mockupHeightFor } from "../components/PhoneMockup";
 import { AdText } from "../components/AdText";
 import { ACTIVE_BUSINESS } from "../business";
-import { COLORS, SCENE_CIERRE } from "../theme";
+import { COLORS, VIDEO_HEIGHT } from "../theme";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 const FONT_STACK = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 
-const WapiWordmark: React.FC<{ delay: number }> = ({ delay }) => {
+const PHONE_WIDTH = 420;
+const PHONE_HEIGHT = mockupHeightFor(PHONE_WIDTH);
+const PHONE_TOP = 150;
+const PHONE_BOTTOM = PHONE_TOP + PHONE_HEIGHT;
+
+const useEnter = (delay: number) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const entrance = spring({ frame: frame - delay, fps, config: { damping: 200, mass: 0.6 } });
-  const translateY = interpolate(entrance, [0, 1], [22, 0]);
+  return { opacity: entrance, translateY: interpolate(entrance, [0, 1], [22, 0]) };
+};
 
+const WapiWordmark: React.FC<{ delay: number; top: number }> = ({ delay, top }) => {
+  const { opacity, translateY } = useEnter(delay);
   return (
-    <div
-      style={{
-        opacity: entrance,
-        transform: `translateY(${translateY}px)`,
-        fontFamily: FONT_STACK,
-        fontWeight: 900,
-        fontSize: 96,
-        letterSpacing: -2,
-        background: `linear-gradient(135deg, ${COLORS.wapiGreen} 0%, ${COLORS.wapiGreen} 55%, ${COLORS.wapiGreenLight} 100%)`,
-        WebkitBackgroundClip: "text",
-        backgroundClip: "text",
-        color: "transparent",
-      }}
-    >
-      Wapi
+    <div style={{ position: "absolute", top, left: 0, right: 0, textAlign: "center" }}>
+      <div
+        style={{
+          display: "inline-block",
+          opacity,
+          transform: `translateY(${translateY}px)`,
+          fontFamily: FONT_STACK,
+          fontWeight: 900,
+          fontSize: 88,
+          letterSpacing: -2,
+          background: `linear-gradient(135deg, ${COLORS.wapiGreen} 0%, ${COLORS.wapiGreen} 55%, ${COLORS.wapiGreenLight} 100%)`,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        Wapi
+      </div>
     </div>
   );
 };
 
-/** Institutional close — no free-trial offer, just the product + wordmark. */
+const CtaButton: React.FC<{ delay: number; top: number }> = ({ delay, top }) => {
+  const { opacity, translateY } = useEnter(delay);
+  return (
+    <div style={{ position: "absolute", top, left: 0, right: 0, textAlign: "center" }}>
+      <div
+        style={{
+          display: "inline-block",
+          opacity,
+          transform: `translateY(${translateY}px)`,
+          fontFamily: FONT_STACK,
+          fontWeight: 800,
+          fontSize: 38,
+          color: COLORS.black,
+          background: COLORS.wapiGreenLight,
+          padding: "26px 64px",
+          borderRadius: 999,
+          boxShadow: "0 16px 40px -8px rgba(37,211,102,0.45)",
+        }}
+      >
+        Conocé Wapi
+      </div>
+    </div>
+  );
+};
+
+/** Institutional close — no free-trial offer. Small, static product shot up
+ * top; wordmark, tagline and CTA stacked below it, well clear of the mockup. */
 export const ClosingScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
 
-      <AbsoluteFill style={{ opacity: 0.35, filter: "blur(1px)" }}>
-        <Camera from={{ scale: 0.64, y: 14 }} to={{ scale: 0.68, y: 0 }} durationInFrames={SCENE_CIERRE}>
-          <PhoneMockup width={560} src={CATALOG_URL} sheenPosition={0.5} />
-        </Camera>
-      </AbsoluteFill>
+      <div style={{ position: "absolute", top: PHONE_TOP, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+        <PhoneMockup width={PHONE_WIDTH} src={CATALOG_URL} />
+      </div>
 
-      <AbsoluteFill
-        style={{
-          background: "radial-gradient(ellipse at 50% 45%, rgba(5,7,6,0.25) 0%, rgba(5,7,6,0.9) 72%)",
-        }}
-      />
-
-      <AbsoluteFill style={{ alignItems: "center" }}>
-        <div style={{ marginTop: 640 }}>
-          <WapiWordmark delay={4} />
-        </div>
-      </AbsoluteFill>
+      <WapiWordmark delay={8} top={PHONE_BOTTOM + 90} />
 
       <AdText
-        bottom={260}
-        delay={18}
-        fontSize={46}
+        top={PHONE_BOTTOM + 210}
+        delay={24}
+        fontSize={44}
         weight={700}
-        lines={[[{ text: "Un catálogo " }, { text: "profesional", accent: true }, { text: "." }], [{ text: "Pedidos por WhatsApp." }]]}
+        lines={[[{ text: "Convertí tu WhatsApp en un" }], [{ text: "catálogo " }, { text: "profesional", accent: true }, { text: "." }]]}
       />
+
+      <CtaButton delay={44} top={VIDEO_HEIGHT - 500} />
     </AbsoluteFill>
   );
 };

@@ -4,11 +4,7 @@
   "tagline": "Las mejores burgers, a tu manera",
   "wa_number": "5491123456789",
   "logo": "/business/burger-house/logo.jpg",
-  "portadas": [
-    "/business/burger-house/portadas/portada-2.jpg",
-    "/business/burger-house/portadas/portada-3.jpg",
-    "/business/burger-house/portadas/portada-1.jpg"
-  ],
+  "portadas": ["/business/burger-house/portadas/portada-2.jpg"],
   "promoBanner": "/business/burger-house/portadas/portada-4.jpg",
   "categories": ["Burgers", "Papas", "Combos"],
   "demoProduct": {
