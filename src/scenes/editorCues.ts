@@ -1,4 +1,4 @@
-// Frame thresholds (local to the Editor scene / 19s) driving the real
+// Frame thresholds (local to the Editor scene / 21.5s) driving the real
 // editor's demo — see public/wapi-real/vendor/editor-director.js.
 //
 // Follows the real dashboard's own top-to-bottom order: logo → descripción
@@ -18,10 +18,14 @@ export const EDITOR_CUES = {
   // cutting to the product modal.
   openModal: 250,
   pickImage: 285,
-  nameDone: 355,
-  priceDone: 370,
-  descDone: 460,
-  category: 488,
-  saved: 520,
-  bulkLoad: 537,
+  // The single-product walkthrough (foto → nombre → precio → descripción
+  // → categoría → guardar) reads as rushed at a brisk pace — this is the
+  // one part of the whole video meant to read like an actual demo, not a
+  // quick cut, so every step here gets more room than elsewhere.
+  nameDone: 375,
+  priceDone: 400,
+  descDone: 510,
+  category: 545,
+  saved: 585,
+  bulkLoad: 610,
 };
