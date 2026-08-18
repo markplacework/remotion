@@ -1,10 +1,11 @@
 export const FPS = 30;
 
-// 25s exact: Presentación 4.5s, Editor 11s, Catálogo 6s, CTA 3.5s.
+// 27s exact: Presentación 4.5s, Editor 13s, Catálogo 6s, CTA 3.5s.
 // Editor gets the biggest share — it walks through every field (foto,
-// nombre, precio, descripción, categoría, guardar), not just a couple.
+// nombre, precio, descripción, categoría, guardar), not just a couple,
+// and the description needs real time to read since it's a full sentence.
 export const SCENE_1_HOOK = 4.5 * FPS;
-export const SCENE_2_EDITOR = 11 * FPS;
+export const SCENE_2_EDITOR = 13 * FPS;
 export const SCENE_3_CATALOG = 6 * FPS;
 export const SCENE_4_CTA = 3.5 * FPS;
 
