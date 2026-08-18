@@ -2,14 +2,14 @@ import { AbsoluteFill, Sequence } from "remotion";
 import { HookScene } from "./scenes/HookScene";
 import { EditorScene } from "./scenes/EditorScene";
 import { CatalogScene } from "./scenes/CatalogScene";
-import { CtaScene } from "./scenes/CtaScene";
+import { ClosingScene } from "./scenes/ClosingScene";
 import { SceneTransition } from "./components/SceneTransition";
 import {
   COLORS,
-  SCENE_1_HOOK,
-  SCENE_2_EDITOR,
-  SCENE_3_CATALOG,
-  SCENE_4_CTA,
+  SCENE_HOOK,
+  SCENE_EDITOR,
+  SCENE_CATALOG,
+  SCENE_CIERRE,
   TOTAL_DURATION,
   TRANSITION_FRAMES,
   VIDEO_WIDTH,
@@ -23,30 +23,30 @@ export const WAPI_VIDEO_WIDTH = VIDEO_WIDTH;
 export const WAPI_VIDEO_HEIGHT = VIDEO_HEIGHT;
 
 export const WapiVideo: React.FC = () => {
-  const s2 = SCENE_1_HOOK;
-  const s3 = s2 + SCENE_2_EDITOR;
-  const s4 = s3 + SCENE_3_CATALOG;
+  const s2 = SCENE_HOOK;
+  const s3 = s2 + SCENE_EDITOR;
+  const s4 = s3 + SCENE_CATALOG;
 
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.black }}>
-      <Sequence durationInFrames={SCENE_1_HOOK}>
-        <SceneTransition durationInFrames={SCENE_1_HOOK} transitionFrames={TRANSITION_FRAMES}>
+      <Sequence durationInFrames={SCENE_HOOK}>
+        <SceneTransition durationInFrames={SCENE_HOOK} transitionFrames={TRANSITION_FRAMES}>
           <HookScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s2} durationInFrames={SCENE_2_EDITOR}>
-        <SceneTransition durationInFrames={SCENE_2_EDITOR} transitionFrames={TRANSITION_FRAMES}>
+      <Sequence from={s2} durationInFrames={SCENE_EDITOR}>
+        <SceneTransition durationInFrames={SCENE_EDITOR} transitionFrames={TRANSITION_FRAMES}>
           <EditorScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s3} durationInFrames={SCENE_3_CATALOG}>
-        <SceneTransition durationInFrames={SCENE_3_CATALOG} transitionFrames={TRANSITION_FRAMES}>
+      <Sequence from={s3} durationInFrames={SCENE_CATALOG}>
+        <SceneTransition durationInFrames={SCENE_CATALOG} transitionFrames={TRANSITION_FRAMES}>
           <CatalogScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s4} durationInFrames={SCENE_4_CTA}>
-        <SceneTransition durationInFrames={SCENE_4_CTA} transitionFrames={TRANSITION_FRAMES}>
-          <CtaScene />
+      <Sequence from={s4} durationInFrames={SCENE_CIERRE}>
+        <SceneTransition durationInFrames={SCENE_CIERRE} transitionFrames={TRANSITION_FRAMES}>
+          <ClosingScene />
         </SceneTransition>
       </Sequence>
     </AbsoluteFill>

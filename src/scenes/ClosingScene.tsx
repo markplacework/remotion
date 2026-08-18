@@ -4,8 +4,7 @@ import { Camera } from "../components/Camera";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { AdText } from "../components/AdText";
 import { ACTIVE_BUSINESS } from "../business";
-import { COLORS, SCENE_4_CTA } from "../theme";
-import { stopPortadaAutoplay } from "./catalogWindow";
+import { COLORS, SCENE_CIERRE } from "../theme";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 const FONT_STACK = '"Helvetica Neue", Helvetica, Arial, sans-serif';
@@ -36,19 +35,15 @@ const WapiWordmark: React.FC<{ delay: number }> = ({ delay }) => {
   );
 };
 
-export const CtaScene: React.FC = () => {
+/** Institutional close — no free-trial offer, just the product + wordmark. */
+export const ClosingScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
 
       <AbsoluteFill style={{ opacity: 0.35, filter: "blur(1px)" }}>
-        <Camera from={{ scale: 0.62, y: 40 }} to={{ scale: 0.68, y: 20 }} durationInFrames={SCENE_4_CTA}>
-          <PhoneMockup
-            width={560}
-            src={CATALOG_URL}
-            sheenPosition={0.5}
-            onReady={stopPortadaAutoplay}
-          />
+        <Camera from={{ scale: 0.64, y: 14 }} to={{ scale: 0.68, y: 0 }} durationInFrames={SCENE_CIERRE}>
+          <PhoneMockup width={560} src={CATALOG_URL} sheenPosition={0.5} />
         </Camera>
       </AbsoluteFill>
 
@@ -65,18 +60,11 @@ export const CtaScene: React.FC = () => {
       </AbsoluteFill>
 
       <AdText
-        top={800}
-        delay={16}
-        fontSize={60}
-        lines={[[{ text: "Creá tu catálogo" }], [{ text: "con Wapi." }]]}
-      />
-
-      <AdText
-        bottom={210}
-        delay={32}
-        fontSize={40}
+        bottom={260}
+        delay={18}
+        fontSize={46}
         weight={700}
-        lines={[[{ text: "Probá Wapi " }, { text: "gratis", accent: true }, { text: " 15 días." }]]}
+        lines={[[{ text: "Un catálogo " }, { text: "profesional", accent: true }, { text: "." }], [{ text: "Pedidos por WhatsApp." }]]}
       />
     </AbsoluteFill>
   );

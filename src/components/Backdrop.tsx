@@ -9,6 +9,13 @@ export const Backdrop: React.FC = () => (
           "radial-gradient(ellipse 80% 60% at 50% 38%, #101d16 0%, #060a08 55%, #030403 100%)",
       }}
     />
+    {/* A soft brand-color glow behind where the phone sits, so the shot
+        reads as a composed product scene rather than a flat black void. */}
+    <AbsoluteFill
+      style={{
+        background: `radial-gradient(ellipse 55% 40% at 50% 42%, ${COLORS.wapiGreen}26 0%, ${COLORS.wapiGreen}00 70%)`,
+      }}
+    />
     <AbsoluteFill
       style={{
         background:

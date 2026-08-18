@@ -3,7 +3,7 @@ import { Backdrop } from "../components/Backdrop";
 import { Camera } from "../components/Camera";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { ACTIVE_BUSINESS } from "../business";
-import { SCENE_2_EDITOR } from "../theme";
+import { SCENE_EDITOR } from "../theme";
 import { EDITOR_CUES } from "./editorCues";
 
 declare global {
@@ -24,11 +24,7 @@ export const EditorScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
-      <Camera
-        from={{ scale: 0.78, y: 20, rotateY: 10, rotateX: -3 }}
-        to={{ scale: 0.94, y: -6, rotateY: 3, rotateX: -1 }}
-        durationInFrames={SCENE_2_EDITOR}
-      >
+      <Camera from={{ scale: 0.9, y: 12 }} to={{ scale: 0.97, y: 0 }} durationInFrames={SCENE_EDITOR}>
         <PhoneMockup
           width={620}
           src={EDITOR_URL}

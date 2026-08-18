@@ -1,19 +1,22 @@
-// Frame thresholds (local to Scene 2, 0-389 / 13s) driving the real
-// editor's "add one product" demo — see
-// public/wapi-real/vendor/editor-director.js.
+// Frame thresholds (local to the Editor scene, 0-389 / 13s) driving the
+// real editor's demo — see public/wapi-real/vendor/editor-director.js.
 //
-// Follows the modal's real top-to-bottom order (foto → nombre → precio →
-// descripción → categoría → guardar) with a deliberate pause after each
-// beat so every field reads clearly before the next one starts. The
-// description gets the most time of any single step (90 frames / 3s) —
-// it's a full sentence, not a couple of words like the name.
+// Before `openModal`, the real editor sits on its own product list
+// (empty, since the director resets it) with the real logo/banner already
+// showing — a brief establishing beat before we open the "add product"
+// flow, per the brief's "mostrar logo/banner/config" step.
+//
+// From `openModal` on it follows the modal's real top-to-bottom order
+// (foto → nombre → precio → descripción → categoría → guardar), then
+// `bulkLoad` reveals the rest of the catalog's products at once — quickly,
+// on purpose, since the brief only wants ONE full load shown in detail.
 export const EDITOR_CUES = {
-  openModal: 28,
-  pickImage: 60,
-  nameDone: 130,
-  priceDone: 145,
-  descDone: 235,
-  category: 265,
-  saved: 300,
-  bulkLoad: 325,
+  openModal: 75,
+  pickImage: 110,
+  nameDone: 180,
+  priceDone: 195,
+  descDone: 285,
+  category: 313,
+  saved: 345,
+  bulkLoad: 362,
 };

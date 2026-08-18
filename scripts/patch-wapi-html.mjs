@@ -101,29 +101,19 @@ function patchCommon(html, { vendorBase, businessAssetBase }) {
 }
 
 // ---- catalogo (public/catalogo/<slug>.html) ----
+// No director splice here on purpose: the portada carousel is left
+// entirely as-is, running on Wapi's own real timers/CSS transitions. This
+// project doesn't add, block, or simulate any of that — whatever the real
+// page does natively during a render is what ends up in the video.
 {
-  let src = readFileSync(path.join(root, "wapi-source/catalogo_v28.html"), "utf8");
-  src = patchCommon(src, {
+  const src = readFileSync(path.join(root, "wapi-source/catalogo_v28.html"), "utf8");
+  const patched = patchCommon(src, {
     vendorBase: "../wapi-real/vendor",
     businessAssetBase: `../business/${slug}`,
   });
-
-  const catalogDirector = escapeScriptClose(
-    readFileSync(path.join(root, "public/wapi-real/vendor/catalog-director.js"), "utf8"),
-  );
-
-  // Splice into the SAME <script> block as the app code (must run in the
-  // same lexical scope as the `_goPortada` function declaration — see
-  // catalog-director.js for why).
-  const lastScriptClose = src.lastIndexOf("</script>");
-  if (lastScriptClose === -1) {
-    throw new Error("catalogo_v28.html: could not find main </script> to splice into");
-  }
-  src = src.slice(0, lastScriptClose) + "\n" + catalogDirector + "\n" + src.slice(lastScriptClose);
-
   const outFile = path.join(catalogoOutDir, `${slug}.html`);
-  writeFileSync(outFile, src);
-  console.log("wrote", outFile, `(${src.length} bytes)`);
+  writeFileSync(outFile, patched);
+  console.log("wrote", outFile, `(${patched.length} bytes)`);
 }
 
 // ---- editor (public/wapi-real/<slug>/editor.html) ----

@@ -2,45 +2,36 @@ import { AbsoluteFill, staticFile } from "remotion";
 import { Backdrop } from "../components/Backdrop";
 import { Camera } from "../components/Camera";
 import { PhoneMockup } from "../components/PhoneMockup";
-import { AdText } from "../components/AdText";
+import { TextBeat } from "../components/TextBeat";
 import { ACTIVE_BUSINESS } from "../business";
-import { SCENE_1_HOOK } from "../theme";
-import { driveCatalogCarousel } from "./catalogWindow";
+import { SCENE_HOOK } from "../theme";
 
 const CATALOG_URL = staticFile(`/catalogo/${ACTIVE_BUSINESS.slug}.html`);
 
-// Holds each portada ~2.5s, an instant cut (see driveCatalogCarousel) not
-// an animated slide. Only shows as many slides as comfortably fit in this
-// scene's 4.5s — better to hold on one banner a beat longer than to rush
-// through all of them.
-function portadaIndexForFrame(frame: number): number {
-  if (frame < 75) return 0;
-  return 1;
-}
-
+/**
+ * Gancho + Solución. One fixed shot of the real published catalog, two
+ * beats of copy in sequence. No driveFrame here on purpose — the portada
+ * carousel is left to run on Wapi's own real behavior, untouched; if it
+ * does a natural transition while this is on screen, that's fine.
+ */
 export const HookScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
-      <Camera
-        from={{ scale: 0.7, y: 40, rotateY: -14, rotateX: 6 }}
-        to={{ scale: 0.86, y: -10, rotateY: -7, rotateX: 3 }}
-        durationInFrames={SCENE_1_HOOK}
-      >
-        <PhoneMockup
-          width={640}
-          src={CATALOG_URL}
-          sheenPosition={0.25}
-          driveFrame={(win, frame) => {
-            driveCatalogCarousel(win, portadaIndexForFrame(frame));
-          }}
-        />
+      <Camera from={{ scale: 0.88, y: 14 }} to={{ scale: 0.95, y: 0 }} durationInFrames={SCENE_HOOK}>
+        <PhoneMockup width={660} src={CATALOG_URL} sheenPosition={0.25} />
       </Camera>
-      <AdText
+      <TextBeat
         top={130}
-        delay={10}
-        fontSize={78}
-        lines={[[{ text: "Creá tu " }, { text: "catálogo", accent: true }], [{ text: "con Wapi." }]]}
+        fontSize={74}
+        window={[0, 15, 95, 115]}
+        lines={[[{ text: "¿Vendés por " }, { text: "WhatsApp?", accent: true }], [{ text: "Recibí pedidos de forma" }], [{ text: "simple y ordenada." }]]}
+      />
+      <TextBeat
+        bottom={200}
+        fontSize={44}
+        window={[120, 140, 180, 195]}
+        lines={[[{ text: "Un solo link. Un catálogo " }, { text: "profesional", accent: true }, { text: "." }], [{ text: "Pedidos por WhatsApp." }]]}
       />
     </AbsoluteFill>
   );

@@ -1,20 +1,20 @@
 export const FPS = 30;
 
-// 27s exact: Presentación 4.5s, Editor 13s, Catálogo 6s, CTA 3.5s.
-// Editor gets the biggest share — it walks through every field (foto,
-// nombre, precio, descripción, categoría, guardar), not just a couple,
-// and the description needs real time to read since it's a full sentence.
-export const SCENE_1_HOOK = 4.5 * FPS;
-export const SCENE_2_EDITOR = 13 * FPS;
-export const SCENE_3_CATALOG = 6 * FPS;
-export const SCENE_4_CTA = 3.5 * FPS;
+// Not a forced exact duration — each scene gets whatever length its beat
+// actually needs to read clearly at a natural pace (brief: 20-25s is the
+// target, up to ~30s is fine if it keeps things clear). Comes out to
+// ~28.5s: Gancho+Solución 6.5s, Editor real (intro + cargar un producto +
+// ver todos cargados) 13s, Catálogo publicado 5.5s, Cierre 3.5s.
+export const SCENE_HOOK = 6.5 * FPS;
+export const SCENE_EDITOR = 13 * FPS;
+export const SCENE_CATALOG = 5.5 * FPS;
+export const SCENE_CIERRE = 3.5 * FPS;
 
 // Each scene crossfades into the next over this many frames (with a brief
 // motion-blur whip on the outgoing scene) instead of cutting hard.
 export const TRANSITION_FRAMES = 12;
 
-export const TOTAL_DURATION =
-  SCENE_1_HOOK + SCENE_2_EDITOR + SCENE_3_CATALOG + SCENE_4_CTA;
+export const TOTAL_DURATION = SCENE_HOOK + SCENE_EDITOR + SCENE_CATALOG + SCENE_CIERRE;
 
 export const VIDEO_WIDTH = 1080;
 export const VIDEO_HEIGHT = 1920;

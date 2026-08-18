@@ -27,11 +27,16 @@ export const WapiIframe: React.FC<Props> = ({ src, scale, onReady, driveFrame })
   const frame = useCurrentFrame();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  // Scenes without driveFrame (the real catalog page left to run on its
+  // own, untouched) have nothing else to hold the render open on — without
+  // this, frame 0 could get captured before the iframe finishes loading.
+  const [initialLoadHandle] = useState(() => delayRender(`Loading ${src}`));
 
   const handleLoad = () => {
     const win = iframeRef.current?.contentWindow;
     if (win) onReady?.(win);
     setReady(true);
+    continueRender(initialLoadHandle);
   };
 
   useEffect(() => {
