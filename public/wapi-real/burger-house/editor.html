@@ -8382,6 +8382,97 @@ window.__wapiDirector = (function () {
     if (inner) inner.style.animation = "none";
   }
 
+  // Same problem, different CSS mechanism: #dPanel (the color-customizer
+  // sheet) slides in via `transition: transform 0.3s` on a class toggle
+  // instead of a keyframe `animation` on a display toggle — but the effect
+  // on a from-scratch-every-frame replay is identical, so it needs the
+  // same neutralize-right-after-opening treatment.
+  function killTransition(elementId) {
+    var el = document.getElementById(elementId);
+    if (el) el.style.transition = "none";
+  }
+
+  function hexToRgbArr(hex) {
+    var h = String(hex).replace("#", "");
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+
+  function hexLerp(a, b, t) {
+    var ca = hexToRgbArr(a);
+    var cb = hexToRgbArr(b);
+    return (
+      "#" +
+      [0, 1, 2]
+        .map(function (i) {
+          var v = Math.round(ca[i] + (cb[i] - ca[i]) * t);
+          return Math.max(0, Math.min(255, v))
+            .toString(16)
+            .padStart(2, "0");
+        })
+        .join("")
+    );
+  }
+
+  // Real presets to cycle through (indices into the source app's own
+  // COLOR_PRESETS): Verde (the app's own default) -> Rojo -> Azul ->
+  // Violeta.
+  var COLOR_CYCLE = [0, 2, 4, 3];
+
+  // Real preset switches (applyColorPreset) are an instant snap in the
+  // source app — there's no CSS transition on the colored elements
+  // themselves, only on the panel's own entrance. So "not abrupt, well
+  // timed" has to come from us choosing smooth intermediate values, the
+  // same way typedSlice() feeds partial strings into real input fields
+  // instead of waiting for a real transition that doesn't exist. This
+  // still only ever drives the app's own real `dst` state and its own
+  // real dApplyColors()/dGetHBg() — never anything invented.
+  function driveColorCycle(frame, cues) {
+    if (typeof dst === "undefined" || typeof COLOR_PRESETS === "undefined") return;
+    var elapsed = frame - cues.colorsOpen;
+    var fromPreset;
+    var toPreset;
+    var t;
+    if (elapsed < cues.colorsHoldFirst) {
+      fromPreset = toPreset = COLOR_PRESETS[COLOR_CYCLE[0]];
+      t = 0;
+    } else {
+      var afterFirst = elapsed - cues.colorsHoldFirst;
+      var stepIndex = Math.min(COLOR_CYCLE.length - 1, 1 + Math.floor(afterFirst / cues.colorsStepFrames));
+      var withinStep = afterFirst - (stepIndex - 1) * cues.colorsStepFrames;
+      fromPreset = COLOR_PRESETS[COLOR_CYCLE[stepIndex - 1]];
+      toPreset = COLOR_PRESETS[COLOR_CYCLE[stepIndex]];
+      t = clamp01(withinStep / cues.colorsTransitionFrames);
+    }
+    ["hc", "ht", "cb", "ct", "ab", "at", "cc", "ctc", "ac"].forEach(function (k) {
+      dst[k] = hexLerp(fromPreset[k], toPreset[k], t);
+    });
+    dst.htAuto = false;
+    dst.grad = true;
+    dst.ccAuto = false;
+    if (typeof dApplyColors === "function") dApplyColors();
+  }
+
+  // The app's own real defaults (from `let dst = {...}` in the source),
+  // so frames before colorsOpen always show the untouched default look
+  // regardless of what order Remotion requests frames in.
+  function resetColors() {
+    if (typeof dst === "undefined") return;
+    dst.hc = "#128C7E";
+    dst.ht = "#ffffff";
+    dst.htAuto = true;
+    dst.cb = "#ffffff";
+    dst.ct = "#128C7E";
+    dst.grad = true;
+    dst.ab = "#ffffff";
+    dst.at = "#128C7E";
+    dst.cc = "#25D366";
+    dst.ctc = "#ffffff";
+    dst.ac = "#128C7E";
+    dst.ccAuto = true;
+    if (typeof dApplyColors === "function") dApplyColors();
+    if (typeof dClose === "function") dClose();
+  }
+
   function waitUntil(predicate, timeoutMs) {
     var start = Date.now();
     var limit = timeoutMs || 2000;
@@ -8434,6 +8525,8 @@ window.__wapiDirector = (function () {
 
     if (typeof portadas !== "undefined" && Array.isArray(portadas)) portadas.length = 0;
     if (typeof renderPortadas === "function") renderPortadas();
+
+    resetColors();
   }
 
   // The real toast/save-indicator are timer-driven (CSS class + setTimeout
@@ -8457,7 +8550,8 @@ window.__wapiDirector = (function () {
 
   // Order: logo → descripción del negocio → portada → (foto → nombre →
   // precio → descripción → categoría → guardar de UN producto) → resto de
-  // productos ya cargados. Every step uses the editor's own real
+  // productos ya cargados → personalizar colores (encabezado + footer,
+  // ciclando por presets reales). Every step uses the editor's own real
   // functions — nothing here recreates or fakes its UI.
   async function replay(frame, cues, businessData) {
     // The supabase shim hands back businessData.portadas as the exact
@@ -8550,6 +8644,13 @@ window.__wapiDirector = (function () {
       });
       if (typeof renderProducts === "function") renderProducts();
       if (typeof renderCategories === "function") renderCategories();
+    }
+
+    if (frame >= cues.colorsOpen) {
+      if (typeof dOpen === "function") dOpen();
+      killTransition("dPanel");
+      killTransition("dOverlay");
+      driveColorCycle(frame, cues);
     }
   }
 

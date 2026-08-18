@@ -32,4 +32,17 @@ export const EDITOR_CUES = {
   category: 690,
   saved: 735,
   bulkLoad: 775,
+  // Real "Personalizar colores" panel (colorsFab -> dOpen), cycling through
+  // real predefined presets (COLOR_PRESETS / applyColorPreset in the
+  // source app) for header + footer. Starts once the loaded catalog has
+  // had a moment to settle after bulkLoad.
+  colorsOpen: 815,
+  // Verde is already the active preset the instant the panel opens (it's
+  // the app's own default), so it just holds before the first transition.
+  colorsHoldFirst: 30,
+  // Per subsequent preset: colorsTransitionFrames to crossfade in, then
+  // the remainder of colorsStepFrames to hold before the next one starts
+  // — a real pause on each color, not a rapid-fire cycle.
+  colorsStepFrames: 90,
+  colorsTransitionFrames: 30,
 };
