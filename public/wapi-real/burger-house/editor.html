@@ -8367,6 +8367,21 @@ window.__wapiDirector = (function () {
     });
   }
 
+  // The real .modal has a real CSS entrance animation (slideUp 0.3s) that
+  // retriggers every time it goes display:none -> flex. resetToEmpty()
+  // below closes (hides) both modals at the top of every single replay()
+  // call before reopening whichever one applies — so without this, every
+  // rendered frame recaptures the modal at whatever random point of that
+  // 0.3s happens to line up with real render timing, which looks like the
+  // modal trembling/jumping between nearby frames in the final video. This
+  // only touches the scripted demo, not how the modal behaves for a real
+  // user opening it once.
+  function killModalAnimation(overlayId) {
+    var overlay = document.getElementById(overlayId);
+    var inner = overlay && overlay.querySelector(".modal");
+    if (inner) inner.style.animation = "none";
+  }
+
   function waitUntil(predicate, timeoutMs) {
     var start = Date.now();
     var limit = timeoutMs || 2000;
@@ -8454,6 +8469,7 @@ window.__wapiDirector = (function () {
 
     if (frame >= cues.descOpen) {
       if (typeof editBusiness === "function") editBusiness();
+      killModalAnimation("businessModal");
       var descProgress = clamp01((frame - cues.descOpen) / (cues.descTyped - cues.descOpen));
       setValue("inputTagline", typedSlice(businessData.tagline, descProgress));
     }
@@ -8471,6 +8487,7 @@ window.__wapiDirector = (function () {
 
     if (frame < cues.openModal) return;
     if (typeof openAddModal === "function") openAddModal();
+    killModalAnimation("productModal");
 
     if (frame >= cues.pickImage) {
       if (!demoImageFile) {
