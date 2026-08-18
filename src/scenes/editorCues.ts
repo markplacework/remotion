@@ -1,22 +1,24 @@
-// Frame thresholds (local to the Editor scene, 0-389 / 13s) driving the
-// real editor's demo — see public/wapi-real/vendor/editor-director.js.
+// Frame thresholds (local to the Editor scene / 18s) driving the real
+// editor's demo — see public/wapi-real/vendor/editor-director.js.
 //
-// Before `openModal`, the real editor sits on its own product list
-// (empty, since the director resets it) with the real logo/banner already
-// showing — a brief establishing beat before we open the "add product"
-// flow, per the brief's "mostrar logo/banner/config" step.
-//
-// From `openModal` on it follows the modal's real top-to-bottom order
-// (foto → nombre → precio → descripción → categoría → guardar), then
-// `bulkLoad` reveals the rest of the catalog's products at once — quickly,
-// on purpose, since the brief only wants ONE full load shown in detail.
+// Follows the real dashboard's own top-to-bottom order: logo → descripción
+// del negocio → portada → luego el modal de "agregar producto" (foto →
+// nombre → precio → descripción → categoría → guardar) para UN producto,
+// y por último se revela el resto del catálogo ya cargado. Every beat
+// replays from an empty state so Remotion can request any frame in any
+// order and still land on the right visual result.
 export const EDITOR_CUES = {
-  openModal: 75,
-  pickImage: 110,
-  nameDone: 180,
-  priceDone: 195,
-  descDone: 285,
-  category: 313,
-  saved: 345,
-  bulkLoad: 362,
+  logoUpload: 20,
+  descOpen: 60,
+  descTyped: 136,
+  descSaved: 156,
+  portadaUpload: 180,
+  openModal: 220,
+  pickImage: 255,
+  nameDone: 325,
+  priceDone: 340,
+  descDone: 430,
+  category: 458,
+  saved: 490,
+  bulkLoad: 507,
 };

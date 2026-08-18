@@ -2,11 +2,12 @@ export const FPS = 30;
 
 // Not a forced exact duration — each scene gets whatever length its beat
 // actually needs to read clearly at a natural pace (brief: 20-25s is the
-// target, up to ~30s is fine if it keeps things clear). Comes out to
-// ~31.9s: Intro (text only, gancho) 4s, Showcase (4 reference images,
-// carousel-style) 5.3s, Editor real (mockup only — intro + cargar un
-// producto + ver todos cargados) 13s, Catálogo publicado (mockup only)
-// 5.5s, Cierre (text only) 4s.
+// target, more if needed to keep things clear — and the editor beat below
+// grew on request to show the full setup, not just one product). Comes
+// out to ~36.8s: Intro (text only, gancho) 4s, Showcase (4 reference
+// images, carousel-style) 5.3s, Editor real (mockup only — logo,
+// descripción, portada, cargar un producto, ver todos cargados) 18s,
+// Catálogo publicado (mockup only) 5.5s, Cierre (text only) 4s.
 //
 // Text and mockup never share a scene — every scene is either pure copy
 // on a plain background or the product on its own with no caption.
@@ -14,7 +15,7 @@ export const SCENE_INTRO = 4 * FPS;
 export const SHOWCASE_IMAGE_COUNT = 4;
 export const SHOWCASE_SEGMENT_FRAMES = 40;
 export const SCENE_SHOWCASE = SHOWCASE_IMAGE_COUNT * SHOWCASE_SEGMENT_FRAMES;
-export const SCENE_EDITOR = 13 * FPS;
+export const SCENE_EDITOR = 18 * FPS;
 export const SCENE_CATALOG = 5.5 * FPS;
 export const SCENE_CIERRE = 4 * FPS;
 

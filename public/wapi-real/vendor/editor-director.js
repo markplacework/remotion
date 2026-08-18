@@ -1,9 +1,11 @@
 // ── DIRECTOR (inyectado por el proyecto de video) ──
 // Reproduce de forma determinística, a partir de CERO en cada llamada, la
-// demo de "agregar un producto" usando exclusivamente las funciones reales
-// de este editor (openAddModal/saveProduct/etc.), nunca lógica inventada.
-// Esto permite que Remotion pida cualquier frame en cualquier orden y el
-// resultado visual sea siempre el correcto para ese frame.
+// demo de "configurar el negocio + agregar un producto" usando
+// exclusivamente las funciones reales de este editor (triggerLogoUpload,
+// editBusiness/saveBusinessInfo, handlePortadaUpload, openAddModal/
+// saveProduct, etc.), nunca lógica inventada. Esto permite que Remotion
+// pida cualquier frame en cualquier orden y el resultado visual sea
+// siempre el correcto para ese frame.
 window.__wapiDirector = (function () {
   function setValue(id, value) {
     var el = document.getElementById(id);
@@ -27,20 +29,62 @@ window.__wapiDirector = (function () {
       });
   }
 
-  function dispatchProductImage(file) {
-    var input = document.getElementById("productImgInput");
+  function urlToFile(url, filename) {
+    return fetch(url)
+      .then(function (r) {
+        return r.blob();
+      })
+      .then(function (blob) {
+        return new Promise(function (resolve) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(blob);
+        });
+      })
+      .then(function (dataUrl) {
+        return dataUrlToFile(dataUrl, filename);
+      });
+  }
+
+  function dispatchFileTo(inputId, file) {
+    var input = document.getElementById(inputId);
     if (!input) return Promise.resolve();
     var dt = new DataTransfer();
     dt.items.add(file);
     input.files = dt.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    // handleProductImg() reads the file via FileReader, then (async, via
-    // the shim) "uploads" it and re-renders with the final src — poll for
-    // that instead of guessing a fixed delay, so this is correct
-    // regardless of how fast/slow the render environment is.
-    return waitUntil(function () {
-      var img = document.querySelector("#modalImgsGrid img");
-      return !!(img && img.getAttribute("src"));
+    return Promise.resolve();
+  }
+
+  function dispatchProductImage(file) {
+    return dispatchFileTo("productImgInput", file).then(function () {
+      // handleProductImg() reads the file via FileReader, then (async, via
+      // the shim) "uploads" it and re-renders with the final src — poll
+      // for that instead of guessing a fixed delay, so this is correct
+      // regardless of how fast/slow the render environment is.
+      return waitUntil(function () {
+        var img = document.querySelector("#modalImgsGrid img");
+        return !!(img && img.getAttribute("src"));
+      });
+    });
+  }
+
+  function dispatchLogoImage(file) {
+    return dispatchFileTo("logoInput", file).then(function () {
+      return waitUntil(function () {
+        var img = document.getElementById("logoImgEl");
+        return !!(img && img.getAttribute("src"));
+      });
+    });
+  }
+
+  function dispatchPortadaImage(file) {
+    return dispatchFileTo("portadaImgInput", file).then(function () {
+      return waitUntil(function () {
+        return !!document.querySelector("#portadasSection .portada-slide img");
+      }, 4000); // compressImage() draws through a canvas — give it more room
     });
   }
 
@@ -60,9 +104,32 @@ window.__wapiDirector = (function () {
 
   function resetToEmpty() {
     if (typeof closeProductModal === "function") closeProductModal();
+    if (typeof closeBusinessModal === "function") closeBusinessModal();
     products.length = 0;
     if (typeof renderProducts === "function") renderProducts();
     if (typeof renderCategories === "function") renderCategories();
+
+    // The business-setup beats (logo/descripción/portada) replay from an
+    // empty state too, same reasoning as products above.
+    var logoImgEl = document.getElementById("logoImgEl");
+    if (logoImgEl) {
+      logoImgEl.src = "";
+      logoImgEl.dataset.saved = "";
+    }
+    var logoImg = document.getElementById("logoImg");
+    if (logoImg) logoImg.style.display = "none";
+    var logoDeleteBtn = document.getElementById("logoDeleteBtn");
+    if (logoDeleteBtn) logoDeleteBtn.style.display = "none";
+    var logoPlaceholder = document.getElementById("logoPlaceholder");
+    if (logoPlaceholder) logoPlaceholder.style.display = "flex";
+
+    var taglineEl = document.getElementById("businessTagline");
+    if (taglineEl) taglineEl.textContent = "";
+    var footerTaglineEl = document.getElementById("footerTagline");
+    if (footerTaglineEl) footerTaglineEl.textContent = "";
+
+    if (typeof portadas !== "undefined" && Array.isArray(portadas)) portadas.length = 0;
+    if (typeof renderPortadas === "function") renderPortadas();
   }
 
   // The real toast/save-indicator are timer-driven (CSS class + setTimeout
@@ -79,33 +146,56 @@ window.__wapiDirector = (function () {
     debouncedSave = function () {};
   }
 
-  var demoImageDataUrl = null;
   var demoImageFile = null;
+  var demoLogoFile = null;
+  var demoPortadaFile = null;
+  var demoPortadaUrl = null;
 
-  // Follows the modal's real top-to-bottom order: foto → nombre → precio →
-  // descripción → categoría → guardar.
+  // Order: logo → descripción del negocio → portada → (foto → nombre →
+  // precio → descripción → categoría → guardar de UN producto) → resto de
+  // productos ya cargados. Every step uses the editor's own real
+  // functions — nothing here recreates or fakes its UI.
   async function replay(frame, cues, businessData) {
+    // The supabase shim hands back businessData.portadas as the exact
+    // same array object the editor's own `portadas` variable then points
+    // at (unlike products, which the editor copies via .filter() on
+    // load) — so resetToEmpty()'s `portadas.length = 0` below would also
+    // silently empty businessData.portadas on every call after the
+    // first. Snapshot the URL string once, before that can ever happen.
+    if (demoPortadaUrl === null) demoPortadaUrl = businessData.portadas[0];
+
     resetToEmpty();
+
+    if (frame >= cues.logoUpload) {
+      if (!demoLogoFile) {
+        demoLogoFile = await urlToFile(businessData.logo, "logo.jpg");
+      }
+      await dispatchLogoImage(demoLogoFile);
+    }
+
+    if (frame >= cues.descOpen) {
+      if (typeof editBusiness === "function") editBusiness();
+      var descProgress = clamp01((frame - cues.descOpen) / (cues.descTyped - cues.descOpen));
+      setValue("inputTagline", typedSlice(businessData.tagline, descProgress));
+    }
+
+    if (frame >= cues.descSaved) {
+      if (typeof saveBusinessInfo === "function") saveBusinessInfo();
+    }
+
+    if (frame >= cues.portadaUpload) {
+      if (!demoPortadaFile) {
+        demoPortadaFile = await urlToFile(demoPortadaUrl, "portada.jpg");
+      }
+      await dispatchPortadaImage(demoPortadaFile);
+    }
 
     if (frame < cues.openModal) return;
     if (typeof openAddModal === "function") openAddModal();
 
     if (frame >= cues.pickImage) {
       if (!demoImageFile) {
-        demoImageDataUrl = await fetch(businessData.demoProduct.img)
-          .then(function (r) {
-            return r.blob();
-          })
-          .then(function (blob) {
-            return new Promise(function (resolve) {
-              var reader = new FileReader();
-              reader.onload = function () {
-                resolve(reader.result);
-              };
-              reader.readAsDataURL(blob);
-            });
-          });
-        demoImageFile = await dataUrlToFile(demoImageDataUrl, "producto.jpg");
+        demoImageFile = await urlToFile(businessData.demoProduct.img, "producto.jpg");
       }
       await dispatchProductImage(demoImageFile);
     }
@@ -124,8 +214,8 @@ window.__wapiDirector = (function () {
       // The description is much longer than the name — reveal it briskly
       // (it's still visibly "typing", just not at the same reading pace)
       // instead of eating the whole scene on one field.
-      var descProgress = clamp01((frame - cues.priceDone) / (cues.descDone - cues.priceDone));
-      setValue("inputDesc", typedSlice(businessData.demoProduct.desc || "", descProgress));
+      var productDescProgress = clamp01((frame - cues.priceDone) / (cues.descDone - cues.priceDone));
+      setValue("inputDesc", typedSlice(businessData.demoProduct.desc || "", productDescProgress));
     }
 
     if (frame >= cues.category) {
