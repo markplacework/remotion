@@ -118,7 +118,7 @@ window.__wapiDirector = (function () {
   // it centered) — nothing inside it is stretched or squashed, only
   // smaller. Purely a rendering-time transform on the real markup/CSS;
   // doesn't change the modal's real size for an actual user.
-  var PRODUCT_MODAL_SCALE = 0.85;
+  var PRODUCT_MODAL_SCALE = 0.93;
   function scaleProductModal() {
     var inner = document.querySelector("#productModal .modal");
     if (inner) inner.style.transform = "scale(" + PRODUCT_MODAL_SCALE + ")";
@@ -160,17 +160,35 @@ window.__wapiDirector = (function () {
   // Violeta.
   var COLOR_CYCLE = [0, 2, 4, 3];
 
+  // Applies one preset's fields to dst with no interpolation (t is always
+  // 0 when from === to) — used while the panel is open/hidden, where the
+  // exact value isn't visible yet anyway.
+  function setDstFromPreset(preset) {
+    dstLerp(preset, preset, 0);
+  }
+
+  function dstLerp(fromPreset, toPreset, t) {
+    ["hc", "ht", "cb", "ct", "ab", "at", "cc", "ctc", "ac"].forEach(function (k) {
+      dst[k] = hexLerp(fromPreset[k], toPreset[k], t);
+    });
+    dst.htAuto = false;
+    dst.grad = true;
+    dst.ccAuto = false;
+  }
+
   // Real preset switches (applyColorPreset) are an instant snap in the
   // source app — there's no CSS transition on the colored elements
-  // themselves, only on the panel's own entrance. So "not abrupt, well
-  // timed" has to come from us choosing smooth intermediate values, the
-  // same way typedSlice() feeds partial strings into real input fields
-  // instead of waiting for a real transition that doesn't exist. This
-  // still only ever drives the app's own real `dst` state and its own
-  // real dApplyColors()/dGetHBg() — never anything invented.
-  function driveColorCycle(frame, cues) {
+  // themselves. So "not abrupt, well timed" comes from us choosing smooth
+  // intermediate values, the same way typedSlice() feeds partial strings
+  // into real input fields instead of waiting for a real transition that
+  // doesn't exist. This still only ever drives the app's own real `dst`
+  // state and its own real dApplyColors()/dGetHBg() — never anything
+  // invented. `elapsed` is frames since the panel closed and the real
+  // header/footer became visible again (not since it opened) — the whole
+  // point is that this plays out live on the page itself, not hidden
+  // behind the ~88vh customizer sheet.
+  function driveColorCycle(elapsed, cues) {
     if (typeof dst === "undefined" || typeof COLOR_PRESETS === "undefined") return;
-    var elapsed = frame - cues.colorsOpen;
     var fromPreset;
     var toPreset;
     var t;
@@ -185,12 +203,7 @@ window.__wapiDirector = (function () {
       toPreset = COLOR_PRESETS[COLOR_CYCLE[stepIndex]];
       t = clamp01(withinStep / cues.colorsTransitionFrames);
     }
-    ["hc", "ht", "cb", "ct", "ab", "at", "cc", "ctc", "ac"].forEach(function (k) {
-      dst[k] = hexLerp(fromPreset[k], toPreset[k], t);
-    });
-    dst.htAuto = false;
-    dst.grad = true;
-    dst.ccAuto = false;
+    dstLerp(fromPreset, toPreset, t);
     if (typeof dApplyColors === "function") dApplyColors();
   }
 
@@ -389,11 +402,22 @@ window.__wapiDirector = (function () {
       if (typeof renderCategories === "function") renderCategories();
     }
 
-    if (frame >= cues.colorsOpen) {
+    // First: briefly show the real panel itself opening, so it reads as
+    // "here's the real color customizer" — then close it again. The
+    // preset cycle that follows plays out on the actual page with the
+    // panel/overlay fully gone, so the header + footer color change is
+    // the thing on screen, not just the settings sheet sitting open.
+    if (frame >= cues.colorsOpen && frame < cues.colorsPanelClose) {
       if (typeof dOpen === "function") dOpen();
       killTransition("dPanel");
       killTransition("dOverlay");
-      driveColorCycle(frame, cues);
+      setDstFromPreset(COLOR_PRESETS[COLOR_CYCLE[0]]);
+      if (typeof dApplyColors === "function") dApplyColors();
+    } else if (frame >= cues.colorsPanelClose) {
+      if (typeof dClose === "function") dClose();
+      killTransition("dPanel");
+      killTransition("dOverlay");
+      driveColorCycle(frame - cues.colorsPanelClose, cues);
     }
   }
 
