@@ -226,21 +226,22 @@ window.__wapiDirector = (function () {
       await dispatchProductImage(demoImageFile);
     }
 
-    if (frame >= cues.pickImage) {
-      var nameProgress = clamp01((frame - cues.pickImage) / (cues.nameDone - cues.pickImage));
+    // Each field gets its own explicit start cue (not just "right after the
+    // previous field finished") so there's a genuine still beat between
+    // them — a real pause where nothing is changing — rather than one
+    // field's typing running straight into the next.
+    if (frame >= cues.nameStart) {
+      var nameProgress = clamp01((frame - cues.nameStart) / (cues.nameDone - cues.nameStart));
       setValue("inputName", typedSlice(businessData.demoProduct.name, nameProgress));
     }
 
-    if (frame >= cues.nameDone) {
-      var priceProgress = clamp01((frame - cues.nameDone) / (cues.priceDone - cues.nameDone));
+    if (frame >= cues.priceStart) {
+      var priceProgress = clamp01((frame - cues.priceStart) / (cues.priceDone - cues.priceStart));
       setValue("inputPrice", typedSlice(businessData.demoProduct.price || "", priceProgress || 1));
     }
 
-    if (frame >= cues.priceDone) {
-      // The description is much longer than the name — reveal it briskly
-      // (it's still visibly "typing", just not at the same reading pace)
-      // instead of eating the whole scene on one field.
-      var productDescProgress = clamp01((frame - cues.priceDone) / (cues.descDone - cues.priceDone));
+    if (frame >= cues.descStart) {
+      var productDescProgress = clamp01((frame - cues.descStart) / (cues.descDone - cues.descStart));
       setValue("inputDesc", typedSlice(businessData.demoProduct.desc || "", productDescProgress));
     }
 
