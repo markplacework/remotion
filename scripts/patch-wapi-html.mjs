@@ -65,13 +65,24 @@ function stripIntlTelInput(html) {
   return html;
 }
 
+// The HTML parser ends a <script> element at the first literal "</script"
+// byte sequence in its text content, full stop — it doesn't parse the JS
+// inside to know that's part of a string, JSON value, or comment. Any
+// injected text (business data a user typed, or our own prose in a
+// spliced director file) containing that substring silently truncates the
+// script and everything after it just stops running, with no JS error at
+// all. Standard fix: break up the sequence so the browser's HTML tokenizer
+// never sees it, while the JS engine reads it back unchanged.
+function escapeScriptClose(text) {
+  return text.replace(/<\/script/gi, "<\\/script");
+}
+
 // businessData's asset paths are authored as root-relative
 // ("/business/<slug>/..."); rewrite them to be relative to whichever
 // output file will embed this data.
 function localizedBusinessDataScript(businessAssetBase) {
-  const withRelativeAssets = JSON.stringify(businessData).replaceAll(
-    `/business/${slug}/`,
-    `${businessAssetBase}/`,
+  const withRelativeAssets = escapeScriptClose(
+    JSON.stringify(businessData).replaceAll(`/business/${slug}/`, `${businessAssetBase}/`),
   );
   return `<script>window.__WAPI_BUSINESS_DATA__ = ${withRelativeAssets};</script>\n`;
 }
@@ -91,14 +102,28 @@ function patchCommon(html, { vendorBase, businessAssetBase }) {
 
 // ---- catalogo (public/catalogo/<slug>.html) ----
 {
-  const src = readFileSync(path.join(root, "wapi-source/catalogo_v28.html"), "utf8");
-  const patched = patchCommon(src, {
+  let src = readFileSync(path.join(root, "wapi-source/catalogo_v28.html"), "utf8");
+  src = patchCommon(src, {
     vendorBase: "../wapi-real/vendor",
     businessAssetBase: `../business/${slug}`,
   });
+
+  const catalogDirector = escapeScriptClose(
+    readFileSync(path.join(root, "public/wapi-real/vendor/catalog-director.js"), "utf8"),
+  );
+
+  // Splice into the SAME <script> block as the app code (must run in the
+  // same lexical scope as the `_goPortada` function declaration — see
+  // catalog-director.js for why).
+  const lastScriptClose = src.lastIndexOf("</script>");
+  if (lastScriptClose === -1) {
+    throw new Error("catalogo_v28.html: could not find main </script> to splice into");
+  }
+  src = src.slice(0, lastScriptClose) + "\n" + catalogDirector + "\n" + src.slice(lastScriptClose);
+
   const outFile = path.join(catalogoOutDir, `${slug}.html`);
-  writeFileSync(outFile, patched);
-  console.log("wrote", outFile, `(${patched.length} bytes)`);
+  writeFileSync(outFile, src);
+  console.log("wrote", outFile, `(${src.length} bytes)`);
 }
 
 // ---- editor (public/wapi-real/<slug>/editor.html) ----
@@ -109,9 +134,8 @@ function patchCommon(html, { vendorBase, businessAssetBase }) {
     businessAssetBase: `../../business/${slug}`,
   });
 
-  const director = readFileSync(
-    path.join(root, "public/wapi-real/vendor/editor-director.js"),
-    "utf8",
+  const director = escapeScriptClose(
+    readFileSync(path.join(root, "public/wapi-real/vendor/editor-director.js"), "utf8"),
   );
 
   // Splice the director into the SAME <script> block as the app code so it

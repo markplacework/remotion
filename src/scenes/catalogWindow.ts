@@ -4,16 +4,13 @@ export type CatalogWindow = Window & {
 };
 
 /**
- * The real catalog page auto-advances its top carousel via
- * setInterval(_nextPortada, 3000). Reassigning `_nextPortada` doesn't stop
- * it — setInterval captured that function *reference* at schedule time, so
- * a later reassignment never reaches the already-running timer. What DOES
- * work: `_nextPortada`'s body calls `_goPortada` by identifier, resolved
- * live on every tick (normal JS scoping, not a captured reference) — and
- * `_goPortada` is a top-level `function` declaration, so it really is
- * `window._goPortada`, reassignable from here. Blocking it there kills the
- * auto-timer's effect entirely; we keep a copy of the original to drive
- * the carousel ourselves.
+ * The real catalog page's own script (see
+ * public/wapi-real/vendor/catalog-director.js, spliced into the page at
+ * build time) already blocks `_goPortada` synchronously at load, before
+ * the real setInterval(_nextPortada, 3000) ever gets a live `_goPortada`
+ * to call. This is just a defensive fallback in case that didn't run —
+ * doing the same override reactively here, saving a copy of the original
+ * to drive the carousel ourselves.
  */
 function killPortadaAutoplay(win: Window): void {
   const cw = win as CatalogWindow;
@@ -39,6 +36,12 @@ export function driveCatalogCarousel(win: Window, index: number): void {
   killPortadaAutoplay(win);
   const track = win.document.getElementById("portadasTrack");
   if (track) track.style.transition = "none";
+  // The pagination dots have their own CSS transition (width + color, on
+  // the .active class toggle inside _goPortada) — a separate, easy-to-miss
+  // source of the same "caught mid-animation" glitch if left alone.
+  win.document.querySelectorAll<HTMLElement>(".pdot").forEach((dot) => {
+    dot.style.transition = "none";
+  });
   (win as CatalogWindow).__realGoPortada?.(index);
 }
 
