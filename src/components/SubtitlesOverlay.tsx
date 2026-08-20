@@ -19,7 +19,7 @@ const SubtitleLine: React.FC<Subtitle> = ({ from, to, text }) => {
         position: "absolute",
         left: "6%",
         right: "6%",
-        bottom: "16%",
+        bottom: "19%",
         display: "flex",
         justifyContent: "center",
         opacity,
