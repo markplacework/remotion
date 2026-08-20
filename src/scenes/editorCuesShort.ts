@@ -36,11 +36,15 @@ export const EDITOR_CUES_SHORT: typeof EDITOR_CUES = {
   nameDone: 230,
   priceStart: 235,
   priceDone: 255,
+  // The description gets a bit more time to type than the rest of this
+  // fast cut (57 frames vs. the original 42) — everything after it just
+  // shifts by the same +10 frames rather than growing the scene itself,
+  // since the total length here is locked to the supplied audio track.
   descStart: 258,
-  descDone: 300,
-  category: 302,
-  saved: 308,
-  bulkLoad: 315,
+  descDone: 310,
+  category: 312,
+  saved: 318,
+  bulkLoad: 325,
   // Not shown in this cut at all.
   colorsOpen: NEVER,
   colorsPanelClose: NEVER,
