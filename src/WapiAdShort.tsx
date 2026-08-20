@@ -4,6 +4,7 @@ import { EditorScene } from "./scenes/EditorScene";
 import { CatalogScene } from "./scenes/CatalogScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 import { CalloutsOverlay } from "./components/CalloutsOverlay";
+import { SubtitlesOverlay } from "./components/SubtitlesOverlay";
 import { EDITOR_CUES_SHORT } from "./scenes/editorCuesShort";
 import { COLORS, VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 
@@ -40,6 +41,25 @@ const EDITOR_CALLOUTS = [
   { atFrame: 334, holdFrames: 16, text: "Producto agregado" },
 ];
 
+// Burned-in captions for the voiceover. There's no way to detect the
+// voice's exact word timing from this file (background music never dips
+// enough for silence-detection to isolate the pauses between lines), so
+// each line is placed against the part of the video it describes —
+// e.g. "Cargá tu logo, portada y banners" over that part of the editor
+// demo — rather than being timed sample-accurately off the audio track
+// itself. Absolute frame numbers (spans the whole composition).
+const SUBTITLES = [
+  { from: 0, to: 95, text: "¿Sos un negocio local que toma pedidos por WhatsApp?" },
+  { from: 98, to: 144, text: "Entonces esto es para vos." },
+  { from: 147, to: 177, text: "Te presento Wapi." },
+  { from: 180, to: 274, text: "Con Wapi creás tu catálogo profesional en minutos." },
+  { from: 278, to: 338, text: "Y todo personalizalo a tu estilo." },
+  { from: 342, to: 402, text: "Cargá tu logo, portada y banners." },
+  { from: 406, to: 526, text: "Después cargás tus productos con fotos, precios y descripciones." },
+  { from: 530, to: 616, text: "¡Y listo! Ya tenés tu catálogo para compartir." },
+  { from: 662, to: 698, text: "¡Probalo hoy mismo!" },
+];
+
 export const WapiAdShort: React.FC = () => {
   const s2 = SCENE_CHICA;
   const s3 = s2 + SCENE_EDITOR_SHORT;
@@ -63,6 +83,7 @@ export const WapiAdShort: React.FC = () => {
       <Sequence from={s4} durationInFrames={SCENE_CIERRE_SHORT}>
         <ClosingScene />
       </Sequence>
+      <SubtitlesOverlay lines={SUBTITLES} />
     </AbsoluteFill>
   );
 };
