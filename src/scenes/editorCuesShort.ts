@@ -7,14 +7,18 @@ import { EDITOR_CUES } from "./editorCues";
 // re-encode of already-rendered footage. Scene-local: 0 is the start of
 // this scene's own Sequence (330 frames / 11s total).
 //
-// The reference cuts straight past the logo upload and the promo-banner
-// (bottom banner) upload entirely — both cues are pushed past the
-// scene's own length so those `if (frame >= cues.X)` blocks in the
-// director never fire; everything else about the director is untouched.
+// The reference skips the promo-banner (bottom banner) upload entirely —
+// that cue is pushed past the scene's own length so the
+// `if (frame >= cues.promoBannerUpload)` block in the director never
+// fires; everything else about the director is untouched.
 const NEVER = 999999;
 
 export const EDITOR_CUES_SHORT: typeof EDITOR_CUES = {
-  logoUpload: NEVER,
+  // The reference shows the logo already there almost immediately after
+  // the cut into the editor — an empty flash of only a few frames, not a
+  // visible upload beat. Same real dispatch, just placed right at the
+  // start instead of skipped.
+  logoUpload: 8,
   // Business info modal: opens after a brief empty-state establishing
   // beat, tagline typed fast, socials filled, saved.
   descOpen: 45,
