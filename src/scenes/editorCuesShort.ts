@@ -5,12 +5,7 @@ import { EDITOR_CUES } from "./editorCues";
 // user's own fast edit landed on (reference video), but driven from
 // scratch by the real director/DOM logic in editor-director.js, not a
 // re-encode of already-rendered footage. Scene-local: 0 is the start of
-// this scene's own Sequence (330 frames / 11s total).
-//
-// The reference skips the promo-banner (bottom banner) upload entirely —
-// that cue is pushed past the scene's own length so the
-// `if (frame >= cues.promoBannerUpload)` block in the director never
-// fires; everything else about the director is untouched.
+// this scene's own Sequence (350 frames total).
 const NEVER = 999999;
 
 export const EDITOR_CUES_SHORT: typeof EDITOR_CUES = {
@@ -24,27 +19,28 @@ export const EDITOR_CUES_SHORT: typeof EDITOR_CUES = {
   descOpen: 45,
   descTyped: 125,
   descSaved: 150,
-  // Cut straight to "already uploaded" rather than showing the upload
-  // itself settle — matches the reference's own fast-cut style.
+  // Portada (top) then the promo banner (bottom, near the footer) —
+  // one right after the other, same real upload flow each, matching the
+  // full-length video's order. Cut straight to "already uploaded" for
+  // each rather than showing the upload itself settle, matching this
+  // ad's fast-cut style.
   portadaUpload: 150,
-  promoBannerUpload: NEVER,
+  promoBannerUpload: 180,
   // Product modal: photo already picked, each field typed fast with
   // barely a beat between them, saved, catalog reveal.
-  openModal: 195,
-  pickImage: 196,
-  nameStart: 200,
-  nameDone: 230,
-  priceStart: 235,
-  priceDone: 255,
+  openModal: 215,
+  pickImage: 216,
+  nameStart: 220,
+  nameDone: 250,
+  priceStart: 255,
+  priceDone: 275,
   // The description gets a bit more time to type than the rest of this
-  // fast cut (57 frames vs. the original 42) — everything after it just
-  // shifts by the same +10 frames rather than growing the scene itself,
-  // since the total length here is locked to the supplied audio track.
-  descStart: 258,
-  descDone: 310,
-  category: 312,
-  saved: 318,
-  bulkLoad: 325,
+  // fast cut.
+  descStart: 278,
+  descDone: 330,
+  category: 332,
+  saved: 338,
+  bulkLoad: 345,
   // Not shown in this cut at all.
   colorsOpen: NEVER,
   colorsPanelClose: NEVER,
