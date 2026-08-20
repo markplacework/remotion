@@ -34,13 +34,14 @@ export const EDITOR_CUES_SHORT: typeof EDITOR_CUES = {
   nameDone: 250,
   priceStart: 255,
   priceDone: 275,
-  // The description gets a bit more time to type than the rest of this
-  // fast cut.
+  // Description gets real typing time plus a hold to actually read it
+  // once finished, and category gets a real hold too before saving —
+  // both were flashing by too fast to read.
   descStart: 278,
-  descDone: 330,
-  category: 332,
-  saved: 338,
-  bulkLoad: 345,
+  descDone: 353,
+  category: 368,
+  saved: 388,
+  bulkLoad: 395,
   // Not shown in this cut at all.
   colorsOpen: NEVER,
   colorsPanelClose: NEVER,

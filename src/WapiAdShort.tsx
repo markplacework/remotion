@@ -16,9 +16,9 @@ import { COLORS, VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 // Hard cuts throughout, matching the reference's own fast-cut feel — no
 // crossfades here (unlike the full-length WapiVideo).
 const SCENE_CHICA = 180; // 6.0s — the presenter clip's own footage
-const SCENE_EDITOR_SHORT = 350; // logo, business info, portada + promo banner, one product
-const SCENE_CATALOG_SHORT = 90;
-const SCENE_CIERRE_SHORT = 81;
+const SCENE_EDITOR_SHORT = 400; // logo, business info, portada + promo banner, one product
+const SCENE_CATALOG_SHORT = 65;
+const SCENE_CIERRE_SHORT = 56;
 
 export const WAPI_AD_SHORT_FPS = FPS;
 export const WAPI_AD_SHORT_WIDTH = VIDEO_WIDTH;
@@ -38,7 +38,7 @@ const EDITOR_CALLOUTS = [
   { atFrame: 15, holdFrames: 28, text: "Logo cargado" },
   { atFrame: 152, holdFrames: 22, text: "Datos guardados" },
   { atFrame: 177, holdFrames: 22, text: "Portada agregada" },
-  { atFrame: 334, holdFrames: 16, text: "Producto agregado" },
+  { atFrame: 390, holdFrames: 10, text: "Producto agregado" },
 ];
 
 // Burned-in captions for the voiceover. There's no way to detect the
@@ -55,9 +55,9 @@ const SUBTITLES = [
   { from: 180, to: 274, text: "Con Wapi creás tu catálogo profesional en minutos." },
   { from: 278, to: 338, text: "Y todo personalizalo a tu estilo." },
   { from: 342, to: 402, text: "Cargá tu logo, portada y banners." },
-  { from: 406, to: 526, text: "Después cargás tus productos con fotos, precios y descripciones." },
-  { from: 530, to: 616, text: "¡Y listo! Ya tenés tu catálogo para compartir." },
-  { from: 624, to: 699, text: "¡Probalo hoy mismo!" },
+  { from: 406, to: 576, text: "Después cargás tus productos con fotos, precios y descripciones." },
+  { from: 580, to: 644, text: "¡Y listo! Ya tenés tu catálogo para compartir." },
+  { from: 648, to: 699, text: "¡Probalo hoy mismo!" },
 ];
 
 export const WapiAdShort: React.FC = () => {
