@@ -18,8 +18,13 @@ declare global {
 
 const EDITOR_URL = staticFile(`/wapi-real/${ACTIVE_BUSINESS.slug}/editor.html`);
 
-/** Mockup only — no caption. The real editor UI carries the story on its own. */
-export const EditorScene: React.FC = () => {
+/**
+ * Mockup only — no caption. The real editor UI carries the story on its
+ * own. `cues` defaults to the full-video pacing but can be overridden
+ * (e.g. by the short-cut ad composition) — same real director/DOM logic
+ * either way, just different frame thresholds.
+ */
+export const EditorScene: React.FC<{ cues?: typeof EDITOR_CUES }> = ({ cues = EDITOR_CUES }) => {
   return (
     <AbsoluteFill>
       <Backdrop />
@@ -29,7 +34,7 @@ export const EditorScene: React.FC = () => {
           src={EDITOR_URL}
           sheenPosition={0.7}
           driveFrame={async (win, frame) => {
-            await win.__wapiDirector?.replay(frame, EDITOR_CUES, win.__WAPI_BUSINESS_DATA__);
+            await win.__wapiDirector?.replay(frame, cues, win.__WAPI_BUSINESS_DATA__);
           }}
         />
       </AbsoluteFill>
