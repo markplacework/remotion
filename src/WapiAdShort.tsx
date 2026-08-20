@@ -29,13 +29,13 @@ const AUDIO_URL = staticFile("/short-ad/audio.wav");
 // Confirmation toasts over the editor beat — frame numbers match
 // EDITOR_CUES_SHORT's own cues (see editorCuesShort.ts), just nudged a
 // few frames later so each toast reads as "that thing you just saw
-// happen". Kept to three, spaced well apart: "Datos guardados" and
-// "Banner agregado" were dropped — the former sat right next to the
-// portada one (read as clutter), and the banner itself never actually
+// happen", and staggered so no two are ever on screen together.
+// "Banner agregado" was dropped — the banner itself never actually
 // shows on screen at this scroll position, so confirming it felt
 // disconnected from what's visible.
 const EDITOR_CALLOUTS = [
   { atFrame: 15, holdFrames: 28, text: "Logo cargado" },
+  { atFrame: 152, holdFrames: 22, text: "Datos guardados" },
   { atFrame: 177, holdFrames: 22, text: "Portada agregada" },
   { atFrame: 334, holdFrames: 16, text: "Producto agregado" },
 ];
