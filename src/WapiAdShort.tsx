@@ -57,7 +57,7 @@ const SUBTITLES = [
   { from: 342, to: 402, text: "Cargá tu logo, portada y banners." },
   { from: 406, to: 526, text: "Después cargás tus productos con fotos, precios y descripciones." },
   { from: 530, to: 616, text: "¡Y listo! Ya tenés tu catálogo para compartir." },
-  { from: 662, to: 698, text: "¡Probalo hoy mismo!" },
+  { from: 624, to: 699, text: "¡Probalo hoy mismo!" },
 ];
 
 export const WapiAdShort: React.FC = () => {
