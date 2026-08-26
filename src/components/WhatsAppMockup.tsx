@@ -1,4 +1,4 @@
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
@@ -33,6 +33,17 @@ function PersonAvatar() {
       <circle cx="20" cy="16" r="7" fill="#eef0f1" />
       <path d="M6 36c1-8 8-13 14-13s13 5 14 13" fill="#eef0f1" />
     </svg>
+  );
+}
+
+/** A real business logo, used when the chat header contact is the
+ * business itself rather than a person (no real customer photo exists,
+ * so that side keeps the generic PersonAvatar). */
+function LogoAvatar({ src }: { src: string }) {
+  return (
+    <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+      <Img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    </div>
   );
 }
 
@@ -148,6 +159,9 @@ const ChatBubble: React.FC<Bubble> = ({ from, text, timestamp, atFrame }) => {
 type Props = {
   contactName: string;
   bubbles: Bubble[];
+  /** Real logo to show as the contact's avatar (e.g. when the contact
+   * is the business itself). Falls back to a generic person silhouette. */
+  avatarSrc?: string;
 };
 
 /**
@@ -158,7 +172,7 @@ type Props = {
  * (captured via catalog-director.js in the previous scene); the outgoing
  * reply is the business's own confirmation, supplied by the user.
  */
-export const WhatsAppMockup: React.FC<Props> = ({ contactName, bubbles }) => {
+export const WhatsAppMockup: React.FC<Props> = ({ contactName, bubbles, avatarSrc }) => {
   return (
     <div
       style={{
@@ -182,7 +196,7 @@ export const WhatsAppMockup: React.FC<Props> = ({ contactName, bubbles }) => {
         }}
       >
         <BackArrow />
-        <PersonAvatar />
+        {avatarSrc ? <LogoAvatar src={avatarSrc} /> : <PersonAvatar />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: WA.headerText, fontSize: 30, fontWeight: 600, lineHeight: 1.2 }}>{contactName}</div>
           <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 20 }}>en línea</div>

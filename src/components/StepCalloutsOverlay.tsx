@@ -44,7 +44,7 @@ const StepBadge: React.FC<Step> = ({ atFrame, holdFrames, number, text }) => {
     <div
       style={{
         position: "absolute",
-        top: "6%",
+        top: "2%",
         left: 0,
         right: 0,
         display: "flex",

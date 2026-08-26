@@ -1,7 +1,8 @@
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, staticFile } from "remotion";
 import { Backdrop } from "../components/Backdrop";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { WhatsAppMockup } from "../components/WhatsAppMockup";
+import { ACTIVE_BUSINESS } from "../business";
 
 // Steps 1-2 of the walkthrough: a customer asks for the catalog, the
 // business shares its real Wapi link. Same customer (Martina) who goes
@@ -32,6 +33,7 @@ export const CatalogRequestScene: React.FC = () => {
         <PhoneMockup width={760} sheenPosition={0.4} frameVariant="graphite">
           <WhatsAppMockup
             contactName={BUSINESS_NAME}
+            avatarSrc={staticFile(ACTIVE_BUSINESS.logo)}
             bubbles={[
               { from: "me", text: ASK_MESSAGE, timestamp: "12:38", atFrame: 15 },
               { from: "them", text: REPLY_MESSAGE, timestamp: "12:39", atFrame: 95 },
