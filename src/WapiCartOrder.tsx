@@ -32,7 +32,7 @@ const CATALOG_REQUEST_STEP_CALLOUTS = [
 // than two back-to-back toasts — starts right after the scroll settles
 // on the grid and holds through the cart opening.
 const CART_STEP_CALLOUTS = [
-  { atFrame: 68, holdFrames: 140, number: 3, text: "Tus clientes miran el catálogo y arman el pedido" },
+  { atFrame: 68, holdFrames: 140, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [
   { atFrame: 15, holdFrames: 40, number: 4, text: "Te llegó el pedido por WhatsApp" },
