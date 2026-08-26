@@ -2,16 +2,14 @@
 // see public/wapi-real/vendor/catalog-director.js. Scene-local: 0 is the
 // start of this scene's own Sequence.
 export const CART_CUES = {
-  // Smooth scroll (not a snap) from the top down to the products grid.
-  scrollStart: 20,
-  scrollEnd: 55,
-  // Each add gets its own still beat before the next — same "no field
-  // runs straight into the next" principle used in the editor demo.
-  addItem1: 70,
-  addItem2: 115,
-  // A longer pause before opening the cart — let the second item's badge
-  // update register first.
-  openCart: 165,
-  // Real pause reading the cart summary (items + total) before sending.
-  sendOrder: 260,
+  // Smooth scroll (not a snap) from the top down to the products grid —
+  // sped up, this whole "selecting products" stretch read as too slow.
+  scrollStart: 15,
+  scrollEnd: 35,
+  addItem1: 45,
+  addItem2: 65,
+  openCart: 95,
+  // Real pause reading the cart summary (items + total) before sending —
+  // this part read fine, so it keeps the same hold length as before.
+  sendOrder: 190,
 };
