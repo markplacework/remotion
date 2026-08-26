@@ -4,16 +4,30 @@ import { WapiIframe } from "./WapiIframe";
 
 type Props = {
   width: number;
-  src: string;
+  /** A real Wapi page to load in an iframe (the normal case). Omit and
+   * pass `children` instead for screen content that isn't a Wapi page at
+   * all (e.g. a recreated third-party app UI like WhatsApp). */
+  src?: string;
   onReady?: (win: Window) => void;
   driveFrame?: (win: Window, frame: number) => void | Promise<void>;
   /** 0-1 highlight sweep position for the glass reflection — a fixed
    * position per scene, not animated over time. */
   sheenPosition?: number;
+  /** Frame finish — lets two phones on screen in different scenes (e.g.
+   * customer vs. business owner) read as visually distinct devices
+   * without ever putting text on the same scene as the mockup. */
+  frameVariant?: "graphite" | "gold";
+  /** Screen content rendered directly instead of the Wapi iframe. */
+  children?: React.ReactNode;
 };
 
 /** Height, in px, of the mockup at a given rendered width. */
 export const mockupHeightFor = (width: number) => width * 2.162;
+
+const FRAME_GRADIENTS = {
+  graphite: "linear-gradient(150deg, #626568 0%, #2e3032 10%, #141516 28%, #0a0a0b 50%, #18191b 68%, #45484a 86%, #64676a 100%)",
+  gold: "linear-gradient(150deg, #9c8a68 0%, #6b5a3e 10%, #332a1c 28%, #1a150e 50%, #291f14 68%, #7c684a 86%, #9c8a68 100%)",
+} as const;
 
 /**
  * A premium, high-end flagship-style phone shell built entirely from CSS
@@ -28,6 +42,8 @@ export const PhoneMockup: React.FC<Props> = ({
   onReady,
   driveFrame,
   sheenPosition = 0.3,
+  frameVariant = "graphite",
+  children,
 }) => {
   const frame = useCurrentFrame();
   const height = mockupHeightFor(width);
@@ -69,8 +85,7 @@ export const PhoneMockup: React.FC<Props> = ({
           width,
           height,
           borderRadius: bodyRadius,
-          background:
-            "linear-gradient(150deg, #626568 0%, #2e3032 10%, #141516 28%, #0a0a0b 50%, #18191b 68%, #45484a 86%, #64676a 100%)",
+          background: FRAME_GRADIENTS[frameVariant],
           boxShadow:
             "0 70px 130px -24px rgba(0,0,0,0.8), 0 24px 50px -12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.16), inset 0 1px 1px rgba(255,255,255,0.4), inset 0 -1px 1px rgba(0,0,0,0.5)",
           padding: bezel,
@@ -99,7 +114,11 @@ export const PhoneMockup: React.FC<Props> = ({
             boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.7)",
           }}
         >
-          <WapiIframe src={src} scale={scale} onReady={onReady} driveFrame={driveFrame} />
+          {src ? (
+            <WapiIframe src={src} scale={scale} onReady={onReady} driveFrame={driveFrame} />
+          ) : (
+            <div style={{ width: "100%", height: "100%" }}>{children}</div>
+          )}
 
           {/* Glass reflection sweep */}
           <div

@@ -13,6 +13,13 @@ import {
   WAPI_AD_SHORT_HEIGHT,
   WAPI_AD_SHORT_WIDTH,
 } from "./WapiAdShort";
+import {
+  WapiCartOrder,
+  WAPI_CART_ORDER_DURATION,
+  WAPI_CART_ORDER_FPS,
+  WAPI_CART_ORDER_HEIGHT,
+  WAPI_CART_ORDER_WIDTH,
+} from "./WapiCartOrder";
 
 export const WapiVideoComposition = () => {
   return (
@@ -32,6 +39,14 @@ export const WapiVideoComposition = () => {
         fps={WAPI_AD_SHORT_FPS}
         width={WAPI_AD_SHORT_WIDTH}
         height={WAPI_AD_SHORT_HEIGHT}
+      />
+      <Composition
+        id="WapiCartOrder"
+        component={WapiCartOrder}
+        durationInFrames={WAPI_CART_ORDER_DURATION}
+        fps={WAPI_CART_ORDER_FPS}
+        width={WAPI_CART_ORDER_WIDTH}
+        height={WAPI_CART_ORDER_HEIGHT}
       />
     </>
   );
