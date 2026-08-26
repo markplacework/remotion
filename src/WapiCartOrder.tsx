@@ -28,11 +28,16 @@ const CATALOG_REQUEST_STEP_CALLOUTS = [
   { atFrame: 12, holdFrames: 45, number: 1, text: "Te piden el catálogo" },
   { atFrame: 92, holdFrames: 90, number: 2, text: "Les compartís el link de tu tienda Wapi" },
 ];
+// One persistent label for the whole browse-and-add stretch, rather
+// than two back-to-back toasts — starts right after the scroll settles
+// on the grid and holds through the cart opening.
 const CART_STEP_CALLOUTS = [
-  { atFrame: 68, holdFrames: 50, number: 3, text: "Ven tus productos, con fotos, precios y descripciones" },
-  { atFrame: 122, holdFrames: 70, number: 4, text: "Arman su pedido" },
+  { atFrame: 68, holdFrames: 140, number: 3, text: "Tus clientes miran el catálogo y arman el pedido" },
 ];
-const WHATSAPP_STEP_CALLOUTS = [{ atFrame: 15, holdFrames: 40, number: 5, text: "Te llega el pedido por WhatsApp" }];
+const WHATSAPP_STEP_CALLOUTS = [
+  { atFrame: 15, holdFrames: 40, number: 4, text: "Te llegó el pedido por WhatsApp" },
+  { atFrame: 95, holdFrames: 50, number: 5, text: "¡Confirmás y listo!" },
+];
 
 export const WAPI_CART_ORDER_FPS = FPS;
 export const WAPI_CART_ORDER_WIDTH = VIDEO_WIDTH;

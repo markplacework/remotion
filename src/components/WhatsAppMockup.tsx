@@ -1,4 +1,4 @@
-import { Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
@@ -26,9 +26,11 @@ function BackArrow() {
   );
 }
 
+const AVATAR_SIZE = 46;
+
 function PersonAvatar() {
   return (
-    <svg width="38" height="38" viewBox="0 0 40 40">
+    <svg width={AVATAR_SIZE} height={AVATAR_SIZE} viewBox="0 0 40 40">
       <circle cx="20" cy="20" r="20" fill="#c8ccce" />
       <circle cx="20" cy="16" r="7" fill="#eef0f1" />
       <path d="M6 36c1-8 8-13 14-13s13 5 14 13" fill="#eef0f1" />
@@ -38,12 +40,21 @@ function PersonAvatar() {
 
 /** A real business logo, used when the chat header contact is the
  * business itself rather than a person (no real customer photo exists,
- * so that side keeps the generic PersonAvatar). */
+ * so that side keeps the generic PersonAvatar). The source file is a
+ * square lockup (icon + wordmark + stars) — at avatar size the whole
+ * thing reads as noise, so this zooms into just the burger icon at the
+ * top instead of shrinking the full lockup down. */
 function LogoAvatar({ src }: { src: string }) {
   return (
-    <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-      <Img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-    </div>
+    <div
+      style={{
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE,
+        borderRadius: "50%",
+        flexShrink: 0,
+        background: `#000 url(${src}) no-repeat 50% 20% / 330%`,
+      }}
+    />
   );
 }
 
