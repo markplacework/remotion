@@ -4,6 +4,7 @@ import { CartScene } from "./scenes/CartScene";
 import { WhatsAppScene } from "./scenes/WhatsAppScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 import { SceneTransition } from "./components/SceneTransition";
+import { StepCalloutsOverlay } from "./components/StepCalloutsOverlay";
 import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 
 // "Del carrito al pedido por WhatsApp": customer builds an order in the
@@ -13,9 +14,18 @@ import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS
 // WhatsApp screen itself: WhatsApp isn't part of Wapi, so it's a
 // faithful recreation of the real WhatsApp UI (see WhatsAppMockup.tsx),
 // showing the exact message Wapi's own real cart/checkout code produces.
-const SCENE_HOOK = 4 * FPS;
+const SCENE_HOOK = 5 * FPS; // gancho + steps 1-2, two beats in sequence
 const SCENE_CART = 230; // ~7.7s — trimmed from 10s, the product-selecting part read too slow
 const SCENE_WHATSAPP = 8 * FPS;
+
+// Steps 3-5 of the "Mirá qué fácil..." walkthrough (steps 1-2 live in
+// CartHookScene's own text) — synced to the moment each one is actually
+// happening on screen. Frames are local to each scene's own Sequence.
+const CART_STEP_CALLOUTS = [
+  { atFrame: 18, holdFrames: 32, number: 3, text: "Ven tus productos, con fotos, precios y descripciones" },
+  { atFrame: 55, holdFrames: 40, number: 4, text: "Arman su pedido" },
+];
+const WHATSAPP_STEP_CALLOUTS = [{ atFrame: 15, holdFrames: 40, number: 5, text: "Te llega el pedido por WhatsApp" }];
 
 export const WAPI_CART_ORDER_FPS = FPS;
 export const WAPI_CART_ORDER_WIDTH = VIDEO_WIDTH;
@@ -57,10 +67,16 @@ export const WapiCartOrder: React.FC = () => {
           <CartScene />
         </SceneTransition>
       </Sequence>
+      <Sequence from={s2} durationInFrames={SCENE_CART}>
+        <StepCalloutsOverlay steps={CART_STEP_CALLOUTS} />
+      </Sequence>
       <Sequence from={s3} durationInFrames={SCENE_WHATSAPP}>
         <SceneTransition durationInFrames={SCENE_WHATSAPP} transitionFrames={TRANSITION_FRAMES}>
           <WhatsAppScene />
         </SceneTransition>
+      </Sequence>
+      <Sequence from={s3} durationInFrames={SCENE_WHATSAPP}>
+        <StepCalloutsOverlay steps={WHATSAPP_STEP_CALLOUTS} />
       </Sequence>
       <Sequence from={s4} durationInFrames={SCENE_CIERRE}>
         <SceneTransition durationInFrames={SCENE_CIERRE} transitionFrames={TRANSITION_FRAMES}>
