@@ -15,7 +15,7 @@ import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS
 // showing the exact message Wapi's own real cart/checkout code produces.
 const SCENE_HOOK = 4 * FPS;
 const SCENE_CART = 10 * FPS;
-const SCENE_WHATSAPP = 5.5 * FPS;
+const SCENE_WHATSAPP = 8 * FPS;
 
 export const WAPI_CART_ORDER_FPS = FPS;
 export const WAPI_CART_ORDER_WIDTH = VIDEO_WIDTH;

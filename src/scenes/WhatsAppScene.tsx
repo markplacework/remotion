@@ -17,6 +17,13 @@ const ORDER_MESSAGE =
   "*Total: $22.300*\n\n" +
   "¿Pueden confirmarme disponibilidad? 😊";
 
+// The business's own reply, confirming the order — supplied by the user.
+const REPLY_MESSAGE =
+  "¡Excelente, Martina! 😊\n" +
+  "Tu pedido quedó confirmado 🎉\n\n" +
+  "⏱️ En aproximadamente 25 minutos va a estar listo.\n\n" +
+  "¿Lo retirás por el local o querés que te lo enviemos? 🛵";
+
 // The customer's name as it would appear in the business owner's chat —
 // example/placeholder content (same footing as the example social media
 // handles already used elsewhere in this project), since a real customer
@@ -25,12 +32,12 @@ const CUSTOMER_NAME = "Martina Gómez";
 
 /**
  * Mockup only — no caption. The business owner's phone, receiving the
- * order the customer just sent in CartScene. A different frame finish
- * (gold vs. the customer's graphite) so the two phones read as distinct
- * devices without ever needing a caption to say so. WhatsApp itself
- * isn't part of Wapi, so this screen is a faithful recreation of the
- * real WhatsApp UI rather than a loaded Wapi page — everything else in
- * this project stays 100% real Wapi code.
+ * order the customer just sent in CartScene and replying to confirm it.
+ * A different frame finish (gold vs. the customer's graphite) so the two
+ * phones read as distinct devices without ever needing a caption to say
+ * so. WhatsApp itself isn't part of Wapi, so this screen is a faithful
+ * recreation of the real WhatsApp UI rather than a loaded Wapi page —
+ * everything else in this project stays 100% real Wapi code.
  */
 export const WhatsAppScene: React.FC = () => {
   return (
@@ -38,7 +45,13 @@ export const WhatsAppScene: React.FC = () => {
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhoneMockup width={760} sheenPosition={0.4} frameVariant="gold">
-          <WhatsAppMockup contactName={CUSTOMER_NAME} message={ORDER_MESSAGE} timestamp="12:41" bubbleAtFrame={20} />
+          <WhatsAppMockup
+            contactName={CUSTOMER_NAME}
+            bubbles={[
+              { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: 20 },
+              { from: "me", text: REPLY_MESSAGE, timestamp: "12:42", atFrame: 110 },
+            ]}
+          />
         </PhoneMockup>
       </AbsoluteFill>
     </AbsoluteFill>

@@ -11,9 +11,10 @@ const WA = {
   headerText: "#ffffff",
   wallpaper: "#e5ddd4",
   bubbleIn: "#ffffff",
+  bubbleOut: "#d9fdd3",
   bubbleText: "#111b21",
   timestamp: "#667781",
-  inputBarBg: "#f0f2f5",
+  readTick: "#53bdeb",
   green: "#25D366",
 };
 
@@ -67,9 +68,19 @@ function IconMenu() {
   );
 }
 
+/** The real "read" receipt — double check, tinted blue. */
+function IconReadTicks() {
+  return (
+    <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
+      <path d="M1 6.8l3.6 3.6L11 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.3 6.8l3.6 3.6L17 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** WhatsApp renders *text* as bold and single line breaks as-is — parse
- * just enough of that real markdown to render the real captured message
- * text faithfully. */
+ * just enough of that real markdown to render message text faithfully
+ * (both the real captured order message, and the owner's reply). */
 function renderWaText(text: string) {
   return text.split("\n").map((line, i) => {
     const parts = line.split(/(\*[^*]+\*)/g).filter(Boolean);
@@ -84,30 +95,70 @@ function renderWaText(text: string) {
   });
 }
 
-type Props = {
-  contactName: string;
-  message: string;
+type Bubble = {
+  from: "them" | "me";
+  text: string;
   timestamp: string;
   /** Frame this scene's own timeline the bubble should appear on. */
-  bubbleAtFrame: number;
+  atFrame: number;
+};
+
+const ChatBubble: React.FC<Bubble> = ({ from, text, timestamp, atFrame }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const local = frame - atFrame;
+  const enter = spring({ frame: Math.max(0, local), fps, config: { damping: 15, mass: 0.6 } });
+  const opacity = local < 0 ? 0 : Math.min(enter, 1);
+  const scale = interpolate(enter, [0, 1], [0.85, 1]);
+  const translateY = interpolate(enter, [0, 1], [14, 0]);
+  const outgoing = from === "me";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: outgoing ? "flex-end" : "flex-start",
+        opacity,
+        transform: `translateY(${translateY}px) scale(${scale})`,
+        transformOrigin: outgoing ? "top right" : "top left",
+        marginBottom: 16,
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          background: outgoing ? WA.bubbleOut : WA.bubbleIn,
+          color: WA.bubbleText,
+          borderRadius: outgoing ? "18px 2px 18px 18px" : "2px 18px 18px 18px",
+          padding: "14px 16px 10px",
+          maxWidth: "84%",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+        }}
+      >
+        <div style={{ fontSize: 26, lineHeight: 1.42, whiteSpace: "pre-wrap" }}>{renderWaText(text)}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 5, marginTop: 4 }}>
+          <span style={{ fontSize: 18, color: WA.timestamp }}>{timestamp}</span>
+          {outgoing && <IconReadTicks />}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type Props = {
+  contactName: string;
+  bubbles: Bubble[];
 };
 
 /**
  * A faithful recreation of the real WhatsApp chat UI (not a Wapi page —
  * WhatsApp is a separate real app, so this is built as its own component
- * rather than loaded from a live page) showing the exact order message
- * the catalog's own real sendCartToWA() template produces, captured via
- * catalog-director.js in the previous scene.
+ * rather than loaded from a live page). The incoming bubble is the exact
+ * order message the catalog's own real sendCartToWA() template produces
+ * (captured via catalog-director.js in the previous scene); the outgoing
+ * reply is the business's own confirmation, supplied by the user.
  */
-export const WhatsAppMockup: React.FC<Props> = ({ contactName, message, timestamp, bubbleAtFrame }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const local = frame - bubbleAtFrame;
-  const enter = spring({ frame: Math.max(0, local), fps, config: { damping: 15, mass: 0.6 } });
-  const bubbleOpacity = local < 0 ? 0 : Math.min(enter, 1);
-  const bubbleScale = interpolate(enter, [0, 1], [0.85, 1]);
-  const bubbleY = interpolate(enter, [0, 1], [14, 0]);
-
+export const WhatsAppMockup: React.FC<Props> = ({ contactName, bubbles }) => {
   return (
     <div
       style={{
@@ -143,13 +194,7 @@ export const WhatsAppMockup: React.FC<Props> = ({ contactName, message, timestam
 
       {/* Chat body */}
       <div style={{ flex: 1, position: "relative", padding: "20px 16px", overflow: "hidden" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 22,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}>
           <div
             style={{
               background: "rgba(255,255,255,0.75)",
@@ -165,52 +210,13 @@ export const WhatsAppMockup: React.FC<Props> = ({ contactName, message, timestam
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-start",
-            opacity: bubbleOpacity,
-            transform: `translateY(${bubbleY}px) scale(${bubbleScale})`,
-            transformOrigin: "top left",
-          }}
-        >
-          <div
-            style={{
-              position: "relative",
-              background: WA.bubbleIn,
-              color: WA.bubbleText,
-              borderRadius: "2px 18px 18px 18px",
-              padding: "14px 16px 10px",
-              maxWidth: "84%",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-            }}
-          >
-            <div style={{ fontSize: 26, lineHeight: 1.42, whiteSpace: "pre-wrap" }}>{renderWaText(message)}</div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 4,
-              }}
-            >
-              <span style={{ fontSize: 18, color: WA.timestamp }}>{timestamp}</span>
-            </div>
-          </div>
-        </div>
+        {bubbles.map((b, i) => (
+          <ChatBubble key={i} {...b} />
+        ))}
       </div>
 
       {/* Input bar */}
-      <div
-        style={{
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "12px 14px 26px",
-        }}
-      >
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12, padding: "12px 14px 26px" }}>
         <div
           style={{
             flex: 1,
