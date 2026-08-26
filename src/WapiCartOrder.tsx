@@ -1,5 +1,6 @@
 import { AbsoluteFill, Audio, interpolate, Sequence, staticFile } from "remotion";
 import { CartHookScene } from "./scenes/CartHookScene";
+import { CatalogRequestScene } from "./scenes/CatalogRequestScene";
 import { CartScene } from "./scenes/CartScene";
 import { WhatsAppScene } from "./scenes/WhatsAppScene";
 import { ClosingScene } from "./scenes/ClosingScene";
@@ -11,26 +12,33 @@ import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS
 // real published catalog, then the business owner receives it. Same
 // rules as the rest of this project — Wapi's own pages driven by their
 // own real functions, nothing invented there. The one exception is the
-// WhatsApp screen itself: WhatsApp isn't part of Wapi, so it's a
-// faithful recreation of the real WhatsApp UI (see WhatsAppMockup.tsx),
-// showing the exact message Wapi's own real cart/checkout code produces.
-const SCENE_HOOK = 5 * FPS; // gancho + steps 1-2, two beats in sequence
-const SCENE_CART = 230; // ~7.7s — trimmed from 10s, the product-selecting part read too slow
+// WhatsApp screens: WhatsApp isn't part of Wapi, so they're a faithful
+// recreation of the real WhatsApp UI (see WhatsAppMockup.tsx) — one at
+// the start (customer asking for the catalog) and one at the end (the
+// real order message Wapi's own cart/checkout code produces).
+const SCENE_HOOK = 100; // ~3.3s — gancho only now, steps 1-2 moved to their own mockup scene
+const SCENE_CATALOG_REQUEST = 220; // ~7.3s — steps 1-2: asks for the catalog, gets the real link
+const SCENE_CART = 320; // ~10.7s — steps 3-4: enough time to actually see the catalog before adding to cart
 const SCENE_WHATSAPP = 8 * FPS;
 
-// Steps 3-5 of the "Mirá qué fácil..." walkthrough (steps 1-2 live in
-// CartHookScene's own text) — synced to the moment each one is actually
-// happening on screen. Frames are local to each scene's own Sequence.
+// Steps 1-5 of the "Mirá qué fácil..." walkthrough, as numbered toasts
+// synced to the moment each one is actually happening on screen. Frames
+// are local to each scene's own Sequence.
+const CATALOG_REQUEST_STEP_CALLOUTS = [
+  { atFrame: 12, holdFrames: 45, number: 1, text: "Te piden el catálogo" },
+  { atFrame: 92, holdFrames: 90, number: 2, text: "Les compartís el link de tu tienda Wapi" },
+];
 const CART_STEP_CALLOUTS = [
-  { atFrame: 18, holdFrames: 32, number: 3, text: "Ven tus productos, con fotos, precios y descripciones" },
-  { atFrame: 55, holdFrames: 40, number: 4, text: "Arman su pedido" },
+  { atFrame: 68, holdFrames: 50, number: 3, text: "Ven tus productos, con fotos, precios y descripciones" },
+  { atFrame: 122, holdFrames: 70, number: 4, text: "Arman su pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [{ atFrame: 15, holdFrames: 40, number: 5, text: "Te llega el pedido por WhatsApp" }];
 
 export const WAPI_CART_ORDER_FPS = FPS;
 export const WAPI_CART_ORDER_WIDTH = VIDEO_WIDTH;
 export const WAPI_CART_ORDER_HEIGHT = VIDEO_HEIGHT;
-export const WAPI_CART_ORDER_DURATION = SCENE_HOOK + SCENE_CART + SCENE_WHATSAPP + SCENE_CIERRE;
+export const WAPI_CART_ORDER_DURATION =
+  SCENE_HOOK + SCENE_CATALOG_REQUEST + SCENE_CART + SCENE_WHATSAPP + SCENE_CIERRE;
 
 // User-supplied background music (free-library ukulele track), no voice
 // track in this video — just fades in/out around the fixed composition
@@ -42,8 +50,9 @@ const FADE_OUT_FRAMES = 45;
 
 export const WapiCartOrder: React.FC = () => {
   const s2 = SCENE_HOOK;
-  const s3 = s2 + SCENE_CART;
-  const s4 = s3 + SCENE_WHATSAPP;
+  const s3 = s2 + SCENE_CATALOG_REQUEST;
+  const s4 = s3 + SCENE_CART;
+  const s5 = s4 + SCENE_WHATSAPP;
   const total = WAPI_CART_ORDER_DURATION;
 
   return (
@@ -62,23 +71,31 @@ export const WapiCartOrder: React.FC = () => {
           <CartHookScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s2} durationInFrames={SCENE_CART}>
+      <Sequence from={s2} durationInFrames={SCENE_CATALOG_REQUEST}>
+        <SceneTransition durationInFrames={SCENE_CATALOG_REQUEST} transitionFrames={TRANSITION_FRAMES}>
+          <CatalogRequestScene />
+        </SceneTransition>
+      </Sequence>
+      <Sequence from={s2} durationInFrames={SCENE_CATALOG_REQUEST}>
+        <StepCalloutsOverlay steps={CATALOG_REQUEST_STEP_CALLOUTS} />
+      </Sequence>
+      <Sequence from={s3} durationInFrames={SCENE_CART}>
         <SceneTransition durationInFrames={SCENE_CART} transitionFrames={TRANSITION_FRAMES}>
           <CartScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s2} durationInFrames={SCENE_CART}>
+      <Sequence from={s3} durationInFrames={SCENE_CART}>
         <StepCalloutsOverlay steps={CART_STEP_CALLOUTS} />
       </Sequence>
-      <Sequence from={s3} durationInFrames={SCENE_WHATSAPP}>
+      <Sequence from={s4} durationInFrames={SCENE_WHATSAPP}>
         <SceneTransition durationInFrames={SCENE_WHATSAPP} transitionFrames={TRANSITION_FRAMES}>
           <WhatsAppScene />
         </SceneTransition>
       </Sequence>
-      <Sequence from={s3} durationInFrames={SCENE_WHATSAPP}>
+      <Sequence from={s4} durationInFrames={SCENE_WHATSAPP}>
         <StepCalloutsOverlay steps={WHATSAPP_STEP_CALLOUTS} />
       </Sequence>
-      <Sequence from={s4} durationInFrames={SCENE_CIERRE}>
+      <Sequence from={s5} durationInFrames={SCENE_CIERRE}>
         <SceneTransition durationInFrames={SCENE_CIERRE} transitionFrames={TRANSITION_FRAMES}>
           <ClosingScene />
         </SceneTransition>
