@@ -2,13 +2,6 @@ import { AbsoluteFill, staticFile } from "remotion";
 import { Backdrop } from "../components/Backdrop";
 import { PhotoPhoneMockup } from "../components/PhotoPhoneMockup";
 import { DarkChatLog, type DarkBubble } from "../components/DarkChatLog";
-import {
-  CATALOG_ASK_MESSAGE,
-  CATALOG_GREETING_MESSAGE,
-  CATALOG_LINK_MESSAGE,
-  CATALOG_INFO_MESSAGE,
-  CATALOG_THANKS_MESSAGE,
-} from "./CatalogRequestScene";
 
 // The exact real message the previous scene's own order produces — same
 // two products (Burger Clásica x1, Burger Bacon BBQ x1), same real
@@ -38,16 +31,10 @@ const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone-business.png");
 const IMAGE_ASPECT = 1794 / 877;
 const CHAT_AREA = { top: "15.9%", bottom: "10.8%", left: "6.3%", right: "8.6%" };
 
+// Just the order + confirmation — the earlier catalog-request history
+// made this scene's chat too long/busy, so it's not carried over here
+// anymore (CatalogRequestScene still shows it in full).
 const BUBBLES: DarkBubble[] = [
-  // Same catalog-request exchange as CatalogRequestScene, seen from
-  // the business's side (from flipped) — already settled in before
-  // this scene starts, so it reads as chat history rather than
-  // something that just happened.
-  { from: "them", text: CATALOG_ASK_MESSAGE, timestamp: "12:38", atFrame: -40 },
-  { from: "me", text: CATALOG_GREETING_MESSAGE, timestamp: "12:39", atFrame: -40 },
-  { from: "me", text: CATALOG_LINK_MESSAGE, timestamp: "12:39", atFrame: -40 },
-  { from: "me", text: CATALOG_INFO_MESSAGE, timestamp: "12:39", atFrame: -40 },
-  { from: "them", text: CATALOG_THANKS_MESSAGE, timestamp: "12:40", atFrame: -40 },
   { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: 20 },
   { from: "me", text: REPLY_MESSAGE, timestamp: "12:42", atFrame: 110 },
 ];
@@ -70,7 +57,7 @@ export const WhatsAppScene: React.FC = () => {
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhotoPhoneMockup width={760} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
-          <DarkChatLog bubbles={BUBBLES} compact />
+          <DarkChatLog bubbles={BUBBLES} />
         </PhotoPhoneMockup>
       </AbsoluteFill>
     </AbsoluteFill>

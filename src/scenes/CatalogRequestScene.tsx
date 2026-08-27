@@ -7,17 +7,13 @@ import { DarkChatLog, type DarkBubble } from "../components/DarkChatLog";
 // business shares its real Wapi link. Same customer who goes on to
 // place the order later, so the whole video reads as one continuous
 // interaction rather than two unrelated demos.
-//
-// Exported so WhatsAppScene can show this same exchange as the
-// business owner's chat history, above the order that arrives later —
-// same conversation thread, seen from the other phone.
-export const CATALOG_ASK_MESSAGE = "Hola! 👋 ¿Tienen catálogo y precios?";
-export const CATALOG_GREETING_MESSAGE = "¡Hola! 😊 Sí, mirá, te paso nuestro catálogo 👇";
+const CATALOG_ASK_MESSAGE = "Hola! 👋 ¿Tienen catálogo y precios?";
+const CATALOG_GREETING_MESSAGE = "¡Hola! 😊 Sí, mirá, te paso nuestro catálogo 👇";
 // The real Wapi link — user-supplied, sent as its own message.
-export const CATALOG_LINK_MESSAGE = "https://www.wapilink.com.ar/burguer-house";
-export const CATALOG_INFO_MESSAGE =
+const CATALOG_LINK_MESSAGE = "https://www.wapilink.com.ar/burguer-house";
+const CATALOG_INFO_MESSAGE =
   "Ahí podés ver todos nuestros productos, fotos y precios, y armar tu pedido directamente desde ahí 🛒";
-export const CATALOG_THANKS_MESSAGE = "¡Genial! Gracias 🙌";
+const CATALOG_THANKS_MESSAGE = "¡Genial! Gracias 🙌";
 
 const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone.png");
 
