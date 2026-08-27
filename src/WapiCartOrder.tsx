@@ -2,7 +2,7 @@ import { AbsoluteFill, Audio, interpolate, Sequence, staticFile } from "remotion
 import { CartHookScene } from "./scenes/CartHookScene";
 import { CatalogRequestScene } from "./scenes/CatalogRequestScene";
 import { CartScene } from "./scenes/CartScene";
-import { WhatsAppScene } from "./scenes/WhatsAppScene";
+import { WhatsAppScene, ORDER_MESSAGE_FRAME } from "./scenes/WhatsAppScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 import { SceneTransition } from "./components/SceneTransition";
 import { StepCalloutsOverlay } from "./components/StepCalloutsOverlay";
@@ -59,6 +59,12 @@ const FADE_OUT_FRAMES = 45;
 // offset/trim needed.
 const VOICE_URL = staticFile("/cart-order/voice.wav");
 
+// User-supplied WhatsApp notification sound — trimmed to just its first
+// "ding" (the source file repeats it 3x back to back); plays once, right
+// when the order message bubble lands on the business's phone.
+const NOTIFICATION_URL = staticFile("/cart-order/notification.mp3");
+const NOTIFICATION_DURATION = 57; // 1.9s @ 30fps
+
 export const WapiCartOrder: React.FC = () => {
   const s2 = SCENE_HOOK;
   const s3 = s2 + SCENE_CATALOG_REQUEST;
@@ -103,6 +109,9 @@ export const WapiCartOrder: React.FC = () => {
         <SceneTransition durationInFrames={SCENE_WHATSAPP} transitionFrames={TRANSITION_FRAMES}>
           <WhatsAppScene />
         </SceneTransition>
+      </Sequence>
+      <Sequence from={s4 + ORDER_MESSAGE_FRAME} durationInFrames={NOTIFICATION_DURATION}>
+        <Audio src={NOTIFICATION_URL} />
       </Sequence>
       <Sequence from={s4} durationInFrames={SCENE_WHATSAPP}>
         <StepCalloutsOverlay steps={WHATSAPP_STEP_CALLOUTS} />

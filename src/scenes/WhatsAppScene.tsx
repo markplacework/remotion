@@ -39,11 +39,16 @@ const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone-business.png");
 const IMAGE_ASPECT = 1844 / 853;
 const CHAT_AREA = { top: "15.5%", bottom: "13.6%", left: "9.1%", right: "9.7%" };
 
+// Exported so WapiCartOrder.tsx can time the incoming-order
+// notification sound to land exactly when this bubble appears, without
+// a second hardcoded copy of the frame number drifting out of sync.
+export const ORDER_MESSAGE_FRAME = 20;
+
 // Just the order + confirmation — the earlier catalog-request history
 // made this scene's chat too long/busy, so it's not carried over here
 // anymore (CatalogRequestScene still shows it in full).
 const BUBBLES: DarkBubble[] = [
-  { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: 20 },
+  { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: ORDER_MESSAGE_FRAME },
   { from: "me", text: REPLY_MESSAGE, timestamp: "12:42", atFrame: 110 },
   { from: "them", text: PICKUP_MESSAGE, timestamp: "12:43", atFrame: 190 },
 ];
