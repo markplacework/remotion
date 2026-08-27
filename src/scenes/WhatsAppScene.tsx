@@ -24,6 +24,9 @@ const REPLY_MESSAGE =
   "⏱️ En aproximadamente 25 minutos va a estar listo.\n\n" +
   "¿Lo retirás por el local o querés que te lo enviemos? 🛵";
 
+// The customer's answer to that question — supplied by the user.
+const PICKUP_MESSAGE = "Lo retiro por local, gracias";
+
 const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone-business.png");
 // Measured from this photo's own pixels (877x1794): header bottom
 // edge at y≈285, input bar top edge at y≈1600, screen sides at
@@ -37,6 +40,7 @@ const CHAT_AREA = { top: "15.9%", bottom: "10.8%", left: "6.3%", right: "8.6%" }
 const BUBBLES: DarkBubble[] = [
   { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: 20 },
   { from: "me", text: REPLY_MESSAGE, timestamp: "12:42", atFrame: 110 },
+  { from: "them", text: PICKUP_MESSAGE, timestamp: "12:43", atFrame: 190 },
 ];
 
 /**
