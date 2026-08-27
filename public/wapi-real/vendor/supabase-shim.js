@@ -39,7 +39,7 @@
       msg_product: "",
       msg_cart: "",
       beneficios: [],
-      horarios: [],
+      horarios: DATA.horarios || [],
       // headerColor deliberately omitted — applyCatalogColors() bails out
       // right after reading it if it's missing, leaving Wapi's own default
       // theme untouched. Only promoBanner is real customization here.

@@ -10,6 +10,18 @@
   "facebook": "burgerhouseok",
   "tiktok": "burgerhouse.ok",
   "categories": ["Burgers", "Papas", "Combos"],
+  "horarios": {
+    "active": true,
+    "days": {
+      "lunes": { "open": false },
+      "martes": { "open": true, "from": "12:00", "to": "15:00", "from2": "19:30", "to2": "23:30" },
+      "miercoles": { "open": true, "from": "12:00", "to": "15:00", "from2": "19:30", "to2": "23:30" },
+      "jueves": { "open": true, "from": "12:00", "to": "15:00", "from2": "19:30", "to2": "23:30" },
+      "viernes": { "open": true, "from": "12:00", "to": "15:00", "from2": "19:30", "to2": "23:30" },
+      "sabado": { "open": true, "from": "12:00", "to": "15:30", "from2": "19:30", "to2": "00:00" },
+      "domingo": { "open": true, "from": "19:30", "to": "23:30" }
+    }
+  },
   "demoProduct": {
     "id": "burger-clasica",
     "name": "Burger Clásica",

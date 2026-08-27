@@ -7,6 +7,17 @@ export type Product = {
   category: string;
 };
 
+/** One weekday's opening hours, in the real catalog page's own "days"
+ * format (renderHorariosSection in catalogo_v28.html) — from2/to2 is an
+ * optional second shift (e.g. lunch + dinner). from/to are only read
+ * when open is true. */
+export type DayHours = { open: boolean; from?: string; to?: string; from2?: string; to2?: string };
+
+export type Horarios = {
+  active: boolean;
+  days: Partial<Record<"lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo", DayHours>>;
+};
+
 export type BusinessData = {
   slug: string;
   business_name: string;
@@ -32,4 +43,8 @@ export type BusinessData = {
   /** Product used for the scripted "add one product" editor demo. */
   demoProduct: Product;
   products: Product[];
+  /** Optional — populates the real "Horarios" chips in the catalog
+   * page's own UBICACION Y HORARIOS section. Omitted entirely means
+   * that section stays hidden (supabase-shim.js defaults to []). */
+  horarios?: Horarios;
 };
