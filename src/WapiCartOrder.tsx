@@ -37,7 +37,7 @@ const CART_STEP_CALLOUTS = [
 ];
 const WHATSAPP_STEP_CALLOUTS = [
   { atFrame: 15, holdFrames: 40, number: 4, text: "Te llega el pedido por WhatsApp" },
-  { atFrame: 125, holdFrames: 55, number: 5, text: "¡Confirmás y listo!" },
+  { atFrame: 110, holdFrames: 50, number: 5, text: "¡Confirmás y listo!" },
 ];
 
 export const WAPI_CART_ORDER_FPS = FPS;
