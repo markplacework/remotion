@@ -119,10 +119,10 @@ const HoyPill: React.FC = () => (
 /**
  * A WhatsApp dark-mode chat log — HOY divider + bubbles, spaced so
  * consecutive messages from the same sender sit closer together than
- * a sender change, and centered vertically in whatever chat-area
- * container it's placed in (rather than pinned to the top) so it
- * reads as a natural, unhurried conversation rather than a cramped
- * list. Meant to sit inside PhotoPhoneMockup's chat-area overlay.
+ * a sender change, starting a natural gap below the header (like a
+ * real conversation that begins near the top and grows down) rather
+ * than centered or pinned tight against the header. Meant to sit
+ * inside PhotoPhoneMockup's chat-area overlay.
  *
  * `compact` shrinks the font and gaps for scenes with more/longer
  * messages than comfortably fit at the default size — the "no
@@ -136,7 +136,7 @@ export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean }>
   const hoyGap = compact ? 20 : 30;
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 12px" }}>
+    <div style={{ padding: "24px 12px 0" }}>
       <div style={{ marginBottom: hoyGap }}>
         <HoyPill />
       </div>
