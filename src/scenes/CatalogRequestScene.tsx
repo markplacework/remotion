@@ -11,10 +11,13 @@ import { ACTIVE_BUSINESS } from "../business";
 // the customer's own phone this time (graphite, matching CartScene),
 // contact name is the business — mirrors WhatsAppScene at the end,
 // which shows the same exchange from the business owner's gold phone.
-const ASK_MESSAGE = "Hola! 👋 Tienen catálogo y precios?";
+// Exported so WhatsAppScene can show this same exchange as the
+// business owner's chat history, above the order that arrives later —
+// same conversation thread, seen from the other phone.
+export const CATALOG_ASK_MESSAGE = "Hola! 👋 Tienen catálogo y precios?";
 
 // The real Wapi link — user-supplied.
-const REPLY_MESSAGE =
+export const CATALOG_LINK_MESSAGE =
   "¡Hola Martina! Sí, mirá nuestro catálogo acá 👇\n" +
   "www.wapilink.com.ar/burguer-house\n\n" +
   "Vas a poder ver todos los productos con fotos y precios, y armar tu pedido directo desde ahí 🍔";
@@ -35,8 +38,8 @@ export const CatalogRequestScene: React.FC = () => {
             contactName={BUSINESS_NAME}
             avatarSrc={staticFile(ACTIVE_BUSINESS.logo)}
             bubbles={[
-              { from: "me", text: ASK_MESSAGE, timestamp: "12:38", atFrame: 15 },
-              { from: "them", text: REPLY_MESSAGE, timestamp: "12:39", atFrame: 95 },
+              { from: "me", text: CATALOG_ASK_MESSAGE, timestamp: "12:38", atFrame: 15 },
+              { from: "them", text: CATALOG_LINK_MESSAGE, timestamp: "12:39", atFrame: 95 },
             ]}
           />
         </PhoneMockup>

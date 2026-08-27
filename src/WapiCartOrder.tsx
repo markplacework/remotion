@@ -35,7 +35,7 @@ const CART_STEP_CALLOUTS = [
   { atFrame: 68, holdFrames: 140, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [
-  { atFrame: 15, holdFrames: 40, number: 4, text: "Te llegó el pedido por WhatsApp" },
+  { atFrame: 15, holdFrames: 40, number: 4, text: "Te llega el pedido por WhatsApp" },
   { atFrame: 95, holdFrames: 50, number: 5, text: "¡Confirmás y listo!" },
 ];
 
