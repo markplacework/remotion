@@ -46,13 +46,17 @@ export const WAPI_CART_ORDER_HEIGHT = VIDEO_HEIGHT;
 export const WAPI_CART_ORDER_DURATION =
   SCENE_HOOK + SCENE_CATALOG_REQUEST + SCENE_CART + SCENE_WHATSAPP + SCENE_CIERRE;
 
-// User-supplied background music (free-library ukulele track), no voice
-// track in this video — just fades in/out around the fixed composition
-// length instead of being timed to any dialogue.
+// User-supplied background music (corporate track), faded in/out around
+// the fixed composition length rather than timed to any dialogue.
 const MUSIC_URL = staticFile("/cart-order/music.mp3");
-const MUSIC_VOLUME = 0.35;
+const MUSIC_VOLUME = 0.18; // ducked well under the voiceover
 const FADE_IN_FRAMES = 20;
 const FADE_OUT_FRAMES = 45;
+
+// User-supplied voiceover — recorded to this composition's own length
+// (34.57s vs. the video's 34.5s), so it plays at full volume with no
+// offset/trim needed.
+const VOICE_URL = staticFile("/cart-order/voice.wav");
 
 export const WapiCartOrder: React.FC = () => {
   const s2 = SCENE_HOOK;
@@ -72,6 +76,7 @@ export const WapiCartOrder: React.FC = () => {
           })
         }
       />
+      <Audio src={VOICE_URL} />
       <Sequence durationInFrames={SCENE_HOOK}>
         <SceneTransition durationInFrames={SCENE_HOOK} transitionFrames={TRANSITION_FRAMES}>
           <CartHookScene />
