@@ -28,22 +28,16 @@ const REPLY_MESSAGE =
 const PICKUP_MESSAGE = "Lo retiro por local, gracias";
 
 const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone-business.png");
-// The original photo (877x1794) had the phone's two bottom corners
-// touching the very last pixel row — 0px margin, so the frame read as
-// cropped no matter how this scene was positioned. Padded with 50px of
-// solid black at the bottom (now 877x1844) to give it real breathing
-// room. Measured from the ORIGINAL photo's own pixels: header bottom
-// edge at y≈285, input bar top edge at y≈1600, screen sides at
-// x≈55/802 — all still valid measured from the top, since only rows
-// were added below. Re-measure if this reference image is ever
-// swapped for an unpadded one.
-const IMAGE_ASPECT = 1844 / 877;
-const CHAT_AREA = { top: "15.5%", bottom: "13.2%", left: "6.3%", right: "8.6%" };
-// This reference photo's phone content is shorter relative to its
-// width than CatalogRequestScene's — at the same `width` the two
-// phones would render at different sizes, this one noticeably smaller.
-// Widened so both scenes' phones render at the same on-screen height.
-const MOCKUP_WIDTH = 803;
+// A corrected version of the reference photo (the first one had the
+// phone's bottom corners touching the very last pixel row — 0px
+// margin, cropped no matter how this scene was positioned). This one
+// is 853x1844 — same canvas size as CatalogRequestScene's own photo —
+// with real margin on all sides. Measured from this photo's own
+// pixels: header bottom edge at y≈285, input bar top edge at y≈1595,
+// screen sides at x≈78/770. Re-measure if this reference image is
+// ever swapped.
+const IMAGE_ASPECT = 1844 / 853;
+const CHAT_AREA = { top: "15.5%", bottom: "13.6%", left: "9.1%", right: "9.7%" };
 
 // Just the order + confirmation — the earlier catalog-request history
 // made this scene's chat too long/busy, so it's not carried over here
@@ -71,7 +65,7 @@ export const WhatsAppScene: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <PhotoPhoneMockup width={MOCKUP_WIDTH} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
+        <PhotoPhoneMockup width={760} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
           <DarkChatLog bubbles={BUBBLES} />
         </PhotoPhoneMockup>
       </AbsoluteFill>
