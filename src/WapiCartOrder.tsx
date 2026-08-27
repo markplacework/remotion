@@ -19,7 +19,7 @@ import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS
 // cart/checkout code produces).
 const SCENE_HOOK = 100; // ~3.3s — gancho only now, steps 1-2 moved to their own mockup scene
 const SCENE_CATALOG_REQUEST = 220; // ~7.3s — steps 1-2: asks for the catalog, gets the real link
-const SCENE_CART = 320; // ~10.7s — steps 3-4: enough time to actually see the catalog before adding to cart
+const SCENE_CART = 385; // ~12.8s — steps 3-4: a full scroll of the store (down to the bottom, then back up to the grid) before adding to cart
 const SCENE_WHATSAPP = 8 * FPS;
 
 // Steps 1-5 of the "Mirá qué fácil..." walkthrough, as numbered toasts
@@ -33,7 +33,7 @@ const CATALOG_REQUEST_STEP_CALLOUTS = [
 // than two back-to-back toasts — starts right after the scroll settles
 // on the grid and holds through the cart opening.
 const CART_STEP_CALLOUTS = [
-  { atFrame: 68, holdFrames: 140, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
+  { atFrame: 25, holdFrames: 245, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [
   { atFrame: 15, holdFrames: 40, number: 4, text: "Te llega el pedido por WhatsApp" },

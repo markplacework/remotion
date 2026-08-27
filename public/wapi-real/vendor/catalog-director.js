@@ -62,12 +62,22 @@ window.__catalogDirector = (function () {
   async function replay(frame, cues) {
     resetToEmpty();
 
+    // A full tour of the store before adding anything to the cart:
+    // scroll all the way down to the bottom of the page first (so the
+    // whole catalog — every product, the promo banner, everything —
+    // gets shown, not just the products grid), then scroll back up to
+    // the grid to actually add items.
     if (frame >= cues.scrollStart) {
       var grid = document.getElementById("productGrid");
-      if (grid) {
-        var targetTop = Math.max(0, grid.offsetTop - 96);
-        var t = easeOutCubic(clamp01((frame - cues.scrollStart) / (cues.scrollEnd - cues.scrollStart)));
-        window.scrollTo(0, targetTop * t);
+      var gridTop = grid ? Math.max(0, grid.offsetTop - 96) : 0;
+      var maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+      if (frame < cues.scrollBackStart) {
+        var tDown = easeOutCubic(clamp01((frame - cues.scrollStart) / (cues.scrollDownEnd - cues.scrollStart)));
+        window.scrollTo(0, maxScroll * tDown);
+      } else {
+        var tUp = easeOutCubic(clamp01((frame - cues.scrollBackStart) / (cues.scrollBackEnd - cues.scrollBackStart)));
+        window.scrollTo(0, maxScroll + (gridTop - maxScroll) * tUp);
       }
     }
 

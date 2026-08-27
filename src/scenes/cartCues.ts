@@ -2,14 +2,16 @@
 // see public/wapi-real/vendor/catalog-director.js. Scene-local: 0 is the
 // start of this scene's own Sequence.
 export const CART_CUES = {
-  // Smooth scroll down to the products grid, then a real pause sitting
-  // on it — the whole point of this scene is showing the catalog, so
-  // it needs to actually stay on screen long enough to read.
+  // A full scroll down to the very bottom of the page — the whole
+  // catalog, not just the products grid — then back up to the grid
+  // once it's time to actually add items.
   scrollStart: 20,
-  scrollEnd: 65,
-  addItem1: 115,
-  addItem2: 155,
-  openCart: 195,
+  scrollDownEnd: 110,
+  scrollBackStart: 140,
+  scrollBackEnd: 185,
+  addItem1: 205,
+  addItem2: 240,
+  openCart: 275,
   // Pause reading the cart summary (items + total) before sending.
-  sendOrder: 285,
+  sendOrder: 365,
 };
