@@ -4,14 +4,15 @@
 export const CART_CUES = {
   // A full scroll down to the very bottom of the page — the whole
   // catalog, not just the products grid — then back up to the grid
-  // once it's time to actually add items.
+  // once it's time to actually add items. A touch faster than the
+  // first pass (still eased, not a snap).
   scrollStart: 20,
-  scrollDownEnd: 110,
-  scrollBackStart: 140,
-  scrollBackEnd: 185,
-  addItem1: 205,
-  addItem2: 240,
-  openCart: 275,
+  scrollDownEnd: 90,
+  scrollBackStart: 120,
+  scrollBackEnd: 155,
+  addItem1: 175,
+  addItem2: 210,
+  openCart: 245,
   // Pause reading the cart summary (items + total) before sending.
-  sendOrder: 365,
+  sendOrder: 335,
 };

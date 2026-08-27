@@ -5757,6 +5757,49 @@ window.__catalogDirector = (function () {
     if (typeof cart !== "undefined" && Array.isArray(cart)) cart.length = 0;
     if (typeof updateCartUI === "function") updateCartUI();
     capturedMessage = null;
+    resetButtonHighlights();
+  }
+
+  // Purely cosmetic — the real page gives no visual feedback on the
+  // button itself when a product is added (only a toast, a temporary
+  // pill, and the header count). Since this demo is a silent scripted
+  // replay (real showToast() is disabled below), viewers had no way to
+  // tell which product just got added — so the button for that product
+  // gets a green ring + checkmark that stays for the rest of the scene,
+  // a genuinely true "this one's in your cart" indicator, not invented
+  // functionality.
+  function getCartButtons() {
+    var grid = document.getElementById("productGrid");
+    return grid ? Array.prototype.slice.call(grid.querySelectorAll(".btn-cart")) : [];
+  }
+
+  function resetButtonHighlights() {
+    getCartButtons().forEach(function (btn) {
+      btn.style.transform = "";
+      btn.style.boxShadow = "";
+      if (btn.dataset.origHtml !== undefined) {
+        btn.innerHTML = btn.dataset.origHtml;
+        delete btn.dataset.origHtml;
+      }
+    });
+  }
+
+  function applyAddedHighlight(index, frame, cueFrame) {
+    var btn = getCartButtons()[index];
+    if (!btn) return;
+    var local = frame - cueFrame;
+    if (local < 0) return;
+
+    if (btn.dataset.origHtml === undefined) {
+      btn.dataset.origHtml = btn.innerHTML;
+      btn.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:5px"><path d="M4 12.5l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>¡Agregado!';
+    }
+
+    var pulse = 1 - clamp01(local / 14);
+    var scale = 1 + 0.1 * pulse;
+    btn.style.transform = "scale(" + scale.toFixed(3) + ")";
+    btn.style.boxShadow = "0 0 0 3px #ffffff, 0 0 0 6px #25D366, 0 8px 18px -6px rgba(37,211,102,0.65)";
   }
 
   function clamp01(n) {
@@ -5794,10 +5837,12 @@ window.__catalogDirector = (function () {
 
     if (frame >= cues.addItem1) {
       if (typeof addToCart === "function") addToCart(0);
+      applyAddedHighlight(0, frame, cues.addItem1);
     }
 
     if (frame >= cues.addItem2) {
       if (typeof addToCart === "function") addToCart(1);
+      applyAddedHighlight(1, frame, cues.addItem2);
     }
 
     if (frame >= cues.openCart) {
