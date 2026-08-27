@@ -59,7 +59,7 @@ export const WhatsAppScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", paddingBottom: "6%" }}>
         <PhotoPhoneMockup width={760} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
           <DarkChatLog bubbles={BUBBLES} />
         </PhotoPhoneMockup>
