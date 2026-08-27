@@ -34,7 +34,7 @@ const CATALOG_REQUEST_STEP_CALLOUTS = [
 // on the grid and holds through the cart opening (holdFrames tracks
 // CART_CUES.openCart, so it still disappears right as the cart opens).
 const CART_STEP_CALLOUTS = [
-  { atFrame: 25, holdFrames: 265, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
+  { atFrame: 25, holdFrames: 280, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [
   { atFrame: 15, holdFrames: 40, number: 4, text: "Te llega el pedido por WhatsApp" },
