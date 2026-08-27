@@ -51,7 +51,7 @@ function renderText(text: string) {
 
 type DarkBubble = { from: "them" | "me"; text: string; timestamp: string; atFrame: number };
 
-const DarkChatBubble: React.FC<DarkBubble> = ({ from, text, timestamp, atFrame }) => {
+const DarkChatBubble: React.FC<DarkBubble & { marginTop: number }> = ({ from, text, timestamp, atFrame, marginTop }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const local = frame - atFrame;
@@ -69,7 +69,7 @@ const DarkChatBubble: React.FC<DarkBubble> = ({ from, text, timestamp, atFrame }
         opacity,
         transform: `translateY(${translateY}px) scale(${scale})`,
         transformOrigin: outgoing ? "top right" : "top left",
-        marginBottom: 10,
+        marginTop,
       }}
     >
       <div
@@ -90,6 +90,27 @@ const DarkChatBubble: React.FC<DarkBubble> = ({ from, text, timestamp, atFrame }
     </div>
   );
 };
+
+const HoyPill: React.FC = () => (
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    <div
+      style={{
+        background: "rgba(255,255,255,0.08)",
+        color: WA.timestamp,
+        fontFamily: FONT_STACK,
+        fontSize: 15,
+        fontWeight: 600,
+        padding: "5px 12px",
+        borderRadius: 7,
+      }}
+    >
+      HOY
+    </div>
+  </div>
+);
+
+const SENDER_CHANGE_GAP = 26;
+const SAME_SENDER_GAP = 14;
 
 const BUBBLES: DarkBubble[] = [
   { from: "me", text: CATALOG_ASK_MESSAGE, timestamp: "12:38", atFrame: 15 },
@@ -113,10 +134,15 @@ export const CatalogRequestScene: React.FC = () => {
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhotoPhoneMockup width={760} src={MOCKUP_SRC}>
-          <div style={{ padding: "14px 12px" }}>
-            {BUBBLES.map((b, i) => (
-              <DarkChatBubble key={i} {...b} />
-            ))}
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 12px" }}>
+            <div style={{ marginBottom: 30 }}>
+              <HoyPill />
+            </div>
+            {BUBBLES.map((b, i) => {
+              const prev = BUBBLES[i - 1];
+              const marginTop = i === 0 ? 0 : prev.from !== b.from ? SENDER_CHANGE_GAP : SAME_SENDER_GAP;
+              return <DarkChatBubble key={i} {...b} marginTop={marginTop} />;
+            })}
           </div>
         </PhotoPhoneMockup>
       </AbsoluteFill>
