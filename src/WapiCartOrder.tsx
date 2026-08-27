@@ -13,9 +13,10 @@ import { COLORS, SCENE_CIERRE, TRANSITION_FRAMES, VIDEO_WIDTH, VIDEO_HEIGHT, FPS
 // rules as the rest of this project — Wapi's own pages driven by their
 // own real functions, nothing invented there. The one exception is the
 // WhatsApp screens: WhatsApp isn't part of Wapi, so they're a faithful
-// recreation of the real WhatsApp UI (see WhatsAppMockup.tsx) — one at
-// the start (customer asking for the catalog) and one at the end (the
-// real order message Wapi's own cart/checkout code produces).
+// recreation of the real WhatsApp UI (see PhotoPhoneMockup.tsx and
+// DarkChatLog.tsx) — one at the start (customer asking for the
+// catalog) and one at the end (the real order message Wapi's own
+// cart/checkout code produces).
 const SCENE_HOOK = 100; // ~3.3s — gancho only now, steps 1-2 moved to their own mockup scene
 const SCENE_CATALOG_REQUEST = 220; // ~7.3s — steps 1-2: asks for the catalog, gets the real link
 const SCENE_CART = 320; // ~10.7s — steps 3-4: enough time to actually see the catalog before adding to cart

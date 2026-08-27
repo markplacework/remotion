@@ -1,20 +1,22 @@
 import { Easing, Img, interpolate, useCurrentFrame } from "remotion";
 
-// The reference iPhone photo is 853x1844 — close enough to the CSS
-// PhoneMockup's own 1:2.162 ratio that both read the same size on
-// screen at the same `width`.
-const IMAGE_ASPECT = 1844 / 853;
+type ChatArea = { top: string; bottom: string; left: string; right: string };
 
-// Percentage insets locating the blank chat area within the photo,
-// measured directly from the source pixels (853x1844): header block
+// Default matches the first reference photo (853x1844): header block
 // (status bar + WhatsApp header, both baked into the photo) bottom
 // edge at y≈310, input bar top edge at y≈1590, screen sides at
-// x≈45/813. Re-measure these if the reference image is ever swapped.
-const CHAT_AREA = { top: "16.8%", bottom: "13.8%", left: "5.3%", right: "4.7%" };
+// x≈45/813. Pass `imageAspect`/`chatArea` for a different photo —
+// re-measure its pixels rather than reusing these blindly.
+const DEFAULT_IMAGE_ASPECT = 1844 / 853;
+const DEFAULT_CHAT_AREA: ChatArea = { top: "16.8%", bottom: "13.8%", left: "5.3%", right: "4.7%" };
 
 type Props = {
   width: number;
   src: string;
+  /** height / width of the source photo. */
+  imageAspect?: number;
+  /** Percentage insets locating the blank chat area within the photo. */
+  chatArea?: ChatArea;
   children?: React.ReactNode;
 };
 
@@ -26,9 +28,15 @@ type Props = {
  * pixels exactly. A trial alternative to PhoneMockup for scenes where
  * photographic realism matters more than live-driven content.
  */
-export const PhotoPhoneMockup: React.FC<Props> = ({ width, src, children }) => {
+export const PhotoPhoneMockup: React.FC<Props> = ({
+  width,
+  src,
+  imageAspect = DEFAULT_IMAGE_ASPECT,
+  chatArea = DEFAULT_CHAT_AREA,
+  children,
+}) => {
   const frame = useCurrentFrame();
-  const height = width * IMAGE_ASPECT;
+  const height = width * imageAspect;
 
   const settle = interpolate(frame, [0, 14], [0, 1], {
     extrapolateLeft: "clamp",
@@ -52,10 +60,10 @@ export const PhotoPhoneMockup: React.FC<Props> = ({ width, src, children }) => {
       <div
         style={{
           position: "absolute",
-          top: CHAT_AREA.top,
-          bottom: CHAT_AREA.bottom,
-          left: CHAT_AREA.left,
-          right: CHAT_AREA.right,
+          top: chatArea.top,
+          bottom: chatArea.bottom,
+          left: chatArea.left,
+          right: chatArea.right,
           overflow: "hidden",
         }}
       >
