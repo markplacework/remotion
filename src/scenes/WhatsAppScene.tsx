@@ -2,7 +2,13 @@ import { AbsoluteFill } from "remotion";
 import { Backdrop } from "../components/Backdrop";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { WhatsAppMockup } from "../components/WhatsAppMockup";
-import { CATALOG_ASK_MESSAGE, CATALOG_LINK_MESSAGE } from "./CatalogRequestScene";
+import {
+  CATALOG_ASK_MESSAGE,
+  CATALOG_GREETING_MESSAGE,
+  CATALOG_LINK_MESSAGE,
+  CATALOG_INFO_MESSAGE,
+  CATALOG_THANKS_MESSAGE,
+} from "./CatalogRequestScene";
 
 // The exact real message the previous scene's own order produces — same
 // two products (Burger Clásica x1, Burger Bacon BBQ x1), same real
@@ -54,7 +60,10 @@ export const WhatsAppScene: React.FC = () => {
               // settled in before this scene starts, so it reads as
               // chat history rather than something that just happened.
               { from: "them", text: CATALOG_ASK_MESSAGE, timestamp: "12:38", atFrame: -40 },
+              { from: "me", text: CATALOG_GREETING_MESSAGE, timestamp: "12:39", atFrame: -40 },
               { from: "me", text: CATALOG_LINK_MESSAGE, timestamp: "12:39", atFrame: -40 },
+              { from: "me", text: CATALOG_INFO_MESSAGE, timestamp: "12:39", atFrame: -40 },
+              { from: "them", text: CATALOG_THANKS_MESSAGE, timestamp: "12:40", atFrame: -40 },
               { from: "them", text: ORDER_MESSAGE, timestamp: "12:41", atFrame: 20 },
               { from: "me", text: REPLY_MESSAGE, timestamp: "12:42", atFrame: 110 },
             ]}
