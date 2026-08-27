@@ -33,6 +33,13 @@ const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone-business.png");
 // x≈55/802. Re-measure if this reference image is ever swapped.
 const IMAGE_ASPECT = 1794 / 877;
 const CHAT_AREA = { top: "15.9%", bottom: "10.8%", left: "6.3%", right: "8.6%" };
+// This reference photo's own aspect ratio (2.046) is shorter than
+// CatalogRequestScene's (2.162) — at the same `width` the two phones
+// would render at different sizes, this one noticeably smaller with
+// more black space around it (read as "the phone looks cut off"
+// compared to the other scene). Widened so both scenes' phones render
+// at the same on-screen height instead.
+const MOCKUP_WIDTH = 803;
 
 // Just the order + confirmation — the earlier catalog-request history
 // made this scene's chat too long/busy, so it's not carried over here
@@ -60,7 +67,7 @@ export const WhatsAppScene: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <PhotoPhoneMockup width={760} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
+        <PhotoPhoneMockup width={MOCKUP_WIDTH} src={MOCKUP_SRC} imageAspect={IMAGE_ASPECT} chatArea={CHAT_AREA}>
           <DarkChatLog bubbles={BUBBLES} />
         </PhotoPhoneMockup>
       </AbsoluteFill>
