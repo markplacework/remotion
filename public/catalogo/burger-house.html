@@ -5773,15 +5773,23 @@ window.__catalogDirector = (function () {
     return grid ? Array.prototype.slice.call(grid.querySelectorAll(".btn-cart")) : [];
   }
 
+  function getSendButton() {
+    return document.querySelector("#cartModal .btn-send-order");
+  }
+
+  function resetHighlightedButton(btn) {
+    btn.style.transform = "";
+    btn.style.boxShadow = "";
+    if (btn.dataset.origHtml !== undefined) {
+      btn.innerHTML = btn.dataset.origHtml;
+      delete btn.dataset.origHtml;
+    }
+  }
+
   function resetButtonHighlights() {
-    getCartButtons().forEach(function (btn) {
-      btn.style.transform = "";
-      btn.style.boxShadow = "";
-      if (btn.dataset.origHtml !== undefined) {
-        btn.innerHTML = btn.dataset.origHtml;
-        delete btn.dataset.origHtml;
-      }
-    });
+    getCartButtons().forEach(resetHighlightedButton);
+    var sendBtn = getSendButton();
+    if (sendBtn) resetHighlightedButton(sendBtn);
   }
 
   function applyAddedHighlight(index, frame, cueFrame) {
@@ -5798,6 +5806,29 @@ window.__catalogDirector = (function () {
 
     var pulse = 1 - clamp01(local / 14);
     var scale = 1 + 0.1 * pulse;
+    btn.style.transform = "scale(" + scale.toFixed(3) + ")";
+    btn.style.boxShadow = "0 0 0 3px #ffffff, 0 0 0 6px #25D366, 0 8px 18px -6px rgba(37,211,102,0.65)";
+  }
+
+  // Same idea as applyAddedHighlight, for the "Enviar pedido por
+  // WhatsApp" button itself — real click feedback is just the browser
+  // opening a wa.me tab (intercepted/no-op during this scripted
+  // replay), so without this the viewer has no visual cue the button
+  // was ever pressed.
+  function applySentHighlight(frame, cueFrame) {
+    var btn = getSendButton();
+    if (!btn) return;
+    var local = frame - cueFrame;
+    if (local < 0) return;
+
+    if (btn.dataset.origHtml === undefined) {
+      btn.dataset.origHtml = btn.innerHTML;
+      btn.innerHTML =
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>¡Pedido enviado!';
+    }
+
+    var pulse = 1 - clamp01(local / 14);
+    var scale = 1 + 0.06 * pulse;
     btn.style.transform = "scale(" + scale.toFixed(3) + ")";
     btn.style.boxShadow = "0 0 0 3px #ffffff, 0 0 0 6px #25D366, 0 8px 18px -6px rgba(37,211,102,0.65)";
   }
@@ -5852,6 +5883,7 @@ window.__catalogDirector = (function () {
 
     if (frame >= cues.sendOrder) {
       if (typeof sendCartToWA === "function") sendCartToWA();
+      applySentHighlight(frame, cues.sendOrder);
     }
   }
 
