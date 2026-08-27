@@ -11,8 +11,6 @@ const CATALOG_ASK_MESSAGE = "Hola! 👋 ¿Tienen catálogo y precios?";
 const CATALOG_GREETING_MESSAGE = "¡Hola! 😊 Sí, mirá, te paso nuestro catálogo 👇";
 // The real Wapi link — user-supplied, sent as its own message.
 const CATALOG_LINK_MESSAGE = "https://www.wapilink.com.ar/burguer-house";
-const CATALOG_INFO_MESSAGE =
-  "Ahí podés ver todos nuestros productos, fotos y precios, y armar tu pedido directamente desde ahí 🛒";
 const CATALOG_THANKS_MESSAGE = "¡Genial! Gracias 🙌";
 
 const MOCKUP_SRC = staticFile("/mockups/whatsapp-dark-iphone.png");
@@ -21,8 +19,7 @@ const BUBBLES: DarkBubble[] = [
   { from: "me", text: CATALOG_ASK_MESSAGE, timestamp: "12:38", atFrame: 15 },
   { from: "them", text: CATALOG_GREETING_MESSAGE, timestamp: "12:39", atFrame: 60 },
   { from: "them", text: CATALOG_LINK_MESSAGE, timestamp: "12:39", atFrame: 90 },
-  { from: "them", text: CATALOG_INFO_MESSAGE, timestamp: "12:39", atFrame: 120 },
-  { from: "me", text: CATALOG_THANKS_MESSAGE, timestamp: "12:40", atFrame: 165 },
+  { from: "me", text: CATALOG_THANKS_MESSAGE, timestamp: "12:40", atFrame: 130 },
 ];
 
 /**
