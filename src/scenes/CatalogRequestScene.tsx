@@ -34,7 +34,7 @@ export const CatalogRequestScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop />
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", paddingBottom: "10%" }}>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <PhotoPhoneMockup width={760} src={MOCKUP_SRC}>
           <DarkChatLog bubbles={BUBBLES} />
         </PhotoPhoneMockup>
