@@ -11,6 +11,12 @@ export const CART_CUES = {
   // catalog, not just the products grid — then back up to the grid
   // once it's time to actually add items. A touch faster than the
   // first pass (still eased, not a snap).
+  // Real "next portada" is a wall-clock setInterval (see
+  // catalog-director.js) — nondeterministic under frame-precise offline
+  // rendering, so it's neutered and driven from here instead, timed to
+  // land while the scene is already holding on the banner (well before
+  // scrollStart).
+  portadaSwitch: 40,
   scrollStart: 80,
   scrollDownEnd: 150,
   scrollBackStart: 180,

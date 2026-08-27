@@ -35,10 +35,37 @@ window.__catalogDirector = (function () {
     showToast = function () {};
   }
 
+  // Same problem as the toast: renderPortadas() starts a real
+  // setInterval(_nextPortada, 3000) whenever there's more than one
+  // portada — wall-clock-driven, so it's nondeterministic frame to
+  // frame. Neutered here (this runs before renderPortadas() itself,
+  // since that only fires once the async business-data fetch
+  // resolves), and driven explicitly instead — see applyPortadaCue()
+  // below, called from replay() for scenes that opt in via
+  // cues.portadaSwitch.
+  if (typeof _nextPortada === "function") {
+    _nextPortada = function () {};
+  }
+
   function killModalAnimation(overlayId) {
     var overlay = document.getElementById(overlayId);
     var inner = overlay && overlay.querySelector(".modal");
     if (inner) inner.style.animation = "none";
+  }
+
+  // Snaps the portadas carousel to whichever slide the given cue frame
+  // implies, with its CSS transition killed first so the jump lands
+  // instantly rather than mid-animation on whatever frame gets
+  // captured. No-ops for pages with 0-1 portadas (nothing to switch
+  // to) or scenes that don't pass a portadaSwitch cue.
+  function applyPortadaCue(frame, cues) {
+    if (!cues || typeof cues.portadaSwitch !== "number") return;
+    if (typeof _goPortada !== "function" || typeof _portadasData === "undefined") return;
+    if (!_portadasData || _portadasData.length < 2) return;
+
+    var track = document.getElementById("portadasTrack");
+    if (track) track.style.transition = "none";
+    _goPortada(frame >= cues.portadaSwitch ? 1 : 0);
   }
 
   function resetToEmpty() {
@@ -135,6 +162,7 @@ window.__catalogDirector = (function () {
 
   async function replay(frame, cues) {
     resetToEmpty();
+    applyPortadaCue(frame, cues);
 
     // A full tour of the store before adding anything to the cart:
     // scroll all the way down to the bottom of the page first (so the
