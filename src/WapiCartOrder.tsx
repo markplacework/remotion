@@ -31,9 +31,10 @@ const CATALOG_REQUEST_STEP_CALLOUTS = [
 ];
 // One persistent label for the whole browse-and-add stretch, rather
 // than two back-to-back toasts — starts right after the scroll settles
-// on the grid and holds through the cart opening.
+// on the grid and holds through the cart opening (holdFrames tracks
+// CART_CUES.openCart, so it still disappears right as the cart opens).
 const CART_STEP_CALLOUTS = [
-  { atFrame: 25, holdFrames: 220, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
+  { atFrame: 25, holdFrames: 265, number: 3, text: "Tus clientes entran a la tienda y arman el pedido" },
 ];
 const WHATSAPP_STEP_CALLOUTS = [
   { atFrame: 15, holdFrames: 40, number: 4, text: "Te llega el pedido por WhatsApp" },
