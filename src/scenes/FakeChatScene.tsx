@@ -49,7 +49,15 @@ export const FakeChatScene: React.FC = () => {
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
       />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 620 }}>
+        {/* DarkChatLog's own font/spacing were tuned for a narrow
+            phone-mockup chat-area overlay elsewhere in the project —
+            scaled up here so the conversation fills the screen like a
+            real full-bleed WhatsApp screenshot instead of sitting as a
+            small centered column. All 10 bubbles are already laid out
+            (just invisible pre-atFrame), so this block's footprint is
+            constant for the whole video — centering it doesn't drift
+            as messages reveal. */}
+        <div style={{ width: 620, transform: "scale(1.6)" }}>
           <DarkChatLog bubbles={BUBBLES} dateLabel="Hoy" />
         </div>
       </AbsoluteFill>
