@@ -1,5 +1,5 @@
-import { AbsoluteFill, Audio } from "remotion";
-import { FakeChatScene, SONG_URL, SONG_DURATION_FRAMES } from "./scenes/FakeChatScene";
+import { AbsoluteFill } from "remotion";
+import { FakeChatScene, SONG_DURATION_FRAMES } from "./scenes/FakeChatScene";
 import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 
 // Standalone, unrelated to the Wapi business videos — a fictional,
@@ -9,14 +9,13 @@ import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 export const FAKE_CHAT_FPS = FPS;
 export const FAKE_CHAT_WIDTH = VIDEO_WIDTH;
 export const FAKE_CHAT_HEIGHT = VIDEO_HEIGHT;
-// Runs the full length of the song rather than a fixed hold after the
-// last bubble, so the track always plays out completely.
+// No audio track — silent. Duration kept at the song's length (the
+// message timing is still paced to it) in case audio comes back later.
 export const FAKE_CHAT_DURATION = SONG_DURATION_FRAMES;
 
 export const FakeChat: React.FC = () => {
   return (
     <AbsoluteFill>
-      <Audio src={SONG_URL} />
       <FakeChatScene />
     </AbsoluteFill>
   );
