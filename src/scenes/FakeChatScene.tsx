@@ -39,24 +39,26 @@ export const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 323 },
   { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 453 },
   { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 548 },
+  // Pulled in ~30f earlier (was 643) — everything else here unchanged.
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 643,
+    atFrame: 613,
   },
   { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 743 },
+  // Pulled in ~30f earlier (was 838) — everything else here unchanged.
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 838,
+    atFrame: 808,
   },
 ];
 
 // The clip now ends right on his last line — no more reply from her.
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 838;
+export const FAKE_CHAT_LAST_FRAME = 808;
 
 export const FakeChatScene: React.FC = () => {
   return (
