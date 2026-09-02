@@ -13,7 +13,9 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // hers gone every bubble here is now "same sender" as the one before
 // it, so the vertical gaps between his lines shrink slightly — a
 // layout detail, not a timing change.
-const SOLO_BUBBLES = BUBBLES.filter((b) => b.from === "me");
+// Exported so FakeChatSoloPhoneScene.tsx (the real-phone-mockup trial)
+// can reuse the exact same filtered list/timing.
+export const SOLO_BUBBLES = BUBBLES.filter((b) => b.from === "me");
 
 export const FakeChatSoloScene: React.FC = () => {
   return (

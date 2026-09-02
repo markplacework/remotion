@@ -28,6 +28,13 @@ import {
   FAKE_CHAT_SOLO_HEIGHT,
   FAKE_CHAT_SOLO_WIDTH,
 } from "./FakeChatSolo";
+import {
+  FakeChatSoloPhone,
+  FAKE_CHAT_SOLO_PHONE_DURATION,
+  FAKE_CHAT_SOLO_PHONE_FPS,
+  FAKE_CHAT_SOLO_PHONE_HEIGHT,
+  FAKE_CHAT_SOLO_PHONE_WIDTH,
+} from "./FakeChatSoloPhone";
 
 export const WapiVideoComposition = () => {
   return (
@@ -71,6 +78,14 @@ export const WapiVideoComposition = () => {
         fps={FAKE_CHAT_SOLO_FPS}
         width={FAKE_CHAT_SOLO_WIDTH}
         height={FAKE_CHAT_SOLO_HEIGHT}
+      />
+      <Composition
+        id="FakeChatSoloPhone"
+        component={FakeChatSoloPhone}
+        durationInFrames={FAKE_CHAT_SOLO_PHONE_DURATION}
+        fps={FAKE_CHAT_SOLO_PHONE_FPS}
+        width={FAKE_CHAT_SOLO_PHONE_WIDTH}
+        height={FAKE_CHAT_SOLO_PHONE_HEIGHT}
       />
     </>
   );
