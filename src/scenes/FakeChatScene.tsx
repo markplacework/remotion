@@ -17,30 +17,29 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // lines in particular.
 const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 20 },
-  { from: "them", text: "Hola amor", timestamp: "21:12", atFrame: 110 },
-  { from: "me", text: "Me desespero de esperarte", timestamp: "21:13", atFrame: 190 },
-  { from: "them", text: "Estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 265 },
-  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 345 },
-  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 430 },
-  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 510 },
+  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 85 },
+  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 180 },
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 275 },
+  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 355 },
+  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 450 },
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 590,
+    atFrame: 545,
   },
-  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 690 },
+  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 645 },
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 770,
+    atFrame: 740,
   },
-  { from: "them", text: "¿Una canción? 👀", timestamp: "21:16", atFrame: 870 },
 ];
 
+// The clip now ends right on his last line — no more reply from her.
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 870;
+export const FAKE_CHAT_LAST_FRAME = 740;
 
 export const FakeChatScene: React.FC = () => {
   return (
@@ -54,7 +53,7 @@ export const FakeChatScene: React.FC = () => {
             phone-mockup chat-area overlay elsewhere in the project —
             scaled up here so the conversation fills the screen like a
             real full-bleed WhatsApp screenshot instead of sitting as a
-            small centered column. All 10 bubbles are already laid out
+            small centered column. All bubbles are already laid out
             (just invisible pre-atFrame), so this block's footprint is
             constant for the whole video — centering it doesn't drift
             as messages reveal. */}
