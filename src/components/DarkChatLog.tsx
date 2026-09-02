@@ -129,11 +129,15 @@ const HoyPill: React.FC<{ label: string }> = ({ label }) => (
  * scrolling" of a static composited screen means the content has to
  * fit outright.
  */
-export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean; dateLabel?: string }> = ({
-  bubbles,
-  compact = false,
-  dateLabel = "HOY",
-}) => {
+export const DarkChatLog: React.FC<{
+  bubbles: DarkBubble[];
+  compact?: boolean;
+  dateLabel?: string;
+  /** false when the mockup photo already has its own date/"Hoy"
+   * divider baked in (e.g. FakeChatSoloPhoneScene's blank-chat
+   * reference photo) — skips rendering a second one. */
+  showDateLabel?: boolean;
+}> = ({ bubbles, compact = false, dateLabel = "HOY", showDateLabel = true }) => {
   const fontSize = compact ? 18 : 22;
   const senderChangeGap = compact ? 18 : 26;
   const sameSenderGap = compact ? 10 : 14;
@@ -141,9 +145,11 @@ export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean; d
 
   return (
     <div style={{ padding: "24px 12px 0" }}>
-      <div style={{ marginBottom: hoyGap }}>
-        <HoyPill label={dateLabel} />
-      </div>
+      {showDateLabel && (
+        <div style={{ marginBottom: hoyGap }}>
+          <HoyPill label={dateLabel} />
+        </div>
+      )}
       {bubbles.map((b, i) => {
         const prev = bubbles[i - 1];
         const marginTop = i === 0 ? 0 : prev.from !== b.from ? senderChangeGap : sameSenderGap;
