@@ -7,6 +7,14 @@ import { DarkChatLog, type DarkBubble } from "../components/DarkChatLog";
 // entirely fictional, for a TikTok-style clip).
 const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 
+// User-supplied song this clip is built around (his lines are its
+// lyrics). Exported so FakeChat.tsx / FakeChatSolo.tsx can play it and
+// size the composition to its length — 45.531s measured directly from
+// the decoded audio (1,003,968 samples @ 22050Hz), rounded up a hair
+// to 1367 frames @ 30fps so playback is never truncated.
+export const SONG_URL = staticFile("/fake-chat/song.mp3");
+export const SONG_DURATION_FRAMES = 1367;
+
 // Exact text as given, split into "Él" (outgoing/green, right side) and
 // "Ella" (incoming/gray, left side) — never rendered as labels, only as
 // bubble side + color, matching real WhatsApp's own visual language.
@@ -18,36 +26,37 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // Exported so FakeChatSoloScene.tsx (the "only his messages" variant)
 // can reuse the exact same text/timing rather than a second hand-typed
 // copy drifting out of sync.
+// Real song now backs this clip (public/fake-chat/song.mp3) — spectral
+// energy analysis of the track showed no multi-second silent intro
+// (it's loud almost immediately, ~0.3-0.4s pickup), so message 1 lands
+// right after that instead of the old 1.5s guess. Every other gap
+// below is untouched — the whole sequence was just shifted 32f earlier
+// as one block to line up with that pickup.
 export const BUBBLES: DarkBubble[] = [
-  // A small beat before anything appears at all (not instant at frame 0).
-  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 45 },
-  // Extra-slow gap to this one specifically (170f/5.7s, vs. ~90-100f
-  // elsewhere) per request.
-  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 215 },
-  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 310 },
-  // Pulled in earlier (was 405) — everything else unchanged, including
-  // the next message's own atFrame.
-  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 355 },
-  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 485 },
-  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 580 },
+  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 13 },
+  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 183 },
+  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 278 },
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 323 },
+  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 453 },
+  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 548 },
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 675,
+    atFrame: 643,
   },
-  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 775 },
+  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 743 },
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 870,
+    atFrame: 838,
   },
 ];
 
 // The clip now ends right on his last line — no more reply from her.
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 870;
+export const FAKE_CHAT_LAST_FRAME = 838;
 
 export const FakeChatScene: React.FC = () => {
   return (

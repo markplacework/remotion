@@ -1,5 +1,5 @@
-import { AbsoluteFill } from "remotion";
-import { FakeChatScene, FAKE_CHAT_LAST_FRAME } from "./scenes/FakeChatScene";
+import { AbsoluteFill, Audio } from "remotion";
+import { FakeChatScene, SONG_URL, SONG_DURATION_FRAMES } from "./scenes/FakeChatScene";
 import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 
 // Standalone, unrelated to the Wapi business videos — a fictional,
@@ -9,13 +9,14 @@ import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 export const FAKE_CHAT_FPS = FPS;
 export const FAKE_CHAT_WIDTH = VIDEO_WIDTH;
 export const FAKE_CHAT_HEIGHT = VIDEO_HEIGHT;
-// A longer hold after the last bubble settles, so the punchline lands
-// before the clip ends.
-export const FAKE_CHAT_DURATION = FAKE_CHAT_LAST_FRAME + 100;
+// Runs the full length of the song rather than a fixed hold after the
+// last bubble, so the track always plays out completely.
+export const FAKE_CHAT_DURATION = SONG_DURATION_FRAMES;
 
 export const FakeChat: React.FC = () => {
   return (
     <AbsoluteFill>
+      <Audio src={SONG_URL} />
       <FakeChatScene />
     </AbsoluteFill>
   );
