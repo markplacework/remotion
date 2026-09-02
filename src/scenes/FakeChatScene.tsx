@@ -25,7 +25,9 @@ export const BUBBLES: DarkBubble[] = [
   // elsewhere) per request.
   { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 215 },
   { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 310 },
-  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 405 },
+  // Pulled in earlier (was 405) — everything else unchanged, including
+  // the next message's own atFrame.
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 355 },
   { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 485 },
   { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 580 },
   {
