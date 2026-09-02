@@ -16,32 +16,33 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // registers before the next lands, extra time after the longer/setup
 // lines in particular.
 const BUBBLES: DarkBubble[] = [
-  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 20 },
-  // Extra-slow gap to this one specifically (140f/4.7s, vs. ~90-100f
+  // A small beat before anything appears at all (not instant at frame 0).
+  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 45 },
+  // Extra-slow gap to this one specifically (170f/5.7s, vs. ~90-100f
   // elsewhere) per request.
-  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 160 },
-  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 255 },
-  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 350 },
-  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 430 },
-  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 525 },
+  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 215 },
+  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 310 },
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 405 },
+  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 485 },
+  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 580 },
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 620,
+    atFrame: 675,
   },
-  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 720 },
+  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 775 },
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 815,
+    atFrame: 870,
   },
 ];
 
 // The clip now ends right on his last line — no more reply from her.
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 815;
+export const FAKE_CHAT_LAST_FRAME = 870;
 
 export const FakeChatScene: React.FC = () => {
   return (
