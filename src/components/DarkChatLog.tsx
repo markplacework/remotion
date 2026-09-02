@@ -98,7 +98,7 @@ const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: numbe
   );
 };
 
-const HoyPill: React.FC = () => (
+const HoyPill: React.FC<{ label: string }> = ({ label }) => (
   <div style={{ display: "flex", justifyContent: "center" }}>
     <div
       style={{
@@ -111,7 +111,7 @@ const HoyPill: React.FC = () => (
         borderRadius: 7,
       }}
     >
-      HOY
+      {label}
     </div>
   </div>
 );
@@ -129,7 +129,11 @@ const HoyPill: React.FC = () => (
  * scrolling" of a static composited screen means the content has to
  * fit outright.
  */
-export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean }> = ({ bubbles, compact = false }) => {
+export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean; dateLabel?: string }> = ({
+  bubbles,
+  compact = false,
+  dateLabel = "HOY",
+}) => {
   const fontSize = compact ? 18 : 22;
   const senderChangeGap = compact ? 18 : 26;
   const sameSenderGap = compact ? 10 : 14;
@@ -138,7 +142,7 @@ export const DarkChatLog: React.FC<{ bubbles: DarkBubble[]; compact?: boolean }>
   return (
     <div style={{ padding: "24px 12px 0" }}>
       <div style={{ marginBottom: hoyGap }}>
-        <HoyPill />
+        <HoyPill label={dateLabel} />
       </div>
       {bubbles.map((b, i) => {
         const prev = bubbles[i - 1];
