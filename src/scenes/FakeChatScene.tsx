@@ -20,31 +20,27 @@ const BUBBLES: DarkBubble[] = [
   { from: "them", text: "¿Qué me querés decir, amor? No me asustes 😰", timestamp: "21:12", atFrame: 110 },
   { from: "me", text: "Me desespero de esperarte", timestamp: "21:13", atFrame: 190 },
   { from: "them", text: "Estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 265 },
-  {
-    from: "me",
-    text: "Que no salgo a buscarte porque sé... Que corro el riesgo de encontrarte",
-    timestamp: "21:14",
-    atFrame: 345,
-  },
-  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 455 },
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 345 },
+  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 430 },
+  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 510 },
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 535,
+    atFrame: 590,
   },
-  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 635 },
+  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 690 },
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 715,
+    atFrame: 770,
   },
-  { from: "them", text: "¿Una canción? 👀", timestamp: "21:16", atFrame: 815 },
+  { from: "them", text: "¿Una canción? 👀", timestamp: "21:16", atFrame: 870 },
 ];
 
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 815;
+export const FAKE_CHAT_LAST_FRAME = 870;
 
 export const FakeChatScene: React.FC = () => {
   return (
