@@ -15,7 +15,10 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // back-and-forth (~2.5-3.7s between messages) so each line actually
 // registers before the next lands, extra time after the longer/setup
 // lines in particular.
-const BUBBLES: DarkBubble[] = [
+// Exported so FakeChatSoloScene.tsx (the "only his messages" variant)
+// can reuse the exact same text/timing rather than a second hand-typed
+// copy drifting out of sync.
+export const BUBBLES: DarkBubble[] = [
   // A small beat before anything appears at all (not instant at frame 0).
   { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 45 },
   // Extra-slow gap to this one specifically (170f/5.7s, vs. ~90-100f

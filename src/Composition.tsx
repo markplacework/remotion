@@ -21,6 +21,13 @@ import {
   WAPI_CART_ORDER_WIDTH,
 } from "./WapiCartOrder";
 import { FakeChat, FAKE_CHAT_DURATION, FAKE_CHAT_FPS, FAKE_CHAT_HEIGHT, FAKE_CHAT_WIDTH } from "./FakeChat";
+import {
+  FakeChatSolo,
+  FAKE_CHAT_SOLO_DURATION,
+  FAKE_CHAT_SOLO_FPS,
+  FAKE_CHAT_SOLO_HEIGHT,
+  FAKE_CHAT_SOLO_WIDTH,
+} from "./FakeChatSolo";
 
 export const WapiVideoComposition = () => {
   return (
@@ -56,6 +63,14 @@ export const WapiVideoComposition = () => {
         fps={FAKE_CHAT_FPS}
         width={FAKE_CHAT_WIDTH}
         height={FAKE_CHAT_HEIGHT}
+      />
+      <Composition
+        id="FakeChatSolo"
+        component={FakeChatSolo}
+        durationInFrames={FAKE_CHAT_SOLO_DURATION}
+        fps={FAKE_CHAT_SOLO_FPS}
+        width={FAKE_CHAT_SOLO_WIDTH}
+        height={FAKE_CHAT_SOLO_HEIGHT}
       />
     </>
   );
