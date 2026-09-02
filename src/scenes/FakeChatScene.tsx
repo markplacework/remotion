@@ -17,7 +17,7 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // lines in particular.
 const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 20 },
-  { from: "them", text: "¿Qué me querés decir, amor? No me asustes 😰", timestamp: "21:12", atFrame: 110 },
+  { from: "them", text: "Hola amor", timestamp: "21:12", atFrame: 110 },
   { from: "me", text: "Me desespero de esperarte", timestamp: "21:13", atFrame: 190 },
   { from: "them", text: "Estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 265 },
   { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 345 },
