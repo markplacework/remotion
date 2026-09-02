@@ -9,8 +9,9 @@ import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 export const FAKE_CHAT_FPS = FPS;
 export const FAKE_CHAT_WIDTH = VIDEO_WIDTH;
 export const FAKE_CHAT_HEIGHT = VIDEO_HEIGHT;
-// A short hold after the last bubble settles, for the still/final frame.
-export const FAKE_CHAT_DURATION = FAKE_CHAT_LAST_FRAME + 45;
+// A longer hold after the last bubble settles, so the punchline lands
+// before the clip ends.
+export const FAKE_CHAT_DURATION = FAKE_CHAT_LAST_FRAME + 100;
 
 export const FakeChat: React.FC = () => {
   return (
