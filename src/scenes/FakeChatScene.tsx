@@ -18,47 +18,45 @@ export const SONG_DURATION_FRAMES = 1367;
 // Exact text as given, split into "Él" (outgoing/green, right side) and
 // "Ella" (incoming/gray, left side) — never rendered as labels, only as
 // bubble side + color, matching real WhatsApp's own visual language.
-// His lines are song lyrics being dropped in one at a time (that's the
-// joke — she reads them literally) — paced much slower than a normal
-// back-and-forth (~2.5-3.7s between messages) so each line actually
-// registers before the next lands, extra time after the longer/setup
-// lines in particular.
-// Exported so FakeChatSoloScene.tsx (the "only his messages" variant)
-// can reuse the exact same text/timing rather than a second hand-typed
-// copy drifting out of sync.
-// Real song now backs this clip (public/fake-chat/song.mp3) — spectral
-// energy analysis of the track showed no multi-second silent intro
-// (it's loud almost immediately, ~0.3-0.4s pickup), so message 1 lands
-// right after that instead of the old 1.5s guess. Every other gap
-// below is untouched — the whole sequence was just shifted 32f earlier
-// as one block to line up with that pickup.
+//
+// His 6 lines' atFrame values are the REAL sung timestamps, transcribed
+// word-by-word from song.mp3 with faster-whisper (small model,
+// word_timestamps=True, biased with an initial_prompt of the expected
+// lyrics — without it, the quiet opening line got skipped entirely).
+// Seconds -> frames at 30fps, rounded to the nearest frame:
+//   "Estoy tratando de decirte que..."      1.66s -> 50
+//   "Me desespero de esperarte"             7.44s -> 223
+//   "Que no salgo a buscarte porque sé..." 11.88s -> 356
+//   "Que corro el riesgo de encontrarte"   15.74s -> 472
+//   "Que me sigo mordiendo..."             20.82s -> 625
+//   "Que te sigo debiendo..."              28.78s -> 863
+// Her 3 lines aren't sung (fictional reactions) — placed within the
+// generous gap before each following "me" line, not tied to the audio.
 export const BUBBLES: DarkBubble[] = [
-  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 13 },
-  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 183 },
-  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 278 },
-  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 323 },
-  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 453 },
-  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 548 },
-  // Pulled in ~30f earlier (was 643) — everything else here unchanged.
+  { from: "me", text: "Estoy tratando de decirte que...", timestamp: "21:12", atFrame: 50 },
+  { from: "me", text: "Me desespero de esperarte", timestamp: "21:12", atFrame: 223 },
+  { from: "them", text: "Hola amor, estoy en casa 🤷‍♀️", timestamp: "21:13", atFrame: 280 },
+  { from: "me", text: "Que no salgo a buscarte porque sé...", timestamp: "21:14", atFrame: 356 },
+  { from: "me", text: "Que corro el riesgo de encontrarte", timestamp: "21:14", atFrame: 472 },
+  { from: "them", text: "Y bueno, no salgas 😭", timestamp: "21:14", atFrame: 545 },
   {
     from: "me",
     text: "Que me sigo mordiendo noche y día las uñas del rencor",
     timestamp: "21:15",
-    atFrame: 613,
+    atFrame: 625,
   },
-  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 743 },
-  // Pulled in ~30f earlier (was 838) — everything else here unchanged.
+  { from: "them", text: "¿Estás bien? 😟", timestamp: "21:15", atFrame: 745 },
   {
     from: "me",
     text: "Que te sigo debiendo todavía una canción de amor",
     timestamp: "21:16",
-    atFrame: 808,
+    atFrame: 863,
   },
 ];
 
 // The clip now ends right on his last line — no more reply from her.
 // Last bubble's entrance settles ~15-20 frames after its atFrame.
-export const FAKE_CHAT_LAST_FRAME = 808;
+export const FAKE_CHAT_LAST_FRAME = 863;
 
 export const FakeChatScene: React.FC = () => {
   return (
