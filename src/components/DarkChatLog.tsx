@@ -102,7 +102,11 @@ const HoyPill: React.FC<{ label: string }> = ({ label }) => (
   <div style={{ display: "flex", justifyContent: "center" }}>
     <div
       style={{
-        background: "rgba(255,255,255,0.08)",
+        // Real WhatsApp's dark-mode date pill is a near-solid dark chip —
+        // at 8% white opacity the busy wallpaper doodles showed through
+        // strongly enough to break up its edges into an irregular shape
+        // instead of a clean rounded rectangle.
+        background: "rgba(24, 34, 41, 0.92)",
         color: WA.timestamp,
         fontFamily: FONT_STACK,
         fontSize: 15,
