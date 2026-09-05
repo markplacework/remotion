@@ -35,6 +35,7 @@ import {
   FAKE_CHAT_SOLO_PHONE_HEIGHT,
   FAKE_CHAT_SOLO_PHONE_WIDTH,
 } from "./FakeChatSoloPhone";
+import { LyricSync, LYRIC_SYNC_DURATION, LYRIC_SYNC_FPS, LYRIC_SYNC_HEIGHT, LYRIC_SYNC_WIDTH } from "./LyricSync";
 
 export const WapiVideoComposition = () => {
   return (
@@ -86,6 +87,14 @@ export const WapiVideoComposition = () => {
         fps={FAKE_CHAT_SOLO_PHONE_FPS}
         width={FAKE_CHAT_SOLO_PHONE_WIDTH}
         height={FAKE_CHAT_SOLO_PHONE_HEIGHT}
+      />
+      <Composition
+        id="LyricSync"
+        component={LyricSync}
+        durationInFrames={LYRIC_SYNC_DURATION}
+        fps={LYRIC_SYNC_FPS}
+        width={LYRIC_SYNC_WIDTH}
+        height={LYRIC_SYNC_HEIGHT}
       />
     </>
   );
