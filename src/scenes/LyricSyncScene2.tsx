@@ -28,18 +28,21 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 //   "Será dormido" (1st)                      33.16s ->  995
 //   "Será posible" (2nd)                      35.56s -> 1067
 //   "Será dormido" (2nd)                      37.88s -> 1136
+// Timestamps advance by a minute every couple of lines rather than
+// staying frozen on one minute for the whole clip — reads more natural
+// than every bubble sharing one timestamp.
 export const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Solo sé que no sé nada de tu vida", timestamp: "20:14", atFrame: 0 },
   { from: "me", text: "Solo me colgué una vez en el pasado", timestamp: "20:14", atFrame: 107 },
-  { from: "me", text: "Presenté mis credenciales a tu risa", timestamp: "20:14", atFrame: 276 },
-  { from: "me", text: "Y me clavaste una lanza en el costado", timestamp: "20:14", atFrame: 396 },
-  { from: "me", text: "Creo que no te dejé jugar con fuego", timestamp: "20:14", atFrame: 550 },
-  { from: "me", text: "Solo nos dijimos cosas al oído", timestamp: "20:14", atFrame: 653 },
-  { from: "me", text: "Y si un día te encontrare una mañana", timestamp: "20:14", atFrame: 789 },
-  { from: "me", text: "Será posible", timestamp: "20:14", atFrame: 926 },
-  { from: "me", text: "Será dormido", timestamp: "20:14", atFrame: 995 },
-  { from: "me", text: "Será posible", timestamp: "20:14", atFrame: 1067 },
-  { from: "me", text: "Será dormido", timestamp: "20:14", atFrame: 1136 },
+  { from: "me", text: "Presenté mis credenciales a tu risa", timestamp: "20:15", atFrame: 276 },
+  { from: "me", text: "Y me clavaste una lanza en el costado", timestamp: "20:15", atFrame: 396 },
+  { from: "me", text: "Creo que no te dejé jugar con fuego", timestamp: "20:16", atFrame: 550 },
+  { from: "me", text: "Solo nos dijimos cosas al oído", timestamp: "20:16", atFrame: 653 },
+  { from: "me", text: "Y si un día te encontrare una mañana", timestamp: "20:17", atFrame: 789 },
+  { from: "me", text: "Será posible", timestamp: "20:17", atFrame: 926 },
+  { from: "me", text: "Será dormido", timestamp: "20:18", atFrame: 995 },
+  { from: "me", text: "Será posible", timestamp: "20:18", atFrame: 1067 },
+  { from: "me", text: "Será dormido", timestamp: "20:18", atFrame: 1136 },
 ];
 
 // Last bubble's entrance settles ~15-20 frames after its atFrame — the

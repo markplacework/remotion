@@ -21,17 +21,21 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 //   "Porque tanto te quise..."                     16.02s -> 481
 //   "Siempre, una marca tuya..."                   20.30s -> 609
 //   "Disculpa si te parece raro..."                24.10s -> 723
+// Timestamps advance by a minute every couple of lines rather than
+// staying frozen on one minute for the whole clip — real WhatsApp
+// conversations drift like that even over a short span, and it reads
+// more natural than every bubble sharing one timestamp.
 export const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Y por todas esas cosas que tenemos en común", timestamp: "23:41", atFrame: 0 },
   { from: "me", text: "Hace tiempo ya marchaste de acá", timestamp: "23:41", atFrame: 112 },
-  { from: "me", text: "Te cansaste de mí, yo me cansé de vos", timestamp: "23:41", atFrame: 240 },
-  { from: "me", text: "Pero cuando nos miramos sabemos que no es verdad", timestamp: "23:41", atFrame: 359 },
-  { from: "me", text: "Porque tanto te quise y tanto te quiero", timestamp: "23:41", atFrame: 481 },
-  { from: "me", text: "Siempre, una marca tuya, llevará mi corazón", timestamp: "23:41", atFrame: 609 },
+  { from: "me", text: "Te cansaste de mí, yo me cansé de vos", timestamp: "23:42", atFrame: 240 },
+  { from: "me", text: "Pero cuando nos miramos sabemos que no es verdad", timestamp: "23:42", atFrame: 359 },
+  { from: "me", text: "Porque tanto te quise y tanto te quiero", timestamp: "23:43", atFrame: 481 },
+  { from: "me", text: "Siempre, una marca tuya, llevará mi corazón", timestamp: "23:43", atFrame: 609 },
   {
     from: "me",
     text: "Disculpa si te parece raro, pero comparto la opinión que escuché en una canción",
-    timestamp: "23:41",
+    timestamp: "23:44",
     atFrame: 723,
   },
 ];
