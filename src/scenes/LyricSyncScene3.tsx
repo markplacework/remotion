@@ -29,22 +29,22 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background.png");
 // Requested effect: seconds before the clip ends, the whole
 // conversation burns away Telegram-self-destruct style, top line
 // first, sweeping down — burnStart below staggers each bubble's start
-// by 9 frames (BurningChatLog burns each one over 30 frames), so
-// bubble 0 starts at 1211 and the last one (index 11) finishes right
+// by 9 frames (BurningChatLog burns each one over 34 frames), so
+// bubble 0 starts at 1207 and the last one (index 11) finishes right
 // at 1340, ten frames before the 1350-frame (45s) cut.
 export const BUBBLES: BurningBubble[] = [
-  { from: "me", text: "Esta vez es en serio", timestamp: "01:58", atFrame: 101, burnStart: 1211 },
-  { from: "me", text: "No estoy mintiendo", timestamp: "01:58", atFrame: 176, burnStart: 1220 },
-  { from: "me", text: "Algo se prende fuego", timestamp: "01:59", atFrame: 270, burnStart: 1229 },
-  { from: "me", text: "Sé que muchas veces dije", timestamp: "01:59", atFrame: 320, burnStart: 1238 },
-  { from: "me", text: "Que el lobo venía, pero esta vez", timestamp: "02:00", atFrame: 416, burnStart: 1247 },
-  { from: "me", text: "El lobo está acá", timestamp: "02:00", atFrame: 508, burnStart: 1256 },
-  { from: "me", text: "Se prende fuego mi pelo", timestamp: "02:01", atFrame: 567, burnStart: 1265 },
-  { from: "me", text: "Mi piano, mis discos", timestamp: "02:01", atFrame: 658, burnStart: 1274 },
-  { from: "me", text: "La ropa y el perro", timestamp: "02:02", atFrame: 725, burnStart: 1283 },
-  { from: "me", text: "Puede ser que otra vez no sea cierto", timestamp: "02:02", atFrame: 796, burnStart: 1292 },
-  { from: "me", text: "Pero siento cómo el fuego", timestamp: "02:03", atFrame: 927, burnStart: 1301 },
-  { from: "me", text: "Me quema por dentro", timestamp: "02:03", atFrame: 986, burnStart: 1310 },
+  { from: "me", text: "Esta vez es en serio", timestamp: "01:58", atFrame: 101, burnStart: 1207 },
+  { from: "me", text: "No estoy mintiendo", timestamp: "01:58", atFrame: 176, burnStart: 1216 },
+  { from: "me", text: "Algo se prende fuego", timestamp: "01:59", atFrame: 270, burnStart: 1225 },
+  { from: "me", text: "Sé que muchas veces dije", timestamp: "01:59", atFrame: 320, burnStart: 1234 },
+  { from: "me", text: "Que el lobo venía, pero esta vez", timestamp: "02:00", atFrame: 416, burnStart: 1243 },
+  { from: "me", text: "El lobo está acá", timestamp: "02:00", atFrame: 508, burnStart: 1252 },
+  { from: "me", text: "Se prende fuego mi pelo", timestamp: "02:01", atFrame: 567, burnStart: 1261 },
+  { from: "me", text: "Mi piano, mis discos", timestamp: "02:01", atFrame: 658, burnStart: 1270 },
+  { from: "me", text: "La ropa y el perro", timestamp: "02:02", atFrame: 725, burnStart: 1279 },
+  { from: "me", text: "Puede ser que otra vez no sea cierto", timestamp: "02:02", atFrame: 796, burnStart: 1288 },
+  { from: "me", text: "Pero siento cómo el fuego", timestamp: "02:03", atFrame: 927, burnStart: 1297 },
+  { from: "me", text: "Me quema por dentro", timestamp: "02:03", atFrame: 986, burnStart: 1306 },
 ];
 
 export const LyricSyncScene3: React.FC = () => {
