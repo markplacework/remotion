@@ -54,7 +54,10 @@ export function renderText(text: string) {
 
 export type DarkBubble = { from: "them" | "me"; text: string; timestamp: string; atFrame: number };
 
-const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: number }> = ({
+// Exported so AutoScrollChatLog.tsx (the long-conversation, auto-
+// scrolling variant) can reuse the exact same bubble rendering/entrance
+// spring instead of duplicating it.
+export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: number }> = ({
   from,
   text,
   timestamp,
