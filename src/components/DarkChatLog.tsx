@@ -1,11 +1,14 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
-const FONT_STACK =
+// Exported so BurningChatLog.tsx (the self-destruct/burn variant) can
+// reuse the exact same visual building blocks instead of duplicating
+// them — only the export keywords are new here, behavior is unchanged.
+export const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
 // Dark-mode WhatsApp's own real palette — shared by every scene that
 // composites a conversation onto a real photographed phone mockup.
-const WA = {
+export const WA = {
   bubbleOut: "#005c4b",
   bubbleIn: "#202c33",
   text: "#e9edef",
@@ -14,7 +17,7 @@ const WA = {
   link: "#53bdeb",
 };
 
-function IconReadTicks() {
+export function IconReadTicks() {
   return (
     <svg width="16" height="11" viewBox="0 0 18 13" fill="none">
       <path d="M1 6.8l3.6 3.6L11 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
@@ -27,7 +30,7 @@ function IconReadTicks() {
  * link blue, and single line breaks as-is — parse just enough of that
  * real markdown to render message text faithfully (the real captured
  * order message uses *bold*, and the Wapi link is its own message). */
-function renderText(text: string) {
+export function renderText(text: string) {
   return text.split("\n").map((line, i) => {
     const parts = line.split(/(\*[^*]+\*|https?:\/\/\S+)/g).filter(Boolean);
     return (
@@ -98,7 +101,7 @@ const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: numbe
   );
 };
 
-const HoyPill: React.FC<{ label: string }> = ({ label }) => (
+export const HoyPill: React.FC<{ label: string }> = ({ label }) => (
   <div style={{ display: "flex", justifyContent: "center" }}>
     <div
       style={{
