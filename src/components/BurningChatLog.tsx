@@ -2,13 +2,21 @@ import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { FONT_STACK, WA, IconReadTicks, renderText, HoyPill, type DarkBubble } from "./DarkChatLog";
 
 // Self-destruct/"burn" variant of DarkChatLog — same exact bubble look
-// (reuses DarkChatLog's own color/font/text-rendering building blocks),
-// but each bubble additionally disappears via a ragged, glowing burn
-// front that eats it from the bottom up, in a top-to-bottom cascade
-// across the conversation. Built for LyricSyncScene3 specifically
-// (Telegram-style self-destruct look, requested to match the song's
-// own "se prende fuego" lyrics) rather than added as an option on the
-// shared DarkChatLog, so the normal chat scenes can't regress from it.
+// (reuses DarkChatLog's own color/font/text pieces rather than
+// duplicating them), but each bubble additionally disappears via an
+// actual animated flame — a flickering, jagged fire licking up from a
+// ragged burnt edge, plus rising embers — eating it from the bottom
+// up, cascading top-to-bottom across the conversation. Built for
+// LyricSyncScene3 specifically (Telegram-style self-destruct look, to
+// match the song's own "se prende fuego" lyrics) rather than added as
+// an option on the shared DarkChatLog, so the normal chat scenes can't
+// regress from it.
+//
+// v2: the first version was just a blurred gradient bar riding a noise
+// mask — reads as "wipe with an orange smear," not fire. This version
+// draws an actual flame layer (per-column flickering flame tongues,
+// hot-core-to-transparent-tip gradient, animated frame to frame) plus
+// drifting ember particles on top of a jaggier burn mask.
 
 export type BurningBubble = DarkBubble & {
   /** Frame this bubble starts burning away. Fully visible (normal
@@ -17,21 +25,43 @@ export type BurningBubble = DarkBubble & {
   burnStart: number;
 };
 
-const BURN_DURATION = 24;
-// Mask is rendered at low resolution on purpose — scaled up via CSS it
-// produces the soft, organic (not pixel-crisp) burnt edge a paper/cloth
-// burn actually has, rather than a clean digital wipe.
-const MASK_W = 48;
-const MASK_H = 80;
+const BURN_DURATION = 30;
+// Mask/flame canvases are rendered at low resolution on purpose —
+// scaled up via CSS it produces the soft, organic (not pixel-crisp)
+// burnt edge a paper/cloth burn actually has, rather than a clean
+// digital wipe.
+const MASK_W = 64;
+const MASK_H = 96;
+const BAND = 0.045; // soft-edge width, in normalized height units
+const NOISE_AMP = 0.16;
+// How far progress must overshoot 1 for every column's mask to fully
+// clear — the soft-edge band plus the worst-case noise trough — so no
+// permanent fleck is left wherever the boundary lands right on (or
+// just past) the canvas edge.
+const REACH = 1 + NOISE_AMP + 2 * BAND;
 
-// Deterministic (seeded) pseudo-noise — same bubble+column always
-// produces the same jitter, so the mask is stable frame to frame
-// instead of flickering, and reproducible across re-renders.
-function noise(xNorm: number, seed: number) {
+// Deterministic (seeded) pseudo-noise, 4 octaves — same bubble+column
+// always produces the same jitter, so the mask is stable frame to
+// frame instead of flickering randomly, and reproducible across
+// re-renders. The extra high-frequency octave vs. a plain 3-octave
+// noise gives the edge a charred, torn-paper irregularity instead of
+// a smooth wave.
+function edgeNoise(xNorm: number, seed: number) {
   return (
-    Math.sin(xNorm * Math.PI * 2 * 2 + seed * 13.1) * 0.5 +
+    Math.sin(xNorm * Math.PI * 2 * 2 + seed * 13.1) * 0.45 +
     Math.sin(xNorm * Math.PI * 2 * 5 + seed * 7.7) * 0.3 +
-    Math.sin(xNorm * Math.PI * 2 * 11 + seed * 3.3) * 0.2
+    Math.sin(xNorm * Math.PI * 2 * 11 + seed * 3.3) * 0.15 +
+    Math.sin(xNorm * Math.PI * 2 * 23 + seed * 19.7) * 0.1
+  );
+}
+
+// Fast time-varying flicker (independent of the static edge jaggedness
+// above) that animates the flame's height/intensity frame to frame.
+function flicker(xNorm: number, seed: number, frame: number) {
+  return (
+    Math.sin(frame * 0.6 + xNorm * 37 + seed * 5.1) * 0.5 +
+    Math.sin(frame * 1.3 + xNorm * 13 + seed * 2.2) * 0.3 +
+    Math.sin(frame * 0.22 + xNorm * 71 + seed * 8.8) * 0.2
   );
 }
 
@@ -40,46 +70,120 @@ function smoothstep(edge0: number, edge1: number, x: number) {
   return t * t * (3 - 2 * t);
 }
 
-/** Builds a small white-on-transparent PNG data URL: opaque where the
- * bubble is still there, transparent where the fire has already eaten
- * through, with a jagged (noise-jittered) boundary and a soft
- * antialiased transition band instead of a hard edge. */
+/** Normalized (0 = top, 1 = bottom) y above which the column is still
+ * unburnt, for a given column and burn progress. Can run outside
+ * [0, 1] on purpose (see REACH) so the caller's soft-edge math clears
+ * fully at the extremes instead of leaving a residual sliver. */
+function burntBoundary(xNorm: number, seed: number, progress: number) {
+  const burntFraction = Math.min(REACH, Math.max(0, progress * REACH + edgeNoise(xNorm, seed) * NOISE_AMP));
+  return 1 - burntFraction;
+}
+
+/** Small white-on-transparent PNG: opaque where the bubble is still
+ * there, transparent where the fire has already eaten through, with a
+ * jagged boundary and a soft antialiased transition band. */
 function buildBurnMaskDataUrl(seed: number, progress: number): string {
   const canvas = document.createElement("canvas");
   canvas.width = MASK_W;
   canvas.height = MASK_H;
   const ctx = canvas.getContext("2d")!;
   const img = ctx.createImageData(MASK_W, MASK_H);
-  const band = 0.05; // soft-edge width, in normalized height units
-  const noiseAmp = 0.14;
-  // Push progress===1 past the top edge — by the soft-edge band AND
-  // the worst-case noise trough — so the transition clears the canvas
-  // entirely for every column instead of leaving tiny unburnt flecks
-  // wherever the noise happened to dip (the transition band straddles
-  // the boundary symmetrically, so a boundary landing exactly on or
-  // just past the edge only gets partially erased).
-  const reach = 1 + noiseAmp + 2 * band;
 
   for (let x = 0; x < MASK_W; x++) {
     const xNorm = x / (MASK_W - 1);
-    const burntFraction = Math.min(reach, Math.max(0, progress * reach + noise(xNorm, seed) * noiseAmp));
-    // Boundary y (normalized, 0 = top, 1 = bottom) above which pixels
-    // are still visible — the burn eats upward from the bottom.
-    const boundary = 1 - burntFraction;
+    const boundary = burntBoundary(xNorm, seed, progress);
     for (let y = 0; y < MASK_H; y++) {
       const yNorm = y / (MASK_H - 1);
-      // 1 = fully visible (above the boundary), 0 = fully burnt away.
-      const visible = 1 - smoothstep(boundary - band, boundary + band, yNorm);
-      const alpha = Math.round(visible * 255);
+      const visible = 1 - smoothstep(boundary - BAND, boundary + BAND, yNorm);
       const i = (y * MASK_W + x) * 4;
       img.data[i] = 255;
       img.data[i + 1] = 255;
       img.data[i + 2] = 255;
-      img.data[i + 3] = alpha;
+      img.data[i + 3] = Math.round(visible * 255);
     }
   }
   ctx.putImageData(img, 0, 0);
   return canvas.toDataURL();
+}
+
+/** Small flame-colored PNG (transparent background, additive-blended
+ * on top of the masked bubble): a flickering, hot-core-to-transparent
+ * flame tongue riding right along the burnt edge of every column. */
+function buildFlameDataUrl(seed: number, progress: number, frame: number): string | null {
+  if (progress <= 0 || progress >= 1) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = MASK_W;
+  canvas.height = MASK_H;
+  const ctx = canvas.getContext("2d")!;
+  ctx.globalCompositeOperation = "lighter";
+
+  const baseHeight = MASK_H * 0.22;
+  for (let x = 0; x < MASK_W; x++) {
+    const xNorm = x / (MASK_W - 1);
+    const boundary = burntBoundary(xNorm, seed, progress);
+    if (boundary >= 1.05 || boundary <= -0.05) continue; // fully unburnt or fully gone: no flame to draw
+    const boundaryY = boundary * (MASK_H - 1);
+    const f = 0.55 + 0.45 * flicker(xNorm, seed, frame); // ~[-0.35, 1]
+    const flameH = Math.max(2, baseHeight * Math.max(0.15, f));
+    const topY = boundaryY - flameH;
+
+    const gradient = ctx.createLinearGradient(0, boundaryY, 0, topY);
+    gradient.addColorStop(0, "rgba(255,244,214,0.95)");
+    gradient.addColorStop(0.35, "rgba(255,163,44,0.9)");
+    gradient.addColorStop(0.7, "rgba(255,80,20,0.55)");
+    gradient.addColorStop(1, "rgba(255,60,0,0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x - 0.5, topY, 2, boundaryY - topY);
+  }
+  ctx.globalCompositeOperation = "source-over";
+  return canvas.toDataURL();
+}
+
+const EMBER_COUNT = 7;
+
+/** Small drifting spark divs — spawned at even intervals across the
+ * burn, each rising from that moment's burn line and fading out — laid
+ * on top of the flame layer for a bit of floating-ash production
+ * value. Deterministic per (seed, k, progress), no per-frame RNG. */
+function EmberParticles({ seed, progress }: { seed: number; progress: number }) {
+  if (progress <= 0 || progress >= 1) return null;
+  const embers = [];
+  for (let k = 0; k < EMBER_COUNT; k++) {
+    const birth = k / EMBER_COUNT;
+    const life = 0.4; // fraction of total progress span this ember lives for
+    const age = progress - birth;
+    if (age < 0 || age > life) continue;
+    const t = age / life; // 0 -> 1 over this ember's life
+    const xNorm = (k + 0.5) / EMBER_COUNT + 0.06 * Math.sin(seed * 4.1 + k * 2.7);
+    // Spawn right at that moment's burn line (bubble-space, 0 = top,
+    // 1 = bottom), then drift up and sideways in plain pixels —
+    // translateY is free to push the dot above the bubble's own box
+    // since nothing here clips overflow.
+    const boundary = Math.min(1, Math.max(0, burntBoundary(xNorm, seed, birth)));
+    const driftX = Math.sin(seed * 2.3 + k * 5.5 + t * 3) * 6;
+    const riseY = t * 34;
+    const opacity = Math.sin(t * Math.PI); // fades in then out
+    const size = 2.5 + 2 * Math.abs(Math.sin(seed * 6.1 + k));
+    embers.push(
+      <div
+        key={k}
+        style={{
+          position: "absolute",
+          left: `${xNorm * 100}%`,
+          top: `${boundary * 100}%`,
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          background: "rgba(255,214,140,0.95)",
+          boxShadow: "0 0 6px 1px rgba(255,140,40,0.85)",
+          opacity,
+          transform: `translate(${driftX}px, ${-riseY}px)`,
+          pointerEvents: "none",
+        }}
+      />,
+    );
+  }
+  return <>{embers}</>;
 }
 
 const BurningChatBubble: React.FC<
@@ -97,14 +201,7 @@ const BurningChatBubble: React.FC<
   const burnProgress = Math.min(1, Math.max(0, (frame - burnStart) / BURN_DURATION));
   const burning = burnProgress > 0;
   const maskUrl = burning ? buildBurnMaskDataUrl(seed, burnProgress) : null;
-  // The glow band's own vertical position tracks the average burn
-  // front (bottom -> top) so it rides right along the ragged edge.
-  const glowBottomPercent = burnProgress * 100;
-  // sin(progress * pi) rises from 0, peaks mid-burn, and returns to
-  // exactly 0 at progress===1 — capping the input (as an earlier
-  // version did) left a residual glow frozen in place forever after
-  // the bubble had fully burnt away.
-  const glowOpacity = burning ? Math.sin(burnProgress * Math.PI) : 0;
+  const flameUrl = burning ? buildFlameDataUrl(seed, burnProgress, frame) : null;
 
   return (
     <div
@@ -140,23 +237,23 @@ const BurningChatBubble: React.FC<
             {outgoing && <IconReadTicks />}
           </div>
         </div>
-        {burning && (
+        {flameUrl && (
           <div
             style={{
               position: "absolute",
-              left: -6,
-              right: -6,
-              bottom: `${glowBottomPercent}%`,
-              height: 22,
-              transform: "translateY(50%)",
-              opacity: glowOpacity,
-              background:
-                "linear-gradient(to top, rgba(255,94,0,0.95), rgba(255,170,40,0.65) 45%, rgba(255,170,40,0) 100%)",
-              filter: "blur(3px)",
+              inset: 0,
+              backgroundImage: `url(${flameUrl})`,
+              backgroundSize: "100% 100%",
+              backgroundRepeat: "no-repeat",
               mixBlendMode: "screen",
               pointerEvents: "none",
             }}
           />
+        )}
+        {burning && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <EmberParticles seed={seed} progress={burnProgress} />
+          </div>
         )}
       </div>
     </div>
