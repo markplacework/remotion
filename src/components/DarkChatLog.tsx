@@ -100,7 +100,11 @@ export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize
         style={{
           background: outgoing ? WA.bubbleOut : WA.bubbleIn,
           color: WA.text,
-          borderRadius: outgoing ? "14px 3px 14px 14px" : "3px 14px 14px 14px",
+          // Real WhatsApp's "tail" corner is a genuine sharp vertex, not
+          // just a smaller radius — confirmed by zooming into a real
+          // screenshot corner: the other three corners are all a
+          // matching wide round, only this one comes to a point.
+          borderRadius: outgoing ? "14px 0px 14px 14px" : "0px 14px 14px 14px",
           padding: "9px 12px 8px",
           maxWidth: "82%",
         }}

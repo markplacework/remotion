@@ -280,7 +280,9 @@ const BurningChatBubble: React.FC<
           style={{
             background: outgoing ? WA.bubbleOut : WA.bubbleIn,
             color: WA.text,
-            borderRadius: outgoing ? "14px 3px 14px 14px" : "3px 14px 14px 14px",
+            // Matches DarkChatLog's own corner fix — real WhatsApp's
+            // "tail" corner is a sharp vertex, not a smaller radius.
+            borderRadius: outgoing ? "14px 0px 14px 14px" : "0px 14px 14px 14px",
             padding: "9px 12px 8px",
             WebkitMaskImage: maskUrl ? `url(${maskUrl})` : undefined,
             maskImage: maskUrl ? `url(${maskUrl})` : undefined,
