@@ -1,5 +1,5 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { FONT_STACK, WA, IconReadTicks, renderText, HoyPill, BubbleTail, type DarkBubble } from "./DarkChatLog";
+import { FONT_STACK, WA, IconReadTicks, renderText, HoyPill, type DarkBubble } from "./DarkChatLog";
 
 // Self-destruct/"burn" variant of DarkChatLog — same exact bubble look
 // (reuses DarkChatLog's own color/font/text pieces rather than
@@ -280,9 +280,7 @@ const BurningChatBubble: React.FC<
           style={{
             background: outgoing ? WA.bubbleOut : WA.bubbleIn,
             color: WA.text,
-            // Matches DarkChatLog's own corner fix — real WhatsApp's
-            // "tail" corner is a sharp vertex, not a smaller radius.
-            borderRadius: outgoing ? "14px 0px 14px 14px" : "0px 14px 14px 14px",
+            borderRadius: outgoing ? "14px 3px 14px 14px" : "3px 14px 14px 14px",
             padding: "9px 12px 8px",
             WebkitMaskImage: maskUrl ? `url(${maskUrl})` : undefined,
             maskImage: maskUrl ? `url(${maskUrl})` : undefined,
@@ -292,7 +290,6 @@ const BurningChatBubble: React.FC<
             maskRepeat: "no-repeat",
           }}
         >
-          <BubbleTail size={fontSize * 0.73} color={outgoing ? WA.bubbleOut : WA.bubbleIn} flip={!outgoing} />
           <div style={{ fontFamily: FONT_STACK, fontSize, lineHeight: 1.32 }}>{renderText(text)}</div>
           <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 2 }}>
             <span style={{ fontFamily: FONT_STACK, fontSize: fontSize * 0.68, color: WA.timestamp }}>

@@ -24,35 +24,6 @@ export const WA = {
 // read-tick relative to its timestamp text (real: check height roughly
 // equal to the timestamp digits' height; ours: closer to 0.7x) — read
 // as "chiquito" against a timestamp scaled up with everything else.
-// The bubble "tail" isn't a corner radius at all — traced it pixel by
-// pixel off a real screenshot: the top edge stays flat, then the edge
-// bulges outward past the bubble's own side (about 18px out, on a
-// 1080-wide frame) a few pixels below the top, before curving back in
-// to rejoin the bubble's normal edge roughly 27px down. A border-radius
-// can only cut INTO a rectangle, never bulge past it, so this is drawn
-// as its own small filled shape glued to the corner instead. `size` is
-// the tail's height; width follows a fixed 11:16 proportion match to
-// what was measured. `flip` mirrors it for the opposite corner
-// (incoming bubbles' tail is top-left, not top-right).
-export function BubbleTail({ size, color, flip }: { size: number; color: string; flip?: boolean }) {
-  const width = (size * 11) / 16;
-  return (
-    <svg
-      width={width}
-      height={size}
-      viewBox="0 0 11 16"
-      style={{
-        position: "absolute",
-        top: 0,
-        [flip ? "left" : "right"]: -width + 0.5,
-        transform: flip ? "scaleX(-1)" : undefined,
-      }}
-    >
-      <path d="M0,0 C7,0 11,2 11,5 C11,9 6,13 0,16 Z" fill={color} />
-    </svg>
-  );
-}
-
 export function IconReadTicks({ size = 11 }: { size?: number }) {
   return (
     <svg width={(size * 18) / 13} height={size} viewBox="0 0 18 13" fill="none">
@@ -127,17 +98,13 @@ export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize
     >
       <div
         style={{
-          position: "relative",
           background: outgoing ? WA.bubbleOut : WA.bubbleIn,
           color: WA.text,
-          // The tail corner stays sharp (flush with the tail shape
-          // glued on below) — the other three keep the normal round.
-          borderRadius: outgoing ? "14px 0px 14px 14px" : "0px 14px 14px 14px",
+          borderRadius: outgoing ? "14px 3px 14px 14px" : "3px 14px 14px 14px",
           padding: "9px 12px 8px",
           maxWidth: "82%",
         }}
       >
-        <BubbleTail size={fontSize * 0.73} color={outgoing ? WA.bubbleOut : WA.bubbleIn} flip={!outgoing} />
         <div style={{ fontFamily: FONT_STACK, fontSize, lineHeight: 1.32 }}>{renderText(text)}</div>
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 6, marginTop: 2 }}>
           <span style={{ fontFamily: FONT_STACK, fontSize: timestampFontSize, color: WA.timestamp }}>{timestamp}</span>
