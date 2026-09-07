@@ -1,5 +1,5 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { FONT_STACK, WA, IconReadTicks, renderText, HoyPill, type DarkBubble } from "./DarkChatLog";
+import { FONT_STACK, WA, IconReadTicks, renderText, HoyPill, BubbleTail, type DarkBubble } from "./DarkChatLog";
 
 // Self-destruct/"burn" variant of DarkChatLog — same exact bubble look
 // (reuses DarkChatLog's own color/font/text pieces rather than
@@ -292,6 +292,7 @@ const BurningChatBubble: React.FC<
             maskRepeat: "no-repeat",
           }}
         >
+          <BubbleTail size={fontSize * 0.73} color={outgoing ? WA.bubbleOut : WA.bubbleIn} flip={!outgoing} />
           <div style={{ fontFamily: FONT_STACK, fontSize, lineHeight: 1.32 }}>{renderText(text)}</div>
           <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 2 }}>
             <span style={{ fontFamily: FONT_STACK, fontSize: fontSize * 0.68, color: WA.timestamp }}>
