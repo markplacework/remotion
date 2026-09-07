@@ -82,7 +82,11 @@ const CANVAS_BOTTOM_MARGIN = 320;
 // conversation into the middle of the screen or requiring the viewer
 // to hide the UI to read it.
 const CANVAS_LEFT_MARGIN = 40;
-const SAFE_RIGHT_EDGE = 896; // ~83% of the 1080-wide frame
+// Re-measured off a screenshot of this clip actually posted: bubbles'
+// right edge sat at ~81% of the frame width, the nearest icon (heart/
+// sound-disc logo) starts at ~87-88% — room to push a bit further
+// right and still clear it with a small buffer.
+const SAFE_RIGHT_EDGE = 920; // ~85% of the 1080-wide frame
 const SCALE = 1.6;
 // Local (pre-scale) px width of the chat block — the wrapping scale
 // maps this to the margins above.
