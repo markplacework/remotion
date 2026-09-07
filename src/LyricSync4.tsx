@@ -10,8 +10,8 @@ export const LYRIC_SYNC_4_FPS = FPS;
 export const LYRIC_SYNC_4_WIDTH = VIDEO_WIDTH;
 export const LYRIC_SYNC_4_HEIGHT = VIDEO_HEIGHT;
 // Natural-length pacing (ends after the last line, no fixed total
-// requested) — a 3s hold plus 5s more added on request.
-export const LYRIC_SYNC_4_DURATION = LYRIC_SYNC_4_LAST_FRAME + 8 * FPS;
+// requested) — a 3s hold, +5s, then +2s more added on request.
+export const LYRIC_SYNC_4_DURATION = LYRIC_SYNC_4_LAST_FRAME + 10 * FPS;
 
 export const LyricSync4: React.FC = () => {
   return (

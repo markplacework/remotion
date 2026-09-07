@@ -61,9 +61,19 @@ export const BUBBLES: DarkBubble[] = [
 // readable before the clip ends.
 export const LYRIC_SYNC_4_LAST_FRAME = 1753;
 
+// Centering the chat block (the original layout) put the first
+// messages right up against the very top edge of the frame — on
+// TikTok that's where the top status/UI chrome sits, and it read as
+// starting "too high" visually. Pinned to a fixed top margin instead,
+// with a bottom margin roomy enough to clear TikTok's own
+// caption/username/engagement-button band at the bottom, leaving the
+// conversation itself in the safe middle of the frame.
+const CANVAS_TOP_MARGIN = 190;
+const CANVAS_BOTTOM_MARGIN = 320;
 // Local (pre-scale) px height of the visible chat viewport — the
-// wrapping scale(1.6) maps this to most of the 1920-tall final frame.
-const VIEWPORT_HEIGHT = 1150;
+// wrapping scale(1.6) maps this to the margins above, out of the
+// 1920-tall final frame.
+const VIEWPORT_HEIGHT = Math.round((1920 - CANVAS_TOP_MARGIN - CANVAS_BOTTOM_MARGIN) / 1.6);
 
 export const LyricSyncScene4: React.FC = () => {
   return (
@@ -72,8 +82,8 @@ export const LyricSyncScene4: React.FC = () => {
         src={BACKGROUND_SRC}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
       />
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 620, transform: "scale(1.6)" }}>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", paddingTop: CANVAS_TOP_MARGIN }}>
+        <div style={{ width: 620, transform: "scale(1.6)", transformOrigin: "top center" }}>
           <AutoScrollChatLog bubbles={BUBBLES} viewportHeight={VIEWPORT_HEIGHT} dateLabel="Hoy" />
         </div>
       </AbsoluteFill>
