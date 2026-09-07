@@ -17,9 +17,16 @@ export const WA = {
   link: "#53bdeb",
 };
 
-export function IconReadTicks() {
+// `size` is the icon's target height — width follows the native
+// viewBox aspect (18:13) so it scales without distorting the check
+// shape. Previously a fixed 16x11 regardless of the bubble's own
+// fontSize, which measured about half the size of the real WhatsApp
+// read-tick relative to its timestamp text (real: check height roughly
+// equal to the timestamp digits' height; ours: closer to 0.7x) — read
+// as "chiquito" against a timestamp scaled up with everything else.
+export function IconReadTicks({ size = 11 }: { size?: number }) {
   return (
-    <svg width="16" height="11" viewBox="0 0 18 13" fill="none">
+    <svg width={(size * 18) / 13} height={size} viewBox="0 0 18 13" fill="none">
       <path d="M1 6.8l3.6 3.6L11 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
       <path d="M6.3 6.8l3.6 3.6L17 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -73,6 +80,10 @@ export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize
   const scale = interpolate(enter, [0, 1], [0.85, 1]);
   const translateY = interpolate(enter, [0, 1], [14, 0]);
   const outgoing = from === "me";
+  // Real WhatsApp's read-tick reads at roughly the same height as the
+  // timestamp digits next to it — matches a real screenshot measured
+  // directly (check height ~0.88x the digit height).
+  const timestampFontSize = fontSize * 0.68;
 
   return (
     <div
@@ -95,9 +106,9 @@ export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize
         }}
       >
         <div style={{ fontFamily: FONT_STACK, fontSize, lineHeight: 1.32 }}>{renderText(text)}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 2 }}>
-          <span style={{ fontFamily: FONT_STACK, fontSize: fontSize * 0.68, color: WA.timestamp }}>{timestamp}</span>
-          {outgoing && <IconReadTicks />}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 6, marginTop: 2 }}>
+          <span style={{ fontFamily: FONT_STACK, fontSize: timestampFontSize, color: WA.timestamp }}>{timestamp}</span>
+          {outgoing && <IconReadTicks size={timestampFontSize} />}
         </div>
       </div>
     </div>

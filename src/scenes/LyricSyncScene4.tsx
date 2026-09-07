@@ -70,10 +70,27 @@ export const LYRIC_SYNC_4_LAST_FRAME = 1753;
 // conversation itself in the safe middle of the frame.
 const CANVAS_TOP_MARGIN = 190;
 const CANVAS_BOTTOM_MARGIN = 320;
+
+// TikTok's own right-side action column (like/comment/save + the
+// sound disc) measured directly off a screenshot of this clip already
+// posted: it sits roughly in the rightmost 15% of the frame, from
+// about the vertical middle down to near the bottom — and it was
+// visibly overlapping the outgoing (right-aligned) bubbles' text.
+// Rather than centering the chat block, it's pinned to a fixed left
+// margin and narrowed just enough that no bubble's right edge crosses
+// this line — clearing TikTok's own UI without pushing the
+// conversation into the middle of the screen or requiring the viewer
+// to hide the UI to read it.
+const CANVAS_LEFT_MARGIN = 40;
+const SAFE_RIGHT_EDGE = 896; // ~83% of the 1080-wide frame
+const SCALE = 1.6;
+// Local (pre-scale) px width of the chat block — the wrapping scale
+// maps this to the margins above.
+const CONTENT_WIDTH = Math.round((SAFE_RIGHT_EDGE - CANVAS_LEFT_MARGIN) / SCALE);
 // Local (pre-scale) px height of the visible chat viewport — the
-// wrapping scale(1.6) maps this to the margins above, out of the
+// wrapping scale maps this to the top/bottom margins above, out of the
 // 1920-tall final frame.
-const VIEWPORT_HEIGHT = Math.round((1920 - CANVAS_TOP_MARGIN - CANVAS_BOTTOM_MARGIN) / 1.6);
+const VIEWPORT_HEIGHT = Math.round((1920 - CANVAS_TOP_MARGIN - CANVAS_BOTTOM_MARGIN) / SCALE);
 
 export const LyricSyncScene4: React.FC = () => {
   return (
@@ -82,9 +99,21 @@ export const LyricSyncScene4: React.FC = () => {
         src={BACKGROUND_SRC}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
       />
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", paddingTop: CANVAS_TOP_MARGIN }}>
-        <div style={{ width: 620, transform: "scale(1.6)", transformOrigin: "top center" }}>
-          <AutoScrollChatLog bubbles={BUBBLES} viewportHeight={VIEWPORT_HEIGHT} dateLabel="Hoy" />
+      <AbsoluteFill
+        style={{
+          alignItems: "flex-start",
+          justifyContent: "flex-start",
+          paddingTop: CANVAS_TOP_MARGIN,
+          paddingLeft: CANVAS_LEFT_MARGIN,
+        }}
+      >
+        <div style={{ transform: `scale(${SCALE})`, transformOrigin: "top left" }}>
+          <AutoScrollChatLog
+            bubbles={BUBBLES}
+            viewportHeight={VIEWPORT_HEIGHT}
+            width={CONTENT_WIDTH}
+            dateLabel="Hoy"
+          />
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

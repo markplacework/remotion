@@ -21,9 +21,11 @@ export const AutoScrollChatLog: React.FC<{
    * the scene's own wrapping scale() determines how that maps to the
    * final frame. */
   viewportHeight: number;
+  /** Local (pre-scale) pixel width of the chat viewport. */
+  width?: number;
   compact?: boolean;
   dateLabel?: string;
-}> = ({ bubbles, viewportHeight, compact = false, dateLabel = "HOY" }) => {
+}> = ({ bubbles, viewportHeight, width = 620, compact = false, dateLabel = "HOY" }) => {
   const fontSize = compact ? 18 : 22;
   const senderChangeGap = compact ? 18 : 26;
   const sameSenderGap = compact ? 10 : 14;
@@ -65,7 +67,7 @@ export const AutoScrollChatLog: React.FC<{
   const scrollY = interpolate(Math.min(ease, 1), [0, 1], [prevScroll, nextScroll]);
 
   return (
-    <div style={{ width: 620, height: viewportHeight, overflow: "hidden", position: "relative" }}>
+    <div style={{ width, height: viewportHeight, overflow: "hidden", position: "relative" }}>
       <div ref={contentRef} style={{ padding: "24px 12px 0", transform: `translateY(${-scrollY}px)` }}>
         <div style={{ marginBottom: hoyGap }}>
           <HoyPill label={dateLabel} />
