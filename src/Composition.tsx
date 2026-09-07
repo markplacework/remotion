@@ -57,6 +57,13 @@ import {
   LYRIC_SYNC_4_HEIGHT,
   LYRIC_SYNC_4_WIDTH,
 } from "./LyricSync4";
+import {
+  LyricSync5,
+  LYRIC_SYNC_5_DURATION,
+  LYRIC_SYNC_5_FPS,
+  LYRIC_SYNC_5_HEIGHT,
+  LYRIC_SYNC_5_WIDTH,
+} from "./LyricSync5";
 
 export const WapiVideoComposition = () => {
   return (
@@ -140,6 +147,14 @@ export const WapiVideoComposition = () => {
         fps={LYRIC_SYNC_4_FPS}
         width={LYRIC_SYNC_4_WIDTH}
         height={LYRIC_SYNC_4_HEIGHT}
+      />
+      <Composition
+        id="LyricSync5"
+        component={LyricSync5}
+        durationInFrames={LYRIC_SYNC_5_DURATION}
+        fps={LYRIC_SYNC_5_FPS}
+        width={LYRIC_SYNC_5_WIDTH}
+        height={LYRIC_SYNC_5_HEIGHT}
       />
     </>
   );
