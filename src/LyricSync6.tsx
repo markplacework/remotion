@@ -9,9 +9,9 @@ import { VIDEO_WIDTH, VIDEO_HEIGHT, FPS } from "./theme";
 export const LYRIC_SYNC_6_FPS = FPS;
 export const LYRIC_SYNC_6_WIDTH = VIDEO_WIDTH;
 export const LYRIC_SYNC_6_HEIGHT = VIDEO_HEIGHT;
-// No fixed duration requested — natural pacing, ends 3s after the
-// last line.
-export const LYRIC_SYNC_6_DURATION = LYRIC_SYNC_6_LAST_FRAME + 3 * FPS;
+// Natural-length pacing (ends after the last line) — a 3s hold plus
+// 5s more added on request.
+export const LYRIC_SYNC_6_DURATION = LYRIC_SYNC_6_LAST_FRAME + 8 * FPS;
 
 export const LyricSync6: React.FC = () => {
   return (
