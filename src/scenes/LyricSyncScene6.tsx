@@ -46,13 +46,18 @@ export const BUBBLES: DarkBubble[] = [
 // readable before the clip ends.
 export const LYRIC_SYNC_6_LAST_FRAME = 834;
 
-// Same TikTok-safe margins tuned on LyricSyncScene4/5: pinned top/left
-// instead of centered so lines don't start flush against the top
-// edge, and the right edge stays clear of TikTok's own action column.
+// Pinned top/left instead of centered so lines don't start flush
+// against the top edge (top/bottom margins are the TikTok-safe values
+// tuned on LyricSyncScene4/5 — unchanged).
 const CANVAS_TOP_MARGIN = 190;
 const CANVAS_BOTTOM_MARGIN = 320;
 const CANVAS_LEFT_MARGIN = 40;
-const SAFE_RIGHT_EDGE = 920; // ~85% of the 1080-wide frame
+// Pushed further right than the TikTok-safe edge on request, for a
+// more realistic full-bleed look — the previous safe value (920,
+// ~85% of frame width, clear of TikTok's own action column) is kept
+// here as a comment in case this needs to be reverted.
+// const SAFE_RIGHT_EDGE = 920; // TikTok-safe: clear of the action column
+const SAFE_RIGHT_EDGE = 980; // ~91% of the 1080-wide frame — may clip into TikTok's icons
 const SCALE = 1.6;
 const CONTENT_WIDTH = Math.round((SAFE_RIGHT_EDGE - CANVAS_LEFT_MARGIN) / SCALE);
 const VIEWPORT_HEIGHT = Math.round((1920 - CANVAS_TOP_MARGIN - CANVAS_BOTTOM_MARGIN) / SCALE);
