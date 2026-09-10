@@ -39,12 +39,14 @@ export function IconReadTicks({ size = 11 }: { size?: number }) {
  * order message uses *bold*, and the Wapi link is its own message). */
 export function renderText(text: string) {
   return text.split("\n").map((line, i) => {
-    const parts = line.split(/(\*[^*]+\*|https?:\/\/\S+)/g).filter(Boolean);
+    const parts = line.split(/(\*[^*]+\*|~[^~]+~|https?:\/\/\S+)/g).filter(Boolean);
     return (
       <div key={i} style={{ minHeight: line ? undefined : "1em" }}>
         {parts.map((part, j) => {
           const boldMatch = /^\*([^*]+)\*$/.exec(part);
           if (boldMatch) return <strong key={j}>{boldMatch[1]}</strong>;
+          const strikeMatch = /^~([^~]+)~$/.exec(part);
+          if (strikeMatch) return <s key={j}>{strikeMatch[1]}</s>;
           if (/^https?:\/\//.test(part)) {
             return (
               <span key={j} style={{ color: WA.link }}>
