@@ -183,6 +183,13 @@ import {
   LYRIC_SYNC_20_HEIGHT,
   LYRIC_SYNC_20_WIDTH,
 } from "./LyricSync20";
+import {
+  LyricSync19Alt,
+  LYRIC_SYNC_19_ALT_DURATION,
+  LYRIC_SYNC_19_ALT_FPS,
+  LYRIC_SYNC_19_ALT_HEIGHT,
+  LYRIC_SYNC_19_ALT_WIDTH,
+} from "./LyricSync19Alt";
 
 export const WapiVideoComposition = () => {
   return (
@@ -410,6 +417,14 @@ export const WapiVideoComposition = () => {
         fps={LYRIC_SYNC_20_FPS}
         width={LYRIC_SYNC_20_WIDTH}
         height={LYRIC_SYNC_20_HEIGHT}
+      />
+      <Composition
+        id="LyricSync19Alt"
+        component={LyricSync19Alt}
+        durationInFrames={LYRIC_SYNC_19_ALT_DURATION}
+        fps={LYRIC_SYNC_19_ALT_FPS}
+        width={LYRIC_SYNC_19_ALT_WIDTH}
+        height={LYRIC_SYNC_19_ALT_HEIGHT}
       />
     </>
   );
