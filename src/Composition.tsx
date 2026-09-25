@@ -35,6 +35,13 @@ import {
   FAKE_CHAT_SOLO_PHONE_HEIGHT,
   FAKE_CHAT_SOLO_PHONE_WIDTH,
 } from "./FakeChatSoloPhone";
+import {
+  PiscinasTalking,
+  PISCINAS_DURATION,
+  PISCINAS_FPS,
+  PISCINAS_HEIGHT,
+  PISCINAS_WIDTH,
+} from "./PiscinasTalking";
 
 export const WapiVideoComposition = () => {
   return (
@@ -86,6 +93,15 @@ export const WapiVideoComposition = () => {
         fps={FAKE_CHAT_SOLO_PHONE_FPS}
         width={FAKE_CHAT_SOLO_PHONE_WIDTH}
         height={FAKE_CHAT_SOLO_PHONE_HEIGHT}
+      />
+      <Composition
+        id="PiscinasTalking"
+        component={PiscinasTalking}
+        durationInFrames={PISCINAS_DURATION}
+        fps={PISCINAS_FPS}
+        width={PISCINAS_WIDTH}
+        height={PISCINAS_HEIGHT}
+        defaultProps={{}}
       />
     </>
   );
