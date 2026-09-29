@@ -18,13 +18,18 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background-alt.png");
 // from these same 7 lines). This is a different clip of the same song
 // as LyricSyncScene28 (shares the "Y por las noches..." chorus) but
 // with a different opening couplet and ending. All 7 matched.
+//
+// Line 2 was corrected by the user from "Quizá me atrapó" to "Ya me
+// atrapó" (the actually-sung word) — re-transcribed with the fix as
+// the bias prompt, which also shifted lines 4-5's timing slightly
+// (the earlier line's boundary nudges the forward-cursor search).
 // Seconds -> frames at 30fps (the project's own fps), rounded to the
 // nearest frame:
 //   "El conjuro de un cuento de amor"           0.00s ->    0
-//   "Quizá me atrapó, lo puedo sentir"           3.14s ->   94
+//   "Ya me atrapó, lo puedo sentir"              3.16s ->   95
 //   "Y por las noches puedo sentir su calor"     9.94s ->  298
-//   "Su dulce magia me hace perder la razón"    17.30s ->  519
-//   "Y de mis sueños creo que un día escapó"    25.78s ->  773
+//   "Su dulce magia me hace perder la razón"    17.04s ->  511
+//   "Y de mis sueños creo que un día escapó"    24.90s ->  747
 //   "Para esconderse dentro de mi corazón"      32.94s ->  988
 //   "Uoh-oh, no"                                42.62s -> 1279
 //
@@ -33,10 +38,10 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background-alt.png");
 // in after Scene9).
 export const BUBBLES: DarkBubble[] = [
   { from: "me", text: "El conjuro de un cuento de amor", timestamp: "01:58", atFrame: 0 },
-  { from: "me", text: "Quizá me atrapó, lo puedo sentir", timestamp: "01:58", atFrame: 94 },
+  { from: "me", text: "Ya me atrapó, lo puedo sentir", timestamp: "01:58", atFrame: 95 },
   { from: "me", text: "Y por las noches puedo sentir su calor", timestamp: "01:59", atFrame: 298 },
-  { from: "me", text: "Su dulce magia me hace perder la razón", timestamp: "01:59", atFrame: 519 },
-  { from: "me", text: "Y de mis sueños creo que un día escapó", timestamp: "02:00", atFrame: 773 },
+  { from: "me", text: "Su dulce magia me hace perder la razón", timestamp: "01:59", atFrame: 511 },
+  { from: "me", text: "Y de mis sueños creo que un día escapó", timestamp: "02:00", atFrame: 747 },
   { from: "me", text: "Para esconderse dentro de mi corazón", timestamp: "02:00", atFrame: 988 },
   { from: "me", text: "Uoh-oh, no", timestamp: "02:01", atFrame: 1279 },
 ];
