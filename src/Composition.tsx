@@ -35,6 +35,7 @@ import {
   FAKE_CHAT_SOLO_PHONE_HEIGHT,
   FAKE_CHAT_SOLO_PHONE_WIDTH,
 } from "./FakeChatSoloPhone";
+import { ArdeChat, ARDE_CHAT_DURATION, ARDE_CHAT_FPS, ARDE_CHAT_HEIGHT, ARDE_CHAT_WIDTH } from "./ArdeChat";
 
 export const WapiVideoComposition = () => {
   return (
@@ -86,6 +87,14 @@ export const WapiVideoComposition = () => {
         fps={FAKE_CHAT_SOLO_PHONE_FPS}
         width={FAKE_CHAT_SOLO_PHONE_WIDTH}
         height={FAKE_CHAT_SOLO_PHONE_HEIGHT}
+      />
+      <Composition
+        id="ArdeChat"
+        component={ArdeChat}
+        durationInFrames={ARDE_CHAT_DURATION}
+        fps={ARDE_CHAT_FPS}
+        width={ARDE_CHAT_WIDTH}
+        height={ARDE_CHAT_HEIGHT}
       />
     </>
   );
