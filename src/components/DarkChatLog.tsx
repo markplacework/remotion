@@ -1,11 +1,14 @@
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
-const FONT_STACK =
+// Exported so BurningChatLog.tsx (the self-destruct/burn variant) can
+// reuse the exact same visual building blocks instead of duplicating
+// them — only the export keywords are new here, behavior is unchanged.
+export const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
 // Dark-mode WhatsApp's own real palette — shared by every scene that
 // composites a conversation onto a real photographed phone mockup.
-const WA = {
+export const WA = {
   bubbleOut: "#005c4b",
   bubbleIn: "#202c33",
   text: "#e9edef",
@@ -14,9 +17,16 @@ const WA = {
   link: "#53bdeb",
 };
 
-function IconReadTicks() {
+// `size` is the icon's target height — width follows the native
+// viewBox aspect (18:13) so it scales without distorting the check
+// shape. Previously a fixed 16x11 regardless of the bubble's own
+// fontSize, which measured about half the size of the real WhatsApp
+// read-tick relative to its timestamp text (real: check height roughly
+// equal to the timestamp digits' height; ours: closer to 0.7x) — read
+// as "chiquito" against a timestamp scaled up with everything else.
+export function IconReadTicks({ size = 11 }: { size?: number }) {
   return (
-    <svg width="16" height="11" viewBox="0 0 18 13" fill="none">
+    <svg width={(size * 18) / 13} height={size} viewBox="0 0 18 13" fill="none">
       <path d="M1 6.8l3.6 3.6L11 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
       <path d="M6.3 6.8l3.6 3.6L17 3.6" stroke={WA.readTick} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -27,14 +37,16 @@ function IconReadTicks() {
  * link blue, and single line breaks as-is — parse just enough of that
  * real markdown to render message text faithfully (the real captured
  * order message uses *bold*, and the Wapi link is its own message). */
-function renderText(text: string) {
+export function renderText(text: string) {
   return text.split("\n").map((line, i) => {
-    const parts = line.split(/(\*[^*]+\*|https?:\/\/\S+)/g).filter(Boolean);
+    const parts = line.split(/(\*[^*]+\*|~[^~]+~|https?:\/\/\S+)/g).filter(Boolean);
     return (
       <div key={i} style={{ minHeight: line ? undefined : "1em" }}>
         {parts.map((part, j) => {
           const boldMatch = /^\*([^*]+)\*$/.exec(part);
           if (boldMatch) return <strong key={j}>{boldMatch[1]}</strong>;
+          const strikeMatch = /^~([^~]+)~$/.exec(part);
+          if (strikeMatch) return <s key={j}>{strikeMatch[1]}</s>;
           if (/^https?:\/\//.test(part)) {
             return (
               <span key={j} style={{ color: WA.link }}>
@@ -51,7 +63,10 @@ function renderText(text: string) {
 
 export type DarkBubble = { from: "them" | "me"; text: string; timestamp: string; atFrame: number };
 
-const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: number }> = ({
+// Exported so AutoScrollChatLog.tsx (the long-conversation, auto-
+// scrolling variant) can reuse the exact same bubble rendering/entrance
+// spring instead of duplicating it.
+export const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: number }> = ({
   from,
   text,
   timestamp,
@@ -67,6 +82,10 @@ const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: numbe
   const scale = interpolate(enter, [0, 1], [0.85, 1]);
   const translateY = interpolate(enter, [0, 1], [14, 0]);
   const outgoing = from === "me";
+  // Real WhatsApp's read-tick reads at roughly the same height as the
+  // timestamp digits next to it — matches a real screenshot measured
+  // directly (check height ~0.88x the digit height).
+  const timestampFontSize = fontSize * 0.68;
 
   return (
     <div
@@ -89,20 +108,24 @@ const DarkChatBubble: React.FC<DarkBubble & { marginTop: number; fontSize: numbe
         }}
       >
         <div style={{ fontFamily: FONT_STACK, fontSize, lineHeight: 1.32 }}>{renderText(text)}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 2 }}>
-          <span style={{ fontFamily: FONT_STACK, fontSize: fontSize * 0.68, color: WA.timestamp }}>{timestamp}</span>
-          {outgoing && <IconReadTicks />}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 6, marginTop: 2 }}>
+          <span style={{ fontFamily: FONT_STACK, fontSize: timestampFontSize, color: WA.timestamp }}>{timestamp}</span>
+          {outgoing && <IconReadTicks size={timestampFontSize} />}
         </div>
       </div>
     </div>
   );
 };
 
-const HoyPill: React.FC<{ label: string }> = ({ label }) => (
+export const HoyPill: React.FC<{ label: string }> = ({ label }) => (
   <div style={{ display: "flex", justifyContent: "center" }}>
     <div
       style={{
-        background: "rgba(255,255,255,0.08)",
+        // Real WhatsApp's dark-mode date pill is a near-solid dark chip —
+        // at 8% white opacity the busy wallpaper doodles showed through
+        // strongly enough to break up its edges into an irregular shape
+        // instead of a clean rounded rectangle.
+        background: "rgba(24, 34, 41, 0.92)",
         color: WA.timestamp,
         fontFamily: FONT_STACK,
         fontSize: 15,
