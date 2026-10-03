@@ -10,9 +10,9 @@ import { LYRIC_SYNC_HOLD_FRAMES } from "./lyricSyncDefaults";
 export const LYRIC_SYNC_36_FPS = FPS;
 export const LYRIC_SYNC_36_WIDTH = VIDEO_WIDTH;
 export const LYRIC_SYNC_36_HEIGHT = VIDEO_HEIGHT;
-// No fixed duration requested — natural pacing, ends at the standard
-// hold (8s) after the last line.
-export const LYRIC_SYNC_36_DURATION = LYRIC_SYNC_36_LAST_FRAME + LYRIC_SYNC_HOLD_FRAMES;
+// Standard 8s hold after the last line plus 10s more on request, so
+// the remix keeps playing a while after the final bubble.
+export const LYRIC_SYNC_36_DURATION = LYRIC_SYNC_36_LAST_FRAME + LYRIC_SYNC_HOLD_FRAMES + 10 * FPS;
 
 export const LyricSync36: React.FC = () => {
   return (
