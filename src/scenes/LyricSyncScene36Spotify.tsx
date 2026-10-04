@@ -14,9 +14,13 @@ import { BUBBLES } from "./LyricSyncScene36";
 // so the two can never drift apart — and the same TikTok-safe margins.
 const LINES = BUBBLES.map(({ text, atFrame }) => ({ text, atFrame }));
 
-// Flat, muted color like the ones Spotify pulls from the cover art.
-const BACKGROUND = "#4a3d8f";
-const LABEL_SIZE = 30;
+// Flat color like the ones Spotify pulls from the cover art — a warm
+// "dawn" orange, picked by the user from four options to match the
+// song's turn from night toward "el día más cerca está".
+const BACKGROUND = "#b5562f";
+// Song title in place of a generic "Letra" header.
+const TITLE = "Hoy que todo parece";
+const LABEL_SIZE = 40;
 const LABEL_GAP = 36;
 
 export const LyricSyncScene36Spotify: React.FC = () => {
@@ -43,7 +47,7 @@ export const LyricSyncScene36Spotify: React.FC = () => {
             marginBottom: LABEL_GAP,
           }}
         >
-          Letra
+          {TITLE}
         </div>
         <SpotifyLyrics lines={LINES} width={width} height={height - LABEL_SIZE * 1.5 - LABEL_GAP} anchorY={220} />
       </div>
