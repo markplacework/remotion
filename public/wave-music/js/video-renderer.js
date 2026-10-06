@@ -161,6 +161,9 @@
         const f = this.theme.flat;
         g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
         this.lineH = f.fontSize * 1.3;
+        const date = content.firstChild.firstChild;
+        this.dateLabel = { ...box(date), text: date.textContent };
+        bubbles.forEach((b) => (b.seen.style.display = "block"));
         this.items = bubbles.map((b, i) => {
           const cs = getComputedStyle(b.box);
           const pl = parseFloat(cs.paddingLeft);
@@ -171,6 +174,7 @@
             box: bx,
             text: { x: bx.x + pl, y: bx.y + pt },
             lines: domLines(b.box),
+            seen: box(b.seen),
           };
         });
         bubbles.forEach((b) => b.reset());
@@ -238,6 +242,11 @@
         const p = this.preview.palette;
         this.items.forEach((it, i) => looks[i] && this.drawLyric(it, looks[i], p));
       } else if (theme.bubble === "flat") {
+        const d = this.dateLabel;
+        g.fillStyle = "#a8a8a8";
+        g.font = `14px ${WM.Themes.FONT_STACK}`;
+        g.textBaseline = "middle";
+        g.fillText(d.text, d.x, d.y + d.h / 2);
         this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawFlat(it, looks[i]));
       } else {
         this.drawPill();
@@ -312,6 +321,32 @@
       g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
       g.textBaseline = "middle";
       it.lines.forEach((line, n) => g.fillText(line, it.text.x, it.text.y + n * this.lineH + this.lineH / 2));
+      if (look.seen) {
+        const sn = it.seen;
+        if (f.seen === "text") {
+          g.fillStyle = "#a8a8a8";
+          g.font = `13px ${WM.Themes.FONT_STACK}`;
+          g.fillText("Visto", sn.x, sn.y + sn.h / 2);
+        } else {
+          const r = sn.w / 2;
+          const cx = sn.x + r;
+          const cy = sn.y + r;
+          g.fillStyle = "#3a3b3c";
+          g.beginPath();
+          g.arc(cx, cy, r, 0, Math.PI * 2);
+          g.fill();
+          g.save();
+          g.clip();
+          g.fillStyle = "#b0b3b8";
+          g.beginPath();
+          g.arc(cx, cy - r * 0.25, r * 0.35, 0, Math.PI * 2);
+          g.fill();
+          g.beginPath();
+          g.arc(cx, cy + r * 0.95, r * 0.65, 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+        }
+      }
       g.restore();
     }
 

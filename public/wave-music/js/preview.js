@@ -192,10 +192,9 @@
       });
       this.content = document.createElement("div");
       // Breathing room under the header / title: Spotify's first line
-      // starts below the top fade, chat bubbles a little lower than
-      // WhatsApp's (which already has its "Hoy" pill there).
+      // starts below the top fade; chats open with a date line ("Hoy").
       this.content.style.padding =
-        theme.kind === "lyrics" ? "56px 0 0" : theme.bubble === "flat" ? "44px 12px 0" : "24px 12px 0";
+        theme.kind === "lyrics" ? "56px 0 0" : "24px 12px 0";
       viewport.appendChild(this.content);
       scaler.appendChild(viewport);
       stage.appendChild(scaler);
@@ -275,6 +274,7 @@
         return;
       }
       if (theme.bubble === "whatsapp") this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
+      else this.content.appendChild(WM.Bubbles.createChatDate("Hoy " + clockFor(entries[0].start)));
       entries.forEach((e, i) => {
         const from = e.from || "me";
         const prevFrom = i > 0 ? entries[i - 1].from || "me" : from;
@@ -301,7 +301,7 @@
       this.tops = this.bubbles.map((b) => b.root.offsetTop);
       this.bottoms = this.bubbles.map((b) => b.root.offsetTop + b.root.offsetHeight);
       const first = this.content.firstChild;
-      this.pillBottom = lyrics || this.theme.bubble === "flat" ? 0 : first.offsetTop + first.offsetHeight;
+      this.pillBottom = lyrics ? 0 : first.offsetTop + first.offsetHeight;
       if (!lyrics) this.bubbles.forEach((b) => b.reset());
     }
 
@@ -313,7 +313,9 @@
         return index >= 0 ? Math.max(0, this.tops[index] - h * LYRIC_ANCHOR) : 0;
       }
       const bottom = index >= 0 ? this.bottoms[index] : this.pillBottom;
-      return Math.max(0, bottom - h + BOTTOM_PADDING);
+      // Instagram / Messenger keep room for "Visto" under the newest bubble.
+      const pad = this.theme.bubble === "flat" ? BOTTOM_PADDING + 26 : BOTTOM_PADDING;
+      return Math.max(0, bottom - h + pad);
     }
 
     /**
@@ -355,6 +357,7 @@
             fill: [WM.Themes.gradientAt(f.stops, y0), WM.Themes.gradientAt(f.stops, y1)],
             // one group: inner corners tighten on the right-hand side
             corners: [i > 0 ? f.tight : f.radius, i < last ? f.tight : f.radius],
+            seen: i === last && s.age > 0.9,
           });
         });
       } else {

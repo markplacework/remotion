@@ -2603,6 +2603,7 @@ kbd {
       justifyContent: "flex-end",
       transformOrigin: "top right",
       marginTop: o.marginTop + "px",
+      position: "relative",
       willChange: "transform, opacity",
     });
     const bubble = el("div", {
@@ -2617,15 +2618,32 @@ kbd {
     });
     bubble.textContent = o.text;
     row.appendChild(bubble);
+    // Read receipt under the newest message: "Visto" (Instagram) or the
+    // contact's tiny avatar (Messenger). Absolutely positioned so it never
+    // changes the layout the scroll is measured from.
+    const seen =
+      f.seen === "text"
+        ? el("span", { position: "absolute", right: "4px", top: "calc(100% + 5px)", fontFamily: WM.Themes.FONT_STACK, fontSize: "13px", color: "#a8a8a8", display: "none" })
+        : el(
+            "span",
+            { position: "absolute", right: "2px", top: "calc(100% + 5px)", width: "16px", height: "16px", display: "none" },
+            '<svg width="16" height="16" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#3a3b3c"/><circle cx="20" cy="15" r="7" fill="#b0b3b8"/><path d="M7 34c2-7 7-10 13-10s11 3 13 10a20 20 0 0 1-26 0z" fill="#b0b3b8"/></svg>',
+          );
+    if (f.seen === "text") seen.textContent = "Visto";
+    row.appendChild(seen);
+    let lastSeen = false;
     let last = "";
     let lastFill = "";
     let lastCorners = "";
     return {
       root: row,
       box: bubble,
+      seen,
       reset() {
         row.style.display = "none";
         last = lastFill = lastCorners = "";
+        lastSeen = false;
+        seen.style.display = "none";
       },
       /** @param s {age, active, fill:[top,bottom], corners:[tr,br]} */
       update(s) {
@@ -2637,6 +2655,11 @@ kbd {
         const look = entranceLook(s);
         look.fill = s.fill;
         look.corners = s.corners;
+        look.seen = !!s.seen;
+        if (look.seen !== lastSeen) {
+          lastSeen = look.seen;
+          seen.style.display = look.seen ? "block" : "none";
+        }
         const fill = s.fill.join();
         if (fill !== lastFill) {
           lastFill = fill;
@@ -2701,7 +2724,16 @@ kbd {
     };
   }
 
-  WM.Bubbles = { createBubble, createFlatBubble, createLyricLine, createHoyPill, makeSpring, WA, FONT_STACK };
+  /** Centered date/time line above an Instagram / Messenger chat. */
+  function createChatDate(label) {
+    const wrap = el("div", { textAlign: "center", marginBottom: "26px", fontFamily: WM.Themes.FONT_STACK, fontSize: "14px", color: "#a8a8a8" });
+    const t = el("span");
+    t.textContent = label;
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  WM.Bubbles = { createChatDate, createBubble, createFlatBubble, createLyricLine, createHoyPill, makeSpring, WA, FONT_STACK };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -2801,6 +2833,7 @@ kbd {
         text: "#ffffff",
         radius: 24,
         tight: 5, // corner between bubbles of the same group
+        seen: "text", // "Visto" under the newest message
         gap: 4,
         fontSize: 21,
         padding: "12px 17px",
@@ -2821,6 +2854,7 @@ kbd {
         text: "#ffffff",
         radius: 22,
         tight: 5,
+        seen: "avatar", // contact's tiny avatar under the newest message
         gap: 4,
         fontSize: 21,
         padding: "11px 16px",
@@ -3136,10 +3170,9 @@ kbd {
       });
       this.content = document.createElement("div");
       // Breathing room under the header / title: Spotify's first line
-      // starts below the top fade, chat bubbles a little lower than
-      // WhatsApp's (which already has its "Hoy" pill there).
+      // starts below the top fade; chats open with a date line ("Hoy").
       this.content.style.padding =
-        theme.kind === "lyrics" ? "56px 0 0" : theme.bubble === "flat" ? "44px 12px 0" : "24px 12px 0";
+        theme.kind === "lyrics" ? "56px 0 0" : "24px 12px 0";
       viewport.appendChild(this.content);
       scaler.appendChild(viewport);
       stage.appendChild(scaler);
@@ -3219,6 +3252,7 @@ kbd {
         return;
       }
       if (theme.bubble === "whatsapp") this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
+      else this.content.appendChild(WM.Bubbles.createChatDate("Hoy " + clockFor(entries[0].start)));
       entries.forEach((e, i) => {
         const from = e.from || "me";
         const prevFrom = i > 0 ? entries[i - 1].from || "me" : from;
@@ -3245,7 +3279,7 @@ kbd {
       this.tops = this.bubbles.map((b) => b.root.offsetTop);
       this.bottoms = this.bubbles.map((b) => b.root.offsetTop + b.root.offsetHeight);
       const first = this.content.firstChild;
-      this.pillBottom = lyrics || this.theme.bubble === "flat" ? 0 : first.offsetTop + first.offsetHeight;
+      this.pillBottom = lyrics ? 0 : first.offsetTop + first.offsetHeight;
       if (!lyrics) this.bubbles.forEach((b) => b.reset());
     }
 
@@ -3257,7 +3291,9 @@ kbd {
         return index >= 0 ? Math.max(0, this.tops[index] - h * LYRIC_ANCHOR) : 0;
       }
       const bottom = index >= 0 ? this.bottoms[index] : this.pillBottom;
-      return Math.max(0, bottom - h + BOTTOM_PADDING);
+      // Instagram / Messenger keep room for "Visto" under the newest bubble.
+      const pad = this.theme.bubble === "flat" ? BOTTOM_PADDING + 26 : BOTTOM_PADDING;
+      return Math.max(0, bottom - h + pad);
     }
 
     /**
@@ -3299,6 +3335,7 @@ kbd {
             fill: [WM.Themes.gradientAt(f.stops, y0), WM.Themes.gradientAt(f.stops, y1)],
             // one group: inner corners tighten on the right-hand side
             corners: [i > 0 ? f.tight : f.radius, i < last ? f.tight : f.radius],
+            seen: i === last && s.age > 0.9,
           });
         });
       } else {
@@ -3481,6 +3518,9 @@ kbd {
         const f = this.theme.flat;
         g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
         this.lineH = f.fontSize * 1.3;
+        const date = content.firstChild.firstChild;
+        this.dateLabel = { ...box(date), text: date.textContent };
+        bubbles.forEach((b) => (b.seen.style.display = "block"));
         this.items = bubbles.map((b, i) => {
           const cs = getComputedStyle(b.box);
           const pl = parseFloat(cs.paddingLeft);
@@ -3491,6 +3531,7 @@ kbd {
             box: bx,
             text: { x: bx.x + pl, y: bx.y + pt },
             lines: domLines(b.box),
+            seen: box(b.seen),
           };
         });
         bubbles.forEach((b) => b.reset());
@@ -3558,6 +3599,11 @@ kbd {
         const p = this.preview.palette;
         this.items.forEach((it, i) => looks[i] && this.drawLyric(it, looks[i], p));
       } else if (theme.bubble === "flat") {
+        const d = this.dateLabel;
+        g.fillStyle = "#a8a8a8";
+        g.font = `14px ${WM.Themes.FONT_STACK}`;
+        g.textBaseline = "middle";
+        g.fillText(d.text, d.x, d.y + d.h / 2);
         this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawFlat(it, looks[i]));
       } else {
         this.drawPill();
@@ -3632,6 +3678,32 @@ kbd {
       g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
       g.textBaseline = "middle";
       it.lines.forEach((line, n) => g.fillText(line, it.text.x, it.text.y + n * this.lineH + this.lineH / 2));
+      if (look.seen) {
+        const sn = it.seen;
+        if (f.seen === "text") {
+          g.fillStyle = "#a8a8a8";
+          g.font = `13px ${WM.Themes.FONT_STACK}`;
+          g.fillText("Visto", sn.x, sn.y + sn.h / 2);
+        } else {
+          const r = sn.w / 2;
+          const cx = sn.x + r;
+          const cy = sn.y + r;
+          g.fillStyle = "#3a3b3c";
+          g.beginPath();
+          g.arc(cx, cy, r, 0, Math.PI * 2);
+          g.fill();
+          g.save();
+          g.clip();
+          g.fillStyle = "#b0b3b8";
+          g.beginPath();
+          g.arc(cx, cy - r * 0.25, r * 0.35, 0, Math.PI * 2);
+          g.fill();
+          g.beginPath();
+          g.arc(cx, cy + r * 0.95, r * 0.65, 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+        }
+      }
       g.restore();
     }
 
