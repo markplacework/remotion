@@ -1118,8 +1118,6 @@
   }
   const wordPop = {
     id: "wordpop",
-    // the whole look is the word being sung: always word by word
-    wordBased: true,
     label: "Word Pop",
     tag: "Redes",
     fonts: ["900 100px Poppins"],
@@ -1170,19 +1168,27 @@
       const { safe } = f;
       let t = f.t;
       const ws = L.words;
-      const j = Math.max(0, activeWord(L, t));
+      // by phrase: the whole line on screen, its key word in the box
+      const phrase = WM.Motion.modeFor(this) === "line";
+      const j = phrase ? longestIndex(ws) : Math.max(0, activeWord(L, t));
       const last = ws[ws.length - 1];
-      const out = clamp(1 - (t - last.t1 - 0.9) / 0.2);
+      const out = phrase ? 1 : clamp(1 - (t - last.t1 - 0.9) / 0.2);
       if (out <= 0) return;
-      const chunks = chunksOf(L);
-      const ci = chunks.findIndex((c) => c.includes(ws[j]));
+      const chunks = phrase ? [ws] : chunksOf(L);
+      const ci = phrase ? 0 : chunks.findIndex((c) => c.includes(ws[j]));
       const chunk = chunks[ci];
       const words = chunk.map((w) => ({ ...w, label: upper(w.text) }));
       let size = u * 128;
       g.font = POP_FONT(100);
       const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
       size = Math.min(size, (100 * safe.w * 0.86) / widest);
-      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.42);
+      const wrapAt = (sz) => wrapCached(g, `p|${L.index}|${ci}|${phrase ? 1 : 0}|${L.text}|${Math.round(sz * 10)}`, words, () => POP_FONT(sz), safe.w * 0.9, sz * 0.42);
+      let rows = wrapAt(size);
+      // a long phrase shrinks to stay inside the frame
+      if (rows.length * size * 1.3 > safe.h * 0.62) {
+        size *= Math.sqrt((safe.h * 0.62) / (rows.length * size * 1.3));
+        rows = wrapAt(size);
+      }
       const lh = size * 1.3;
       const cx = safe.x + safe.w / 2;
       const cy = safe.y + safe.h * 0.5;
@@ -1203,7 +1209,7 @@
       });
       // the highlight box glides from the previous word to the active one
       const act = ws[j];
-      const prevW = ws[j - 1];
+      const prevW = phrase ? null : ws[j - 1];
       const A = rects[act.index];
       if (A && act.t0 <= t) {
         const B = prevW && rects[prevW.index] ? rects[prevW.index] : A;
@@ -1462,6 +1468,8 @@
   const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const notes = {
     id: "notes",
+    // typed as it is sung: always word by word
+    wordBased: true,
     label: "Notas",
     tag: "Viral",
     fonts: ["400 100px Inter", "600 100px Inter", "700 100px Inter"],
@@ -2058,8 +2066,6 @@
   const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
-    // cuts on every word: always word by word
-    wordBased: true,
     label: "Blackout",
     tag: "Contraste",
     fonts: ["400 100px 'League Gothic'", "700 100px 'Barlow Condensed'"],
@@ -2068,8 +2074,10 @@
       const u = safe.w / 825;
       const L = lines[f.current];
       const j = L ? activeWord(L, t) : -1;
-      const gi = L ? wordOffset(lines, f.current) + Math.max(0, j) : 0;
-      const done = L && L.words.length && t > L.words[L.words.length - 1].t1 + 1.4;
+      // by phrase the picture flips on every line, by word on every word
+      const phrase = WM.Motion.modeFor(this) === "line";
+      const gi = L ? (phrase ? f.current : wordOffset(lines, f.current) + Math.max(0, j)) : 0;
+      const done = !phrase && L && L.words.length && t > L.words[L.words.length - 1].t1 + 1.4;
       const inv = !done && j >= 0 && gi % 2 === 1;
       g.fillStyle = inv ? "#ffffff" : "#000000";
       g.fillRect(0, 0, W, H);
@@ -2083,6 +2091,26 @@
       g.fillStyle = ink;
       g.textBaseline = "middle";
       g.textAlign = "center";
+      if (phrase && L.index % 2 === 1) {
+        // the whole phrase as a poster: one giant word per row, punching in
+        const labels = L.words.map((x) => upper(x.text));
+        g.font = BO_GIANT(100);
+        const w100 = Math.max(...labels.map((l) => g.measureText(l).width), 1);
+        let size = (100 * safe.w * 0.94) / w100;
+        const lh = size * 0.86;
+        const fit = Math.min(1, (safe.h * 0.94) / (labels.length * lh));
+        size *= fit;
+        const p = clamp((t - L.start) / 0.22);
+        const k = lerp(3, 1, ease.out(p));
+        g.save();
+        g.translate(cx, cy);
+        g.scale(k, k);
+        g.font = BO_GIANT(size);
+        labels.forEach((l, i) => g.fillText(l, 0, (i - (labels.length - 1) / 2) * size * 0.86 + size * 0.04));
+        g.restore();
+        g.restore();
+        return;
+      }
       if (L.index % 2 === 1) {
         // one giant word at a time, punching in from far too close
         const label = upper(w.text);
@@ -2109,7 +2137,7 @@
       const size = u * 132;
       const rows = wrapWords(g, shown, () => BO_LOWER(size), safe.w * 0.9, size * 0.22);
       const lh = size * 1.0;
-      const k = 1 + 0.05 * (1 - ease.out(clamp((t - w.t0) / 0.18)));
+      const k = 1 + (phrase ? 0.08 : 0.05) * (1 - ease.out(clamp((t - w.t0) / 0.18)));
       g.save();
       g.translate(cx, cy);
       g.scale(k, k);
