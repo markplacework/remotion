@@ -11,8 +11,6 @@
   const sync = new WM.SyncEngine();
   const preview = new WM.Preview($("stage-host"), {
     backgroundSrc: WM.ASSETS.background,
-    mockupSrc: WM.ASSETS.mockup,
-    frameSrc: WM.ASSETS.frame,
     layout: "mockup",
   });
 
@@ -568,11 +566,13 @@
   $("btn-generate").onclick = generate;
 
   // ---------- estilo ----------
-  const STYLE_SWATCH = {
-    whatsapp: "background:#005c4b",
-    instagram: "background:linear-gradient(160deg,#cc06cb,#7f33f5 55%,#4f5bf9)",
-    messenger: "background:linear-gradient(160deg,#1270ff,#3a62ff)",
-    spotify: "background:linear-gradient(#6e0a08,#8e2f25)",
+  // Each option shows a tiny live-looking thumbnail of the style.
+  const bars = (widths, cls) => widths.map((w) => `<i class="${cls}" style="width:${w}%"></i>`).join("");
+  const THUMB = {
+    whatsapp: `<div class="th th-wa" style="background-image:url('${WM.ASSETS.background}')">${bars([62, 48, 74], "b")}</div>`,
+    instagram: `<div class="th th-ig">${bars([58, 44, 72], "b")}</div>`,
+    messenger: `<div class="th th-ms">${bars([58, 44, 72], "b")}</div>`,
+    spotify: `<div class="th th-sp"><i class="t"></i>${bars([78, 62, 84, 56], "l")}</div>`,
   };
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
@@ -583,10 +583,16 @@
   WM.Themes.list.forEach((t) => {
     const b = document.createElement("button");
     b.dataset.style = t.id;
-    b.innerHTML = `<span class="style-swatch" style="${STYLE_SWATCH[t.id]}">` + (t.kind === "lyrics" ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>' : "<i></i>") + `</span>${t.label}`;
+    b.innerHTML = `${THUMB[t.id]}<span class="style-name">${t.label}</span><span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
     b.onclick = () => chooseStyle(t.id);
     $("styles").appendChild(b);
   });
+  function paintSpotifyThumb(id) {
+    const p = WM.Themes.spotifyPalette(id);
+    const th = document.querySelector("#styles .th-sp");
+    th.style.background = `linear-gradient(${p.bgTop}, ${p.bgBottom})`;
+    th.querySelectorAll(".l").forEach((l, i) => (l.style.background = i === 2 ? "#fff" : p.line));
+  }
   WM.Themes.SPOTIFY_COLORS.forEach((c) => {
     const b = document.createElement("button");
     b.dataset.color = c.id;
@@ -596,6 +602,7 @@
     b.onclick = () => {
       document.querySelectorAll("#sp-colors button").forEach((x) => x.setAttribute("aria-pressed", x === b));
       preview.setSpotifyColor(c.id);
+      paintSpotifyThumb(c.id);
       needsSnap = true;
     };
     $("sp-colors").appendChild(b);

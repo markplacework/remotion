@@ -5,9 +5,9 @@
 //   "video"  — the exported 9:16 video (1080x1920): background full-bleed,
 //              content inside src/lyricSyncDefaults.ts' TikTok-safe margins.
 //   "mockup" — preview only: the same content inside the phone mockup's
-//              screen. WhatsApp uses the mockup with its UI baked in;
-//              the other styles draw their UI (chrome.js) inside a
-//              frame-only phone. The mockup is never exported.
+//              screen. WhatsApp, Instagram and Messenger use mockups with
+//              their app UI baked in; Spotify draws its player (chrome.js)
+//              inside a frame-only phone. The mockup is never exported.
 //
 // It never reads the audio — it only receives state.
 (function (WM) {
@@ -20,31 +20,42 @@
   // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
   const LS = { top: 190, bottom: 320, left: 40, safeRight: 935, scale: 1.6 };
 
-  // Mockup geometry, measured from the PNGs' own pixels (853x1843): the
-  // phone spans x 26-826, y 46-1797, so the stage is cropped to that.
-  // WhatsApp's chat area runs from under its header (y 286) to its input
-  // bar (y 1604); the whole screen (frame-only PNG) is x 63-788, y 77-1766.
-  const CROP = { x: 26, y: 46, w: 800, h: 1751 };
-  const SCREEN = { x: 62 - CROP.x, y: 286 - CROP.y, w: 728, h: 1336 };
-  const SCREEN_FULL = { x: 63 - CROP.x, y: 77 - CROP.y, w: 726, h: 1690 };
-  const INPUT_BAR_TOP = 1604 - CROP.y;
+  // Mockup geometry, measured from each PNG's own pixels. Every phone is
+  // cropped to the same proportions (0.457), so the preview box never
+  // changes size between styles.
+  //   WhatsApp (853x1843): phone x 26-826, y 46-1797; chat from under its
+  //     header (y 286) to its input bar (y 1604).
+  //   Instagram / Messenger (840x1872): phone x 16-831, y 40-1831; the
+  //     transparent screen hole is the chat area (IG y 260-1581, Messenger
+  //     y 287-1578 under its rounded header).
+  //   Spotify: the WhatsApp phone with its screen cleared (phone-frame.png),
+  //     screen x 63-788, y 77-1766, UI drawn by chrome.js.
+  const WA_CROP = { x: 26, y: 46, w: 800, h: 1751 };
+  const META_CROP = { x: 14, y: 40, w: 819, h: 1792 };
+  const MOCKUPS = {
+    whatsapp: { asset: "mockup", img: [853, 1843], crop: WA_CROP, bg: { x: 62, y: 286, w: 728, h: 1336 }, chat: { x: 62, y: 286, w: 728, bottom: 1598 } },
+    instagram: { asset: "mockupInstagram", img: [840, 1872], crop: META_CROP, bg: { x: 55, y: 252, w: 729, h: 1340 }, chat: { x: 59, y: 260, w: 721, bottom: 1574 } },
+    messenger: { asset: "mockupMessenger", img: [840, 1872], crop: META_CROP, bg: { x: 53, y: 270, w: 733, h: 1318 }, chat: { x: 57, y: 287, w: 726, bottom: 1571 } },
+    spotify: { asset: "frame", img: [853, 1843], crop: WA_CROP, bg: { x: 63, y: 77, w: 726, h: 1690 }, bgRadius: 92, chat: { x: 103, y: 282, w: 646, bottom: 1416 }, chrome: true },
+  };
+  const BOX_ASPECT = WA_CROP.w / WA_CROP.h;
   const MOCKUP_SCALE = 1.45; // content size relative to a real phone screen
-  const FRAME = { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 };
 
   function layoutFor(framing, theme) {
     const lyrics = theme.kind === "lyrics";
     if (framing === "video") {
-      const scale = lyrics ? 2.0 : LS.scale;
-      const top = lyrics ? LS.top + 150 : LS.top; // room for title/artist
-      // Left-aligned lyrics keep clear of the ~100px each side that the
+      // TikTok-safe margins (lyricSyncDefaults). Spotify's left-aligned
+      // lyrics also keep clear of the ~100px each side that the
       // phone-shaped preview box crops off the 9:16 frame.
-      const left = lyrics ? 110 : LS.left;
+      const scale = lyrics ? 1.9 : LS.scale;
+      const top = lyrics ? LS.top + 170 : LS.top; // room for title/artist
+      const left = lyrics ? 130 : LS.left;
       return {
         id: "video",
         stageW: 1080,
         stageH: 1920,
         bg: { x: 0, y: 0, w: 1080, h: 1920 },
-        header: lyrics ? { x: LS.left, y: LS.top, w: LS.safeRight - LS.left, h: 130, size: 40 } : null,
+        header: lyrics ? { x: 130, y: LS.top, w: LS.safeRight - 130, h: 150, size: 44 } : null,
         chat: {
           x: left,
           y: top,
@@ -55,44 +66,27 @@
         fit: "cover",
       };
     }
-    if (theme.mockup === "baked") {
-      return {
-        id: "mockup",
-        stageW: CROP.w,
-        stageH: CROP.h,
-        bg: SCREEN,
-        chat: {
-          // 12px side inset + the chat's own 12px padding (x1.45) ≈ real
-          // WhatsApp's bubble margin to the screen edge.
-          x: SCREEN.x + 12,
-          y: SCREEN.y,
-          scale: MOCKUP_SCALE,
-          width: Math.round((SCREEN.w - 24) / MOCKUP_SCALE),
-          height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
-        },
-        frame: { src: "mockup", ...FRAME },
-        fit: "contain",
-      };
-    }
-    // Drawn UI inside the frame-only phone.
-    const chat = lyrics
-      ? { x: SCREEN_FULL.x + 40, y: SCREEN.y + 6, w: SCREEN_FULL.w - 80, bottom: 1370 }
-      : { x: SCREEN.x + 12, y: SCREEN.y, w: SCREEN.w - 24, bottom: INPUT_BAR_TOP - 8 };
+    const M = MOCKUPS[theme.id] || MOCKUPS.whatsapp;
+    const c = M.crop;
+    const rel = (r) => ({ x: r.x - c.x, y: r.y - c.y, w: r.w, h: r.h });
+    // Chat themes: 12px side inset + the chat's own 12px padding (x1.45)
+    // ≈ the real apps' bubble margin to the screen edge.
+    const inset = lyrics ? 0 : 12;
     return {
       id: "mockup",
-      stageW: CROP.w,
-      stageH: CROP.h,
-      bg: SCREEN_FULL,
-      bgRadius: 92,
+      stageW: c.w,
+      stageH: c.h,
+      bg: rel(M.bg),
+      bgRadius: M.bgRadius || 0,
       chat: {
-        x: chat.x,
-        y: chat.y,
+        x: M.chat.x - c.x + inset,
+        y: M.chat.y - c.y,
         scale: MOCKUP_SCALE,
-        width: Math.round(chat.w / MOCKUP_SCALE),
-        height: Math.round((chat.bottom - chat.y) / MOCKUP_SCALE),
+        width: Math.round((M.chat.w - inset * 2) / MOCKUP_SCALE),
+        height: Math.round((M.chat.bottom - M.chat.y) / MOCKUP_SCALE),
       },
-      chrome: true,
-      frame: { src: "frame", ...FRAME },
+      chrome: !!M.chrome,
+      frame: { asset: M.asset, x: -c.x, y: -c.y, w: M.img[0], h: M.img[1] },
       fit: "contain",
     };
   }
@@ -101,11 +95,9 @@
   const box = (el, r) => Object.assign(el.style, { position: "absolute", left: px(r.x), top: px(r.y), width: px(r.w), height: px(r.h) });
 
   class Preview {
-    constructor(host, { backgroundSrc, mockupSrc, frameSrc, layout = "mockup", theme = "whatsapp", spotifyColor = "rojo" }) {
+    constructor(host, { backgroundSrc, layout = "mockup", theme = "whatsapp", spotifyColor = "rojo" }) {
       this.host = host;
       this.backgroundSrc = backgroundSrc;
-      this.mockupSrc = mockupSrc;
-      this.frameSrc = frameSrc;
       this.theme = WM.Themes.get(theme);
       this.spotifyColor = spotifyColor;
       this.meta = { title: "", artist: "" };
@@ -141,8 +133,8 @@
       // The preview box keeps the phone's proportions in both framings, so
       // switching never changes its size. "Video final" fills it like
       // object-fit: cover — the exported file is still the full 1080x1920.
-      this.host.style.setProperty("--stage-aspect", `${CROP.w} / ${CROP.h}`);
-      this.host.style.setProperty("--stage-ratio", CROP.w / CROP.h);
+      this.host.style.setProperty("--stage-aspect", String(BOX_ASPECT));
+      this.host.style.setProperty("--stage-ratio", BOX_ASPECT);
 
       const stage = (this.stage = document.createElement("div"));
       stage.className = "wm-stage";
@@ -227,7 +219,7 @@
       // 5. Device frame on top (preview only)
       if (L.frame) {
         const frame = document.createElement("img");
-        frame.src = L.frame.src === "mockup" ? this.mockupSrc : this.frameSrc;
+        frame.src = WM.ASSETS[L.frame.asset];
         frame.alt = "";
         box(frame, L.frame);
         // The frame is deliberately wider than the cropped stage; hosts

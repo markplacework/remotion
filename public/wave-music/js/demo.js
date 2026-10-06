@@ -9,6 +9,9 @@
     mockup: "assets/mockup-whatsapp.png",
     // Same phone with an empty screen, for styles that draw their own UI.
     frame: "assets/phone-frame.png",
+    // User-supplied Instagram / Messenger chat mockups (transparent screen).
+    mockupInstagram: "assets/mockup-instagram.png",
+    mockupMessenger: "assets/mockup-messenger.png",
   };
 
   WM.DEMO = {

@@ -1,26 +1,15 @@
 // Wave Music · INTERFAZ DEL MOCKUP
-// For styles whose app UI isn't baked into a mockup image (Instagram,
-// Messenger, Spotify), the phone's screen is drawn here in HTML: status
-// bar, header and input bar / player controls. Preview only — the
+// Spotify's player UI isn't baked into a mockup image, so its screen is
+// drawn here in HTML (status bar, title/artist, player controls) over the
+// frame-only phone. Preview only — the
 // exported video never includes it. Coordinates are the cropped mockup
 // stage's (see preview.js SCREEN_FULL).
 (function (WM) {
   const FONT = WM.Themes.FONT_STACK;
+  // Font stack safe inside a double-quoted style="" attribute.
+  const LYRICS_ATTR = WM.Themes.LYRICS_FONT.replace(/"/g, "'");
 
   const ICON = {
-    back: '<path d="M19 12H5M11 5l-7 7 7 7"/>',
-    phone:
-      '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
-    video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/>',
-    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/>',
-    flag: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',
-    mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
-    image: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
-    sticker: '<path d="M21 12a9 9 0 1 1-9-9h9z"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
-    plus: '<circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>',
-    camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
-    smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
-    like: '<path d="M7 22V11M2 13v7a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-1.7l1.4-8A2 2 0 0 0 17.8 10H14V5a3 3 0 0 0-3-3l-4 9"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
     share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
     dots: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
@@ -28,9 +17,6 @@
   function icon(name, size, color, { fill = "none", sw = 2 } = {}) {
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICON[name]}</svg>`;
   }
-  const AVATAR = (size) =>
-    `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#3a3b3c;display:grid;place-items:center;overflow:hidden;flex:none">` +
-    `<svg width="${size}" height="${size}" viewBox="0 0 40 40"><circle cx="20" cy="15" r="7" fill="#b0b3b8"/><path d="M6 36c2-8 8-11 14-11s12 3 14 11z" fill="#b0b3b8"/></svg></div>`;
 
   function el(html, style) {
     const d = document.createElement("div");
@@ -53,52 +39,13 @@
   const homeBar = (color) =>
     el("", { left: "300px", top: "1690px", width: "200px", height: "8px", borderRadius: "4px", background: color });
 
-  // ---------- Instagram / Messenger ----------
-  function chatChrome(theme) {
-    const ig = theme.id === "instagram";
-    const accent = ig ? "#ffffff" : "#5647eb";
-    const nodes = [statusBar("#fff")];
-    nodes.push(
-      el(
-        `<span style="display:flex;align-items:center;gap:22px;min-width:0">${icon("back", 46, ig ? "#fff" : accent, { sw: 2.4 })}${AVATAR(72)}` +
-          `<span style="display:flex;flex-direction:column;line-height:1.2">` +
-          `<b style="font-size:30px;color:#fff;font-weight:${ig ? 700 : 600}">usuario</b>` +
-          (ig ? `<span style="font-size:24px;color:#a8a8a8">usuario</span>` : `<span style="font-size:23px;color:#a8a8a8">Activo(a) ahora</span>`) +
-          `</span></span>` +
-          `<span style="display:flex;gap:34px">${icon("phone", 44, accent)}${icon("video", 46, accent)}${ig ? icon("flag", 44, accent) : icon("info", 46, accent)}</span>`,
-        { left: "37px", top: "127px", width: "726px", height: "110px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 34px 0 28px", boxSizing: "border-box" },
-      ),
-    );
-    if (ig) {
-      nodes.push(
-        el(
-          `<span style="width:66px;height:66px;border-radius:50%;background:#3b5bff;display:grid;place-items:center;flex:none">${icon("camera", 34, "#fff", { sw: 2.2 })}</span>` +
-            `<span style="flex:1;color:#a8a8a8;font-size:27px;padding-left:18px">Enviar mensaje...</span>` +
-            `<span style="display:flex;gap:24px;padding-right:10px">${icon("mic", 38, "#fff")}${icon("image", 38, "#fff")}${icon("sticker", 38, "#fff")}${icon("plus", 38, "#fff")}</span>`,
-          { left: "52px", top: "1566px", width: "696px", height: "84px", display: "flex", alignItems: "center", padding: "0 9px", boxSizing: "border-box", borderRadius: "42px", background: "#262626" },
-        ),
-      );
-    } else {
-      nodes.push(
-        el(
-          `<span style="display:flex;gap:22px;align-items:center"><svg width="44" height="44" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${accent}"/><path d="M12 7v10M7 12h10" stroke="#000" stroke-width="2.4" stroke-linecap="round"/></svg>${icon("camera", 42, accent)}${icon("image", 42, accent)}${icon("mic", 42, accent)}</span>` +
-            `<span style="flex:1;margin:0 16px;height:74px;border-radius:37px;background:#2a2a2b;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 26px;color:#a8a8a8;font-size:27px">Mensaje${icon("smile", 38, accent)}</span>` +
-            icon("like", 46, accent, { fill: accent, sw: 1 }),
-          { left: "37px", top: "1570px", width: "726px", height: "80px", display: "flex", alignItems: "center", padding: "0 22px", boxSizing: "border-box" },
-        ),
-      );
-    }
-    nodes.push(homeBar("#ffffff"));
-    return { nodes, update() {} };
-  }
-
   // ---------- Spotify ----------
   function spotifyChrome(theme, ctx) {
     const nodes = [statusBar("#fff")];
     const head = el(
       `<span style="position:absolute;left:30px;top:24px">${icon("chevron", 54, "#fff", { sw: 2.4 })}</span>` +
-        `<b class="sp-title" style="display:block;font-family:${WM.Themes.LYRICS_FONT};font-size:31px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 120px"></b>` +
-        `<span class="sp-artist" style="display:block;font-family:${WM.Themes.LYRICS_FONT};font-size:29px;color:#fff;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 120px"></span>`,
+        `<b class="sp-title" style="display:block;font-family:${LYRICS_ATTR};font-size:31px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 120px"></b>` +
+        `<span class="sp-artist" style="display:block;font-family:${LYRICS_ATTR};font-size:29px;color:#fff;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 120px"></span>`,
       { left: "37px", top: "127px", width: "726px", height: "100px", textAlign: "center", lineHeight: "1.4", paddingTop: "8px", boxSizing: "border-box" },
     );
     nodes.push(head);
@@ -138,7 +85,7 @@
 
   WM.Chrome = {
     build(theme, ctx) {
-      return theme.kind === "lyrics" ? spotifyChrome(theme, ctx) : chatChrome(theme, ctx);
+      return spotifyChrome(theme, ctx);
     },
   };
 })((window.WaveMusic = window.WaveMusic || {}));
