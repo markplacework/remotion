@@ -20,6 +20,7 @@
       return entry.text.split(/\s+/).filter(Boolean).map((text, i) => ({ text, t0: entry.start, t1: entry.start + 0.3, index: i }));
     }
     if (entry.words && entry.words.length) return entry.words;
+    const spread = mode === "spread";
     // real word times from the AI sync, kept relative to the line start
     // so a manual nudge of the line moves its words with it
     const ai = WM.AiWords && WM.AiWords[entry.lineId];
@@ -28,7 +29,9 @@
     if (!parts.length) return [];
     const room = Math.max(0.4, entry.end - entry.start);
     // Sung span: proportional to the word count, never past ~85% of the gap.
-    const span = Math.min(room * 0.85, Math.max(0.5, parts.length / WORDS_PER_SEC));
+    // "spread" fills the line's own window instead, so the words stay
+    // anchored to the phrase timing (the last one ends as the next line starts).
+    const span = spread ? Math.min(room * 0.92, Math.max(0.6, parts.length * 0.6)) : Math.min(room * 0.85, Math.max(0.5, parts.length / WORDS_PER_SEC));
     const weights = parts.map((w) => 0.6 + Math.min(w.length, 10) / 10);
     const total = weights.reduce((a, b) => a + b, 0);
     let t = entry.start;
@@ -45,7 +48,7 @@
     return timeline.entries.map((e, i) => ({ ...e, index: i, words: wordsFor(e, mode) }));
   }
   /** The word mode a preset runs with: word-paced styles always go word by word. */
-  const modeFor = (preset) => (preset && preset.wordBased ? "word" : WM.Motion.wordMode);
+  const modeFor = (preset) => (preset && preset.wordBased ? (preset.wordBased === true ? "word" : preset.wordBased) : WM.Motion.wordMode);
 
   // ---------- energy ----------
   const RATE = 50; // envelope samples per second

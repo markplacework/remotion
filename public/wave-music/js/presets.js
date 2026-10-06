@@ -1118,6 +1118,8 @@
   }
   const wordPop = {
     id: "wordpop",
+    // word by word, paced inside each phrase's own time window
+    wordBased: "spread",
     label: "Word Pop",
     tag: "Redes",
     fonts: ["900 100px Poppins"],
@@ -2066,6 +2068,8 @@
   const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
+    // cuts on every word, paced inside each phrase's own time window
+    wordBased: "spread",
     label: "Blackout",
     tag: "Contraste",
     fonts: ["400 100px 'League Gothic'", "700 100px 'Barlow Condensed'"],

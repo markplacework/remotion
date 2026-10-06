@@ -723,7 +723,7 @@
       { lineId: "b", text: "Siempre vuelvo a vos", start: 2.4, end: 4.8 },
     ],
   };
-  const SAMPLES = { line: WM.Motion.prepare(SAMPLE_TL, "line"), word: WM.Motion.prepare(SAMPLE_TL, "word") };
+  const SAMPLES = { line: WM.Motion.prepare(SAMPLE_TL, "line"), word: WM.Motion.prepare(SAMPLE_TL, "word"), spread: WM.Motion.prepare(SAMPLE_TL, "spread") };
   const proThumbs = [];
   function drawThumbs(now) {
     const t = ((now / 1000) % 5.2) + 0.1;
