@@ -348,7 +348,8 @@
 
   function openFull() {
     if (!timeline) return;
-    hideHint();
+    host.classList.remove("ui-on");
+    $("full-name").textContent = audio.name || "Wave Music";
     $("full-stage").appendChild(host);
     $("full").hidden = false;
     needsSnap = true;
@@ -362,10 +363,34 @@
     needsSnap = true;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
-  host.addEventListener("click", (e) => {
-    if (e.target.closest(".empty-cta")) return;
-    if ($("full").hidden) openFull();
+  // Player overlay on the preview (like a video player): hover shows it
+  // on desktop; on touch a tap shows it for a moment. Clicking the
+  // picture itself plays/pauses; the overlay buttons do the rest.
+  let uiTimer = 0;
+  function showControls(ms = 2500) {
+    host.classList.add("ui-on");
+    clearTimeout(uiTimer);
+    uiTimer = setTimeout(() => host.classList.remove("ui-on"), ms);
+  }
+  host.addEventListener("pointerup", (e) => {
+    if (!$("full").hidden || e.target.closest(".empty-cta, button")) return;
+    if (e.pointerType === "mouse") playPause();
+    else if (host.classList.contains("ui-on")) host.classList.remove("ui-on");
+    else showControls();
   });
+  // Double-click the picture = full screen (as in most video players).
+  host.addEventListener("dblclick", (e) => {
+    if ($("full").hidden && !e.target.closest(".empty-cta, button")) openFull();
+  });
+  $("ui-play").onclick = (e) => {
+    e.stopPropagation();
+    playPause();
+    showControls();
+  };
+  $("ui-full").onclick = (e) => {
+    e.stopPropagation();
+    openFull();
+  };
   $("btn-full").onclick = (e) => {
     e.stopPropagation();
     openFull();
@@ -382,17 +407,13 @@
   });
   fs.addEventListener("change", () => (fullScrubbing = false));
 
-  // Discoverability: a one-time hint the first time the preview has
-  // something to show.
-  let hintShown = false;
-  function showHint() {
-    if (hintShown) return;
-    hintShown = true;
-    $("full-hint").hidden = false;
-    setTimeout(() => hideHint(), 5000);
-  }
-  function hideHint() {
-    $("full-hint").hidden = true;
+  // Discoverability: the first time there is something to watch, the
+  // overlay shows itself for a few seconds so people see it exists.
+  let introShown = false;
+  function introduceControls() {
+    if (introShown) return;
+    introShown = true;
+    showControls(3200);
   }
 
   // ---------- descargar video ----------
@@ -560,7 +581,7 @@
     audio.seek(0);
     audio.play();
     document.body.classList.add("has-demo");
-    setTimeout(showHint, 1200);
+    setTimeout(introduceControls, 900);
   }
 
   document.addEventListener("keydown", (ev) => {

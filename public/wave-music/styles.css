@@ -1114,9 +1114,7 @@ kbd {
 }
 
 /* ---------- pantalla completa ---------- */
-.stage-host {
-  cursor: zoom-in;
-}
+
 .full-btn {
   flex: none;
   width: 40px;
@@ -1137,31 +1135,85 @@ kbd {
 .framing {
   flex-wrap: nowrap;
 }
-.full-hint {
+/* ---------- player overlay ---------- */
+.stage-ui {
   position: absolute;
-  left: 50%;
-  bottom: 16%;
+  inset: 0;
   z-index: 3;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  padding: 8px 14px;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 35%),
+    rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+/* On the mockup, only the phone's screen gets the overlay. */
+.stage-host[data-layout="mockup"] .stage-ui {
+  inset: 13.8% 4.8% 11% 4.6%;
+  border-radius: 0;
+}
+.stage-host.ui-on .stage-ui {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .stage-host:hover .stage-ui {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.stage-host.is-empty .stage-ui {
+  display: none;
+}
+.ui-play {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 0;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s, background 0.2s;
+}
+.ui-play:hover {
+  transform: scale(1.06);
+  background: rgba(255, 255, 255, 0.26);
+}
+.ui-play .i-pause,
+.is-playing .ui-play .i-play {
+  display: none;
+}
+.is-playing .ui-play .i-pause {
+  display: block;
+}
+.ui-full {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
   border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
-  background: rgba(var(--accent-rgb), 0.92);
-  box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.45);
-  pointer-events: none;
-  animation: hint-in 0.35s ease both, hint-bob 1.6s ease-in-out 0.35s infinite;
+  background: rgba(6, 8, 14, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background 0.2s, border-color 0.2s;
 }
-@keyframes hint-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-}
-@keyframes hint-bob {
-  50% { transform: translate(-50%, -4px); }
-}
-.stage-host.is-empty .full-hint {
-  display: none;
+.ui-full:hover {
+  background: rgba(var(--accent-rgb), 0.85);
+  border-color: transparent;
 }
 .full {
   position: fixed;
@@ -1186,22 +1238,47 @@ kbd {
   max-width: 100%;
   cursor: default;
 }
-.full-stage .full-hint {
+.full-stage .stage-ui {
   display: none;
 }
+.full-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 0;
+}
+.full-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.full-title img {
+  height: 18px;
+  mix-blend-mode: screen;
+}
+.full-title span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .full-close {
-  position: absolute;
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  right: 12px;
-  z-index: 2;
-  width: 44px;
-  height: 44px;
+  flex: none;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--text);
   display: grid;
   place-items: center;
+}
+.full-close:hover {
+  border-color: rgba(var(--accent-rgb), 0.7);
 }
 .full-bar {
   flex: none;

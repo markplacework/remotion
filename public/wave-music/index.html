@@ -134,7 +134,17 @@
         <div class="preview-body">
         <div class="preview-main">
           <div id="stage-host" class="stage-host is-empty">
-            <div id="full-hint" class="full-hint" hidden>Tocá para ver en pantalla completa</div>
+            <!-- Player overlay: hover (desktop) / tap (touch) shows it -->
+            <div id="stage-ui" class="stage-ui">
+              <button id="ui-play" class="ui-play" aria-label="Reproducir o pausar">
+                <svg class="i-play" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                <svg class="i-pause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+              </button>
+              <button id="ui-full" class="ui-full" aria-label="Ver en pantalla completa">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+                Pantalla completa
+              </button>
+            </div>
             <div class="empty-cta">
               <img class="empty-logo" src="assets/logo.png" alt="Wave Music" />
               <p>Audio + letra + sincronización</p>
@@ -190,9 +200,15 @@
 
     <!-- Pantalla completa: the stage is moved in here while open -->
     <div id="full" class="full" hidden>
-      <button id="full-close" class="full-close" aria-label="Salir de pantalla completa">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-      </button>
+      <div class="full-top">
+        <div class="full-title">
+          <img src="assets/logo-mark.jpg" alt="" />
+          <span id="full-name">Wave Music</span>
+        </div>
+        <button id="full-close" class="full-close" aria-label="Salir de pantalla completa">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
       <div id="full-stage" class="full-stage"></div>
       <div class="full-bar">
         <button id="full-play" class="play-btn small" aria-label="Reproducir o pausar">
