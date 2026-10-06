@@ -913,6 +913,134 @@ kbd {
   display: block;
 }
 
+/* ---------- export ---------- */
+[hidden] {
+  display: none !important;
+}
+.btn-export {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.export {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 3, 7, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.export-card {
+  width: min(100%, 420px);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.export-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.export-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.export-spec {
+  font-size: 12px;
+  color: var(--muted);
+}
+.export-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.export-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.export-canvas {
+  display: flex;
+  justify-content: center;
+}
+.export-canvas canvas {
+  height: min(46vh, 380px);
+  width: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--line-2);
+}
+.export-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.export-bar div {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent-3), var(--accent), var(--accent-2));
+}
+.export-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.export-ready {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.export-ready svg {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+}
+.export-ready div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+.export-ready span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .toast {
   position: fixed;
   left: 50%;
@@ -926,7 +1054,7 @@ kbd {
   opacity: 0;
   pointer-events: none;
   transition: all 0.25s ease;
-  z-index: 10;
+  z-index: 30;
 }
 .toast.show {
   opacity: 1;
@@ -1087,6 +1215,10 @@ kbd {
             <button data-framing="video" aria-pressed="false">Video final</button>
           </div>
           <span id="framing-note" class="framing-note">El mockup es solo para la vista previa</span>
+          <button id="btn-export" class="btn btn-primary btn-export" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
         </div>
         <div class="preview-body">
         <div id="stage-host" class="stage-host is-empty">
@@ -1130,6 +1262,54 @@ kbd {
     </main>
 
     <div id="toast" class="toast"></div>
+
+    <!-- Export dialog: setup -> recording -> ready -->
+    <div id="export" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
+        <div class="export-head">
+          <h3 id="export-title">Descargar video</h3>
+          <span class="export-spec">9:16 · 1080 × 1920 · sin mockup</span>
+        </div>
+
+        <div class="export-step" data-export="setup">
+          <label class="check">
+            <input id="export-audio" type="checkbox" checked />
+            <span>Incluir el audio de la canción</span>
+          </label>
+          <p class="export-note">
+            El video se graba en tiempo real, así que tarda lo mismo que la canción (<span id="export-dur">00:00</span>).
+            Dejá esta pestaña abierta y visible mientras tanto.
+          </p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cancelar</button>
+            <button id="export-start" class="btn btn-primary">Exportar video</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="recording" hidden>
+          <div id="export-canvas" class="export-canvas"></div>
+          <div class="export-bar"><div id="export-progress"></div></div>
+          <div class="export-meta"><span id="export-time">00:00 / 00:00</span><span>Grabando…</span></div>
+          <div class="export-actions">
+            <button id="export-cancel" class="btn btn-ghost">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="ready" hidden>
+          <div class="export-ready">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            <div>
+              <strong>Tu video está listo</strong>
+              <span id="export-info"></span>
+            </div>
+          </div>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cerrar</button>
+            <button id="export-save" class="btn btn-primary">Guardar video</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Each concept lives in its own module -->
     <script>
@@ -1804,19 +1984,24 @@ kbd {
         row.style.display = "none";
         last = "";
       },
-      /** @param {{ age:number, active:boolean, playing:boolean }} s */
+      /**
+       * @param {{ age:number, active:boolean, playing:boolean }} s
+       * @returns the bubble's look this frame (also used by the video
+       *   renderer, so preview and export animate identically)
+       */
       update(s) {
         if (s.age < 0) {
           if (last !== "hidden") row.style.display = "none";
           last = "hidden";
-          return;
+          return { visible: false };
         }
         const enter = spring(s.age);
         const scale = lerp(0.85, 1, enter);
         const ty = lerp(14, 0, enter);
         const opacity = Math.min(enter, 1) * (s.active ? 1 : 0.78);
+        const look = { visible: true, scale, ty, opacity, active: s.active };
         const key = [scale.toFixed(4), ty.toFixed(2), opacity.toFixed(3), s.active, s.playing].join();
-        if (key === last) return;
+        if (key === last) return look;
         last = key;
         row.style.display = "flex";
         row.style.opacity = opacity;
@@ -1824,6 +2009,7 @@ kbd {
         bubble.style.filter = s.active ? "brightness(1.12)" : "none";
         eq.classList.toggle("on", s.active);
         eq.classList.toggle("playing", s.active && s.playing);
+        return look;
       },
     };
   }
@@ -2009,12 +2195,16 @@ kbd {
       return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - h + BOTTOM_PADDING) : 0;
     }
 
-    /** Pure function of the sync state, so seeking renders the exact frame. */
+    /**
+     * Pure function of the sync state, so seeking renders the exact frame.
+     * @returns {{ scroll:number, looks:object[] }} what was drawn, for the
+     *   video renderer
+     */
     render(state, { playing = false } = {}) {
-      if (!this.bubbles.length) return;
+      if (!this.bubbles.length) return { scroll: 0, looks: [] };
       if (!this.bottoms) this.measure();
 
-      state.entries.forEach((s, i) =>
+      const looks = state.entries.map((s, i) =>
         this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, playing }),
       );
 
@@ -2024,7 +2214,9 @@ kbd {
       const ease = last >= 0 ? Math.min(scrollSpring(state.entries[last].age), 1) : 0;
       const prev = this.scrollFor(last - 1);
       const next = this.scrollFor(last);
-      this.content.style.transform = `translateY(${-(prev + (next - prev) * ease)}px)`;
+      const scroll = prev + (next - prev) * ease;
+      this.content.style.transform = `translateY(${-scroll}px)`;
+      return { scroll, looks };
     }
   }
 
@@ -2036,6 +2228,414 @@ kbd {
 
   WM.Preview = Preview;
   WM.Preview.LAYOUTS = LAYOUTS;
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
+// Wave Music · RENDER DE VIDEO
+// Paints the "Video final" framing (1080x1920: wallpaper + chat, never the
+// mockup) onto a canvas, one frame per call. Layout is not re-invented
+// here: an off-screen Preview in the "video" layout lays the bubbles out
+// with the real DOM/CSS, we read their boxes once, and every frame reuses
+// the Preview's own animation values (entrance spring, scroll).
+(function (WM) {
+  const { WA, FONT_STACK } = WM.Bubbles;
+  const FONT_SIZE = 22; // DarkChatLog default
+  const LINE_H = FONT_SIZE * 1.32;
+  const TS_SIZE = FONT_SIZE * 0.68;
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("No se pudo cargar el fondo"));
+      img.src = src;
+    });
+  }
+
+  function roundRect(g, x, y, w, h, [tl, tr, br, bl]) {
+    g.beginPath();
+    g.moveTo(x + tl, y);
+    g.lineTo(x + w - tr, y);
+    g.quadraticCurveTo(x + w, y, x + w, y + tr);
+    g.lineTo(x + w, y + h - br);
+    g.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+    g.lineTo(x + bl, y + h);
+    g.quadraticCurveTo(x, y + h, x, y + h - bl);
+    g.lineTo(x, y + tl);
+    g.quadraticCurveTo(x, y, x + tl, y);
+    g.closePath();
+  }
+
+  function brighten(hex, k) {
+    const n = parseInt(hex.slice(1), 16);
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.min(255, Math.round(v * k)));
+    return `rgb(${c.join(",")})`;
+  }
+
+  function wrap(g, text, width) {
+    const out = [];
+    text.split("\n").forEach((para) => {
+      let line = "";
+      para.split(/\s+/).forEach((word) => {
+        const tryLine = line ? line + " " + word : word;
+        if (line && g.measureText(tryLine).width > width + 0.5) {
+          out.push(line);
+          line = word;
+        } else line = tryLine;
+      });
+      out.push(line);
+    });
+    return out;
+  }
+
+  class VideoRenderer {
+    /** Use create(): it waits for the background image. */
+    constructor(timeline, bg) {
+      this.timeline = timeline;
+      this.bg = bg;
+      this.canvas = document.createElement("canvas");
+      this.canvas.width = 1080;
+      this.canvas.height = 1920;
+      this.g = this.canvas.getContext("2d");
+
+      // Off-screen Preview in the exported framing, for layout + animation.
+      this.host = document.createElement("div");
+      Object.assign(this.host.style, {
+        position: "fixed",
+        left: "-20000px",
+        top: "0",
+        width: "1080px",
+        height: "1920px",
+        opacity: "0",
+        pointerEvents: "none",
+      });
+      document.body.appendChild(this.host);
+      this.preview = new WM.Preview(this.host, { backgroundSrc: bg.src, layout: "video" });
+      this.preview.setTimeline(timeline);
+      this.L = this.preview.layout;
+      this.measure();
+    }
+
+    static async create(timeline, backgroundSrc) {
+      const bg = await loadImage(backgroundSrc);
+      return new VideoRenderer(timeline, bg);
+    }
+
+    measure() {
+      const g = this.g;
+      const content = this.preview.content;
+      const bubbles = this.preview.bubbles;
+      const scale = this.L.chat.scale;
+      content.style.transform = "";
+      bubbles.forEach((b) => (b.root.style.display = "flex"));
+      // Boxes in the chat's own (pre-scale) coordinates, relative to the
+      // clipping viewport — the same space the canvas draws in.
+      const origin = content.parentElement.getBoundingClientRect();
+      const box = (el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          x: (r.left - origin.left) / scale,
+          y: (r.top - origin.top) / scale,
+          w: r.width / scale,
+          h: r.height / scale,
+        };
+      };
+      const pill = content.firstChild.firstChild;
+      this.pill = { ...box(pill), text: pill.textContent };
+      g.font = `${FONT_SIZE}px ${FONT_STACK}`;
+      this.items = bubbles.map((b, i) => {
+        const rowEl = b.root;
+        const boxEl = rowEl.firstChild;
+        const [textEl, metaEl] = boxEl.children;
+        const row = box(rowEl);
+        const text = box(textEl);
+        const meta = box(metaEl);
+        return {
+          row,
+          box: box(boxEl),
+          text,
+          meta: { right: meta.x + meta.w, cy: meta.y + meta.h / 2 },
+          lines: wrap(g, this.timeline.entries[i].text, textEl.clientWidth),
+          clock: metaEl.querySelector("span:not(.wm-eq)").textContent,
+        };
+      });
+      bubbles.forEach((b) => b.reset());
+    }
+
+    /** Paint the frame for time `t` (seconds) given a sync state. */
+    draw(t, state) {
+      const g = this.g;
+      const L = this.L;
+      const { scroll, looks } = this.preview.render(state, { playing: true });
+
+      // wallpaper, object-fit: cover
+      const { width: iw, height: ih } = this.bg;
+      const k = Math.max(L.stageW / iw, L.stageH / ih);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalAlpha = 1;
+      g.drawImage(this.bg, (L.stageW - iw * k) / 2, (L.stageH - ih * k) / 2, iw * k, ih * k);
+
+      // chat viewport: same origin, scale and clip as the DOM
+      g.save();
+      g.translate(L.chat.x, L.chat.y);
+      g.scale(L.chat.scale, L.chat.scale);
+      g.beginPath();
+      g.rect(0, 0, L.chat.width, L.chat.height);
+      g.clip();
+      g.translate(0, -scroll);
+
+      this.drawPill();
+      this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawBubble(it, looks[i], t));
+      g.restore();
+      return this.canvas;
+    }
+
+    drawPill() {
+      const g = this.g;
+      const p = this.pill;
+      roundRect(g, p.x, p.y, p.w, p.h, [7, 7, 7, 7]);
+      g.fillStyle = "rgba(24, 34, 41, 0.92)";
+      g.fill();
+      g.fillStyle = WA.timestamp;
+      g.font = `600 15px ${FONT_STACK}`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText(p.text, p.x + p.w / 2, p.y + p.h / 2 + 0.5);
+      g.textAlign = "left";
+    }
+
+    drawBubble(it, look, t) {
+      const g = this.g;
+      g.save();
+      g.globalAlpha = look.opacity;
+      // transform-origin: top right of the row (outgoing bubbles)
+      const ox = it.row.x + it.row.w;
+      const oy = it.row.y;
+      g.translate(ox, oy + look.ty);
+      g.scale(look.scale, look.scale);
+      g.translate(-ox, -oy);
+
+      const b = it.box;
+      roundRect(g, b.x, b.y, b.w, b.h, [14, 3, 14, 14]);
+      g.fillStyle = look.active ? brighten(WA.bubbleOut, 1.12) : WA.bubbleOut;
+      g.fill();
+
+      g.fillStyle = look.active ? brighten(WA.text, 1.0) : WA.text;
+      g.font = `${FONT_SIZE}px ${FONT_STACK}`;
+      g.textBaseline = "middle";
+      it.lines.forEach((line, n) => g.fillText(line, it.text.x, it.text.y + n * LINE_H + LINE_H / 2));
+
+      // meta row, right-aligned: [eq] clock ticks
+      const th = TS_SIZE;
+      const tw = (th * 18) / 13;
+      let x = it.meta.right - tw;
+      this.drawTicks(x, it.meta.cy - th / 2, th);
+      g.font = `${TS_SIZE}px ${FONT_STACK}`;
+      g.fillStyle = WA.timestamp;
+      const cw = g.measureText(it.clock).width;
+      x -= 6 + cw;
+      g.fillText(it.clock, x, it.meta.cy + 0.5);
+      if (look.active) this.drawEq(x - 6 - 3, it.meta.cy, t);
+      g.restore();
+    }
+
+    drawTicks(x, y, h) {
+      const g = this.g;
+      const s = h / 13;
+      g.save();
+      g.translate(x, y);
+      g.scale(s, s);
+      g.strokeStyle = WA.readTick;
+      g.lineWidth = 1.6;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      g.beginPath();
+      g.moveTo(1, 6.8);
+      g.lineTo(4.6, 10.4);
+      g.lineTo(11, 3.6);
+      g.moveTo(6.3, 6.8);
+      g.lineTo(9.9, 10.4);
+      g.lineTo(17, 3.6);
+      g.stroke();
+      g.restore();
+    }
+
+    // Same "now playing" bars as the CSS .wm-eq animation (0.9 s loop).
+    drawEq(right, cy, t) {
+      const g = this.g;
+      const H = 11;
+      g.fillStyle = "#22d3f5";
+      [0, -0.3, -0.6].forEach((delay, n) => {
+        const ph = (((t - delay) / 0.9) % 1 + 1) % 1;
+        const k = 0.35 + 0.65 * (0.5 - 0.5 * Math.cos(ph * 2 * Math.PI));
+        const x = right - 11.5 + n * 4.5;
+        g.fillRect(x, cy + H / 2 - H * k, 2.5, H * k);
+      });
+    }
+
+    dispose() {
+      this.host.remove();
+    }
+  }
+
+  WM.VideoRenderer = VideoRenderer;
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
+// Wave Music · EXPORTAR
+// Records the "Video final" framing to a video file in the browser:
+// VideoRenderer paints each frame on a canvas while the song plays on a
+// separate (silent to the speakers) audio element, and MediaRecorder
+// captures canvas + audio together. Real time: a 45 s song takes ~45 s.
+// The audio clock drives the frames, exactly like the preview, so the
+// exported sync is the one you see.
+(function (WM) {
+  const FPS = 30;
+
+  // Prefer MP4 (plays everywhere, TikTok/Instagram ready); WebM otherwise.
+  const TYPES = [
+    { mime: "video/mp4;codecs=avc1.640028,mp4a.40.2", ext: "mp4" },
+    { mime: "video/mp4;codecs=avc1.42E01F,mp4a.40.2", ext: "mp4" },
+    { mime: "video/mp4", ext: "mp4" },
+    { mime: "video/webm;codecs=vp9,opus", ext: "webm" },
+    { mime: "video/webm;codecs=vp8,opus", ext: "webm" },
+    { mime: "video/webm", ext: "webm" },
+  ];
+
+  function pickType() {
+    if (typeof MediaRecorder === "undefined") return null;
+    return TYPES.find((t) => MediaRecorder.isTypeSupported(t.mime)) || null;
+  }
+
+  function supported() {
+    return !!pickType() && !!HTMLCanvasElement.prototype.captureStream;
+  }
+
+  /**
+   * @param {{ timeline, audioSrc:string, backgroundSrc:string, duration:number,
+   *           withAudio?:boolean, onProgress?(t, duration), onCanvas?(canvas),
+   *           signal?:AbortSignal }} o
+   * @returns {Promise<{ blob: Blob, ext: string }>}
+   */
+  async function exportVideo(o) {
+    const type = pickType();
+    if (!type) throw new Error("Este navegador no puede grabar video");
+
+    const renderer = await WM.VideoRenderer.create(o.timeline, o.backgroundSrc);
+    if (o.onCanvas) o.onCanvas(renderer.canvas);
+    const sync = new WM.SyncEngine();
+    sync.setTimeline(o.timeline);
+    renderer.draw(0, sync.stateAt(0));
+
+    const stream = renderer.canvas.captureStream(FPS);
+    const el = new Audio();
+    el.src = o.audioSrc;
+    el.preload = "auto";
+    let actx = null;
+    if (o.withAudio !== false) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      actx = new Ctx();
+      const dest = actx.createMediaStreamDestination();
+      actx.createMediaElementSource(el).connect(dest);
+      dest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
+      await actx.resume();
+    } else {
+      el.muted = true;
+    }
+    await new Promise((res, rej) => {
+      if (el.readyState >= 3) return res();
+      el.oncanplaythrough = res;
+      el.onerror = () => rej(new Error("No se pudo leer el audio"));
+    });
+
+    const rec = new MediaRecorder(stream, {
+      mimeType: type.mime,
+      videoBitsPerSecond: 10_000_000,
+      audioBitsPerSecond: 192_000,
+    });
+    const chunks = [];
+    rec.ondataavailable = (e) => e.data && e.data.size && chunks.push(e.data);
+    const stopped = new Promise((res) => (rec.onstop = res));
+
+    const end = Math.min(o.duration || el.duration, el.duration || Infinity);
+    let raf = 0;
+    let aborted = false;
+    const cleanup = () => {
+      cancelAnimationFrame(raf);
+      el.pause();
+      stream.getTracks().forEach((tr) => tr.stop());
+      if (actx) actx.close();
+      renderer.dispose();
+    };
+
+    try {
+      rec.start(1000);
+      el.currentTime = 0;
+      await el.play();
+      await new Promise((resolve) => {
+        const tick = () => {
+          if (o.signal && o.signal.aborted) {
+            aborted = true;
+            return resolve();
+          }
+          const t = el.currentTime;
+          renderer.draw(t, sync.stateAt(t));
+          if (o.onProgress) o.onProgress(t, end);
+          if (el.ended || t >= end) return resolve();
+          raf = requestAnimationFrame(tick);
+        };
+        el.onended = () => resolve();
+        tick();
+      });
+      // one last frame so the final state is held, then close the file
+      renderer.draw(end, sync.stateAt(end));
+      await new Promise((r) => setTimeout(r, 250));
+      rec.stop();
+      await stopped;
+    } finally {
+      cleanup();
+    }
+    if (aborted) throw Object.assign(new Error("Exportación cancelada"), { code: "cancelled" });
+    return { blob: new Blob(chunks, { type: type.mime.split(";")[0] }), ext: type.ext };
+  }
+
+  // ---------- saving ----------
+  // Inside the claude.ai viewer, files are offered through the `downloads`
+  // capability (the viewer confirms); opened as a plain page, a normal
+  // browser download.
+  const downloadsReady =
+    window.claude && typeof window.claude.use === "function"
+      ? window.claude.use("downloads").catch(() => null)
+      : Promise.resolve(null);
+
+  const SAVE_ERRORS = {
+    declined: "Descarga cancelada",
+    rate_limited: "Esperá un momento y probá de nuevo",
+    too_large: "El video es demasiado grande para descargarlo acá",
+  };
+
+  async function saveFile(blob, filename) {
+    const downloads = await downloadsReady;
+    if (downloads) {
+      try {
+        await downloads.save({ filename, data: blob });
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, message: SAVE_ERRORS[e && e.code] || "No se pudo guardar el video" };
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return { ok: true };
+  }
+
+  WM.Exporter = { exportVideo, saveFile, supported, pickType };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -2089,6 +2689,7 @@ kbd {
     const hasLyrics = parsed.lines.length > 0;
     $("btn-generate").disabled = !hasLyrics;
     $("transport").classList.toggle("disabled", !hasAudio);
+    $("btn-export").disabled = !(hasAudio && timeline);
     $("audio-name").textContent = hasAudio ? audio.name : "Sin audio";
     $("audio-meta").textContent = hasAudio ? T.format(audio.duration) : "mp3 · wav · m4a";
     $("line-count").textContent = hasLyrics ? parsed.lines.length + " líneas" : "";
@@ -2371,6 +2972,76 @@ kbd {
     toast("Tiempos restablecidos");
   };
 
+  // ---------- descargar video ----------
+  let exportCtl = null;
+  let exported = null;
+
+  function exportStep(name) {
+    document.querySelectorAll("[data-export]").forEach((el) => (el.hidden = el.dataset.export !== name));
+  }
+  function closeExport() {
+    if (exportCtl) exportCtl.abort();
+    $("export").hidden = true;
+  }
+
+  $("btn-export").onclick = () => {
+    if (!WM.Exporter.supported()) return toast("Este navegador no puede grabar video. Probá con Chrome.");
+    if (!audio.loaded || !timeline) return;
+    audio.pause();
+    $("export-dur").textContent = T.format(audio.duration);
+    exportStep("setup");
+    $("export").hidden = false;
+    $("export-start").focus();
+  };
+  document.querySelectorAll("[data-export-close]").forEach((b) => (b.onclick = closeExport));
+  $("export-cancel").onclick = closeExport;
+
+  $("export-start").onclick = async () => {
+    exportStep("recording");
+    $("export-canvas").innerHTML = "";
+    exportCtl = new AbortController();
+    try {
+      exported = await WM.Exporter.exportVideo({
+        timeline,
+        audioSrc: audio.sourceUrl,
+        backgroundSrc: WM.ASSETS.background,
+        duration: audio.duration,
+        withAudio: $("export-audio").checked,
+        signal: exportCtl.signal,
+        onCanvas: (c) => $("export-canvas").appendChild(c),
+        onProgress: (t, d) => {
+          $("export-progress").style.width = (t / d) * 100 + "%";
+          $("export-time").textContent = T.format(t) + " / " + T.format(d);
+        },
+      });
+      const mb = (exported.blob.size / 1e6).toFixed(1);
+      $("export-info").textContent = exported.ext.toUpperCase() + " · " + mb + " MB · " + T.format(audio.duration);
+      exportStep("ready");
+      $("export-save").focus();
+    } catch (e) {
+      if (e.code !== "cancelled") toast(e.message || "No se pudo exportar el video");
+      $("export").hidden = true;
+    } finally {
+      exportCtl = null;
+    }
+  };
+
+  $("export-save").onclick = async () => {
+    if (!exported) return;
+    const slug =
+      (audio.name || "wave-music")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "wave-music";
+    const res = await WM.Exporter.saveFile(exported.blob, slug + "-lyric-video." + exported.ext);
+    if (res.ok) {
+      toast("Video guardado");
+      $("export").hidden = true;
+    } else toast(res.message);
+  };
+
   // ---------- events ----------
   audio.on("play", () => document.body.classList.add("is-playing"));
   audio.on("pause", () => document.body.classList.remove("is-playing"));
@@ -2466,6 +3137,10 @@ kbd {
   }
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("export").hidden) {
+      if (ev.key === "Escape" && !exportCtl) closeExport();
+      return;
+    }
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") {
       ev.preventDefault();

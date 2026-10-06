@@ -128,6 +128,10 @@
             <button data-framing="video" aria-pressed="false">Video final</button>
           </div>
           <span id="framing-note" class="framing-note">El mockup es solo para la vista previa</span>
+          <button id="btn-export" class="btn btn-primary btn-export" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
         </div>
         <div class="preview-body">
         <div id="stage-host" class="stage-host is-empty">
@@ -172,6 +176,54 @@
 
     <div id="toast" class="toast"></div>
 
+    <!-- Export dialog: setup -> recording -> ready -->
+    <div id="export" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
+        <div class="export-head">
+          <h3 id="export-title">Descargar video</h3>
+          <span class="export-spec">9:16 · 1080 × 1920 · sin mockup</span>
+        </div>
+
+        <div class="export-step" data-export="setup">
+          <label class="check">
+            <input id="export-audio" type="checkbox" checked />
+            <span>Incluir el audio de la canción</span>
+          </label>
+          <p class="export-note">
+            El video se graba en tiempo real, así que tarda lo mismo que la canción (<span id="export-dur">00:00</span>).
+            Dejá esta pestaña abierta y visible mientras tanto.
+          </p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cancelar</button>
+            <button id="export-start" class="btn btn-primary">Exportar video</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="recording" hidden>
+          <div id="export-canvas" class="export-canvas"></div>
+          <div class="export-bar"><div id="export-progress"></div></div>
+          <div class="export-meta"><span id="export-time">00:00 / 00:00</span><span>Grabando…</span></div>
+          <div class="export-actions">
+            <button id="export-cancel" class="btn btn-ghost">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="ready" hidden>
+          <div class="export-ready">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            <div>
+              <strong>Tu video está listo</strong>
+              <span id="export-info"></span>
+            </div>
+          </div>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cerrar</button>
+            <button id="export-save" class="btn btn-primary">Guardar video</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Each concept lives in its own module -->
     <script src="js/demo.js"></script>
     <script src="js/audio.js"></script>
@@ -182,6 +234,8 @@
     <script src="js/adjust-slider.js"></script>
     <script src="js/bubbles.js"></script>
     <script src="js/preview.js"></script>
+    <script src="js/video-renderer.js"></script>
+    <script src="js/exporter.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

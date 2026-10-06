@@ -118,19 +118,24 @@
         row.style.display = "none";
         last = "";
       },
-      /** @param {{ age:number, active:boolean, playing:boolean }} s */
+      /**
+       * @param {{ age:number, active:boolean, playing:boolean }} s
+       * @returns the bubble's look this frame (also used by the video
+       *   renderer, so preview and export animate identically)
+       */
       update(s) {
         if (s.age < 0) {
           if (last !== "hidden") row.style.display = "none";
           last = "hidden";
-          return;
+          return { visible: false };
         }
         const enter = spring(s.age);
         const scale = lerp(0.85, 1, enter);
         const ty = lerp(14, 0, enter);
         const opacity = Math.min(enter, 1) * (s.active ? 1 : 0.78);
+        const look = { visible: true, scale, ty, opacity, active: s.active };
         const key = [scale.toFixed(4), ty.toFixed(2), opacity.toFixed(3), s.active, s.playing].join();
-        if (key === last) return;
+        if (key === last) return look;
         last = key;
         row.style.display = "flex";
         row.style.opacity = opacity;
@@ -138,6 +143,7 @@
         bubble.style.filter = s.active ? "brightness(1.12)" : "none";
         eq.classList.toggle("on", s.active);
         eq.classList.toggle("playing", s.active && s.playing);
+        return look;
       },
     };
   }

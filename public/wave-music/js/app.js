@@ -48,6 +48,7 @@
     const hasLyrics = parsed.lines.length > 0;
     $("btn-generate").disabled = !hasLyrics;
     $("transport").classList.toggle("disabled", !hasAudio);
+    $("btn-export").disabled = !(hasAudio && timeline);
     $("audio-name").textContent = hasAudio ? audio.name : "Sin audio";
     $("audio-meta").textContent = hasAudio ? T.format(audio.duration) : "mp3 · wav · m4a";
     $("line-count").textContent = hasLyrics ? parsed.lines.length + " líneas" : "";
@@ -330,6 +331,76 @@
     toast("Tiempos restablecidos");
   };
 
+  // ---------- descargar video ----------
+  let exportCtl = null;
+  let exported = null;
+
+  function exportStep(name) {
+    document.querySelectorAll("[data-export]").forEach((el) => (el.hidden = el.dataset.export !== name));
+  }
+  function closeExport() {
+    if (exportCtl) exportCtl.abort();
+    $("export").hidden = true;
+  }
+
+  $("btn-export").onclick = () => {
+    if (!WM.Exporter.supported()) return toast("Este navegador no puede grabar video. Probá con Chrome.");
+    if (!audio.loaded || !timeline) return;
+    audio.pause();
+    $("export-dur").textContent = T.format(audio.duration);
+    exportStep("setup");
+    $("export").hidden = false;
+    $("export-start").focus();
+  };
+  document.querySelectorAll("[data-export-close]").forEach((b) => (b.onclick = closeExport));
+  $("export-cancel").onclick = closeExport;
+
+  $("export-start").onclick = async () => {
+    exportStep("recording");
+    $("export-canvas").innerHTML = "";
+    exportCtl = new AbortController();
+    try {
+      exported = await WM.Exporter.exportVideo({
+        timeline,
+        audioSrc: audio.sourceUrl,
+        backgroundSrc: WM.ASSETS.background,
+        duration: audio.duration,
+        withAudio: $("export-audio").checked,
+        signal: exportCtl.signal,
+        onCanvas: (c) => $("export-canvas").appendChild(c),
+        onProgress: (t, d) => {
+          $("export-progress").style.width = (t / d) * 100 + "%";
+          $("export-time").textContent = T.format(t) + " / " + T.format(d);
+        },
+      });
+      const mb = (exported.blob.size / 1e6).toFixed(1);
+      $("export-info").textContent = exported.ext.toUpperCase() + " · " + mb + " MB · " + T.format(audio.duration);
+      exportStep("ready");
+      $("export-save").focus();
+    } catch (e) {
+      if (e.code !== "cancelled") toast(e.message || "No se pudo exportar el video");
+      $("export").hidden = true;
+    } finally {
+      exportCtl = null;
+    }
+  };
+
+  $("export-save").onclick = async () => {
+    if (!exported) return;
+    const slug =
+      (audio.name || "wave-music")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "wave-music";
+    const res = await WM.Exporter.saveFile(exported.blob, slug + "-lyric-video." + exported.ext);
+    if (res.ok) {
+      toast("Video guardado");
+      $("export").hidden = true;
+    } else toast(res.message);
+  };
+
   // ---------- events ----------
   audio.on("play", () => document.body.classList.add("is-playing"));
   audio.on("pause", () => document.body.classList.remove("is-playing"));
@@ -425,6 +496,10 @@
   }
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("export").hidden) {
+      if (ev.key === "Escape" && !exportCtl) closeExport();
+      return;
+    }
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") {
       ev.preventDefault();

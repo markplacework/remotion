@@ -175,12 +175,16 @@
       return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - h + BOTTOM_PADDING) : 0;
     }
 
-    /** Pure function of the sync state, so seeking renders the exact frame. */
+    /**
+     * Pure function of the sync state, so seeking renders the exact frame.
+     * @returns {{ scroll:number, looks:object[] }} what was drawn, for the
+     *   video renderer
+     */
     render(state, { playing = false } = {}) {
-      if (!this.bubbles.length) return;
+      if (!this.bubbles.length) return { scroll: 0, looks: [] };
       if (!this.bottoms) this.measure();
 
-      state.entries.forEach((s, i) =>
+      const looks = state.entries.map((s, i) =>
         this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, playing }),
       );
 
@@ -190,7 +194,9 @@
       const ease = last >= 0 ? Math.min(scrollSpring(state.entries[last].age), 1) : 0;
       const prev = this.scrollFor(last - 1);
       const next = this.scrollFor(last);
-      this.content.style.transform = `translateY(${-(prev + (next - prev) * ease)}px)`;
+      const scroll = prev + (next - prev) * ease;
+      this.content.style.transform = `translateY(${-scroll}px)`;
+      return { scroll, looks };
     }
   }
 
