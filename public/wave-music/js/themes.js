@@ -137,6 +137,10 @@
     wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", pro: true, background: { type: "motion" } },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true },
+    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" } },
+    blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", pro: true, background: { type: "motion" } },
+    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", pro: true, background: { type: "motion" } },
+    vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", pro: true, background: { type: "motion" }, meta: true },
   };
 
   WM.Themes = {

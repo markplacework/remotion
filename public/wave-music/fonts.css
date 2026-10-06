@@ -84,3 +84,38 @@
   font-display: block;
   src: url(fonts/Poppins-normal-900.woff2) format('woff2');
 }
+@font-face {
+  font-family: 'Bodoni Moda';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: block;
+  src: url(fonts/BodoniModa-variable.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'League Gothic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/LeagueGothic-normal-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url(fonts/BarlowCondensed-normal-700.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/VT323-normal-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Shrikhand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/Shrikhand-normal-400.woff2) format('woff2');
+}

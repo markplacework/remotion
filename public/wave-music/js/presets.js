@@ -1594,6 +1594,563 @@
     },
   };
 
+  // ---------- helpers for the styles below ----------
+  /** How many words the song has before line i (for per-word cuts). */
+  const prefixCache = new WeakMap();
+  function wordOffset(lines, i) {
+    let p = prefixCache.get(lines);
+    if (!p) {
+      p = [0];
+      lines.forEach((l) => p.push(p[p.length - 1] + l.words.length));
+      prefixCache.set(lines, p);
+    }
+    return p[Math.max(0, i)] || 0;
+  }
+  /** Copy a horizontal strip of what is already drawn, shifted by dx. */
+  function shiftStrip(g, W, y, h, dx) {
+    const m = g.getTransform();
+    if (m.b || m.c || h <= 0) return;
+    g.drawImage(g.canvas, m.e, m.f + y * m.d, W * m.a, h * m.d, dx, y, W, h);
+  }
+  function grainOver(g, W, H, t, alpha) {
+    g.save();
+    g.globalAlpha = alpha;
+    const ox = Math.floor(rand(Math.floor(t * 24)) * 192);
+    const oy = Math.floor(rand(Math.floor(t * 24) + 3) * 192);
+    g.translate(-ox, -oy);
+    g.fillStyle = g.createPattern(grainTile(), "repeat");
+    g.fillRect(0, 0, W + 192, H + 192);
+    g.restore();
+  }
+
+  // ======================================================================
+  // 9. COUTURE — black & white fashion film: Didone capitals, cuts on every word
+  // ======================================================================
+  const COUT_FONT = (size) => `500 ${size}px 'Bodoni Moda', Didot, 'Times New Roman', serif`;
+  // 0: white studio, 1: black, 2: white band over black
+  const COUT_LOOKS = [0, 1, 0, 2, 1, 0, 1, 2];
+  const couture = {
+    id: "couture",
+    label: "Couture",
+    tag: "Moda",
+    fonts: ["500 100px 'Bodoni Moda'"],
+    draw(g, f) {
+      const { W, H, t, safe, lines } = f;
+      const u = safe.w / 825;
+      const L = lines[f.current];
+      const j = L ? activeWord(L, t) : -1;
+      const gi = L ? wordOffset(lines, f.current) + Math.max(0, j) : 0;
+      const look = L ? COUT_LOOKS[Math.floor(rand(gi * 1.37 + 3) * COUT_LOOKS.length)] : 1;
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h / 2;
+      let paper;
+      let ink;
+      let ghost;
+      if (look === 0) {
+        const bg = g.createRadialGradient(cx, cy, 0, cx, cy, H * 0.62);
+        bg.addColorStop(0, "#fbfbfb");
+        bg.addColorStop(0.55, "#e6e6e6");
+        bg.addColorStop(1, "#9a9a9a");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        paper = "#f8f8f8";
+        ink = "#0b0b0b";
+        ghost = "rgba(0,0,0,0.075)";
+      } else {
+        const bg = g.createRadialGradient(cx, cy, 0, cx, cy, H * 0.6);
+        bg.addColorStop(0, "#1b1b1b");
+        bg.addColorStop(1, "#030303");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        paper = look === 2 ? "#efefef" : "#0e0e0e";
+        ink = look === 2 ? "#0b0b0b" : "#f4f4f4";
+        ghost = "rgba(255,255,255,0.085)";
+      }
+      if (!L || !L.words.length || j < 0) {
+        grainOver(g, W, H, t, 0.06);
+        return;
+      }
+      // the whole line, giant and faint, drifting behind
+      g.save();
+      g.font = COUT_FONT(u * 360);
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.fillStyle = ghost;
+      const gx = safe.x - u * 60 - (t - L.start) * u * 70;
+      g.fillText(upper(L.text), gx, cy + u * 10);
+      g.restore();
+
+      // the sung words, re-set on every word
+      const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
+      g.font = COUT_FONT(100);
+      const has = "letterSpacing" in g;
+      if (has) g.letterSpacing = "4px";
+      const widest = Math.max(...L.words.map((w) => g.measureText(upper(w.text)).width));
+      const size = Math.min(u * 98, (100 * safe.w * 0.9) / widest);
+      if (has) g.letterSpacing = `${size * 0.04}px`;
+      const rows = wrapCached(g, `co|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => COUT_FONT(size), safe.w * 0.92, size * 0.34);
+      const lh = size * 1.12;
+      const blockH = rows.length * lh;
+      const act = L.words[j];
+      const kick = 1 + 0.035 * (1 - ease.out(clamp((t - act.t0) / 0.25)));
+      if (look === 2) {
+        // a white band, slightly off-axis, carrying the text
+        const bh = blockH + size * 0.9;
+        g.save();
+        g.translate(cx, cy);
+        g.rotate((rand(gi * 2.9) - 0.5) * 0.09);
+        const band = g.createLinearGradient(-W, 0, W, 0);
+        band.addColorStop(0, "#9c9c9c");
+        band.addColorStop(0.5, "#f6f6f6");
+        band.addColorStop(1, "#9c9c9c");
+        g.fillStyle = band;
+        g.fillRect(-W, -bh / 2, W * 2, bh);
+        g.restore();
+      }
+      g.save();
+      g.translate(cx, cy);
+      g.scale(kick, kick);
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.font = COUT_FONT(size);
+      rows.forEach((row, ri) => {
+        const y = (ri - (rows.length - 1) / 2) * lh + size * 0.04;
+        row.items.forEach((it) => {
+          const w = it.w;
+          const x = -row.width / 2 + it.x;
+          const p = clamp((t - w.t0) / 0.16);
+          g.fillStyle = ink;
+          if (p < 1) {
+            // entry: the word arrives torn into slices
+            for (let s = 0; s < 6; s++) {
+              g.save();
+              g.beginPath();
+              g.rect(x - size, y - size * 0.6 + (s * size * 1.2) / 6, it.width + size * 2, (size * 1.2) / 6);
+              g.clip();
+              g.fillText(w.label, x + (rand(w.index * 9 + s + gi) - 0.5) * size * 0.5 * (1 - p), y);
+              g.restore();
+            }
+          } else g.fillText(w.label, x, y);
+          // distressed print: hairline scratches through the letters
+          g.save();
+          g.strokeStyle = paper;
+          g.lineWidth = Math.max(1, size * 0.022);
+          g.beginPath();
+          for (let s = 0; s < 3; s++) {
+            const sx = x + rand(w.index * 13 + s * 7 + L.index) * it.width;
+            g.moveTo(sx, y - size * 0.45);
+            g.quadraticCurveTo(sx + (rand(s + w.index) - 0.5) * size * 0.3, y, sx + (rand(s * 3 + w.index) - 0.5) * size * 0.25, y + size * 0.45);
+          }
+          g.stroke();
+          g.restore();
+        });
+      });
+      g.restore();
+      if (has) g.letterSpacing = "0px";
+      grainOver(g, W, H, t, look === 0 ? 0.07 : 0.1);
+    },
+  };
+
+  // ======================================================================
+  // 10. BLACKOUT — pure black & white, the picture flips on every word
+  // ======================================================================
+  const BO_GIANT = (size) => `400 ${size}px 'League Gothic', 'Arial Narrow', Impact, sans-serif`;
+  const BO_LOWER = (size) => `700 ${size}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+  const blackout = {
+    id: "blackout",
+    label: "Blackout",
+    tag: "Contraste",
+    fonts: ["400 100px 'League Gothic'", "700 100px 'Barlow Condensed'"],
+    draw(g, f) {
+      const { W, H, t, safe, lines } = f;
+      const u = safe.w / 825;
+      const L = lines[f.current];
+      const j = L ? activeWord(L, t) : -1;
+      const gi = L ? wordOffset(lines, f.current) + Math.max(0, j) : 0;
+      const done = L && L.words.length && t > L.words[L.words.length - 1].t1 + 1.4;
+      const inv = !done && j >= 0 && gi % 2 === 1;
+      g.fillStyle = inv ? "#ffffff" : "#000000";
+      g.fillRect(0, 0, W, H);
+      if (!L || !L.words.length || j < 0 || done) return;
+      const ink = inv ? "#000000" : "#ffffff";
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h / 2;
+      const w = L.words[j];
+      g.fillStyle = ink;
+      g.textBaseline = "middle";
+      g.textAlign = "center";
+      if (L.index % 2 === 1) {
+        // one giant word at a time, punching in from far too close
+        const label = upper(w.text);
+        g.font = BO_GIANT(100);
+        const w100 = g.measureText(label).width || 1;
+        const size = Math.min(safe.h * 0.62 / 0.74, (100 * safe.w * 0.94) / w100);
+        const p = clamp((t - w.t0) / 0.2);
+        const k = lerp(4.2, 1, ease.out(p));
+        g.save();
+        g.translate(cx, cy);
+        g.scale(k, k);
+        g.font = BO_GIANT(size);
+        g.fillText(label, 0, size * 0.04);
+        g.restore();
+        return;
+      }
+      // the phrase builds up in lowercase, long words typed in two beats
+      const shown = L.words.slice(0, j + 1).map((x) => {
+        let label = x.text.toLocaleLowerCase("es");
+        if (x === w && label.length > 5 && sung(x, t) < 0.35) label = label.slice(0, Math.ceil(label.length * 0.45));
+        return { ...x, label };
+      });
+      const size = u * 132;
+      const rows = wrapWords(g, shown, () => BO_LOWER(size), safe.w * 0.9, size * 0.22);
+      const lh = size * 1.0;
+      const k = 1 + 0.05 * (1 - ease.out(clamp((t - w.t0) / 0.18)));
+      g.save();
+      g.translate(cx, cy);
+      g.scale(k, k);
+      g.textAlign = "left";
+      g.font = BO_LOWER(size);
+      rows.forEach((row, ri) => {
+        const y = (ri - (rows.length - 1) / 2) * lh;
+        row.items.forEach((it) => g.fillText(it.w.label, -row.width / 2 + it.x, y));
+      });
+      g.restore();
+    },
+  };
+
+  // ======================================================================
+  // 11. VHS — a home tape: warm blur, OSD text, tracking noise
+  // ======================================================================
+  const VHS_FONT = (size) => `400 ${size}px VT323, 'Courier New', monospace`;
+  const VHS_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const vhs = {
+    id: "vhs",
+    label: "VHS",
+    tag: "Retro",
+    fonts: ["400 100px VT323"],
+    draw(g, f) {
+      const { W, H, t, safe, lines } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      // footage stand-in: warm out-of-focus lights, handheld drift
+      g.save();
+      g.translate(Math.sin(t * 0.9) * u * 6, Math.cos(t * 0.7) * u * 5);
+      const bg = g.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#26182c");
+      bg.addColorStop(0.6, "#4a2a24");
+      bg.addColorStop(1, "#1d1012");
+      g.fillStyle = bg;
+      g.fillRect(-u * 20, -u * 20, W + u * 40, H + u * 40);
+      g.globalCompositeOperation = "lighter";
+      ["#ff9f5a", "#ffd27a", "#7fb0ff", "#ff6f91", "#ffb347", "#9fe0c8"].forEach((c, i) => {
+        const x = W * (0.5 + 0.4 * Math.sin(t * (0.11 + i * 0.03) + i * 2));
+        const y = H * (0.5 + 0.38 * Math.cos(t * (0.09 + i * 0.02) + i * 1.3));
+        const r = H * (0.16 + 0.06 * rand(i));
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, hexA(c, 0.42));
+        gr.addColorStop(1, hexA(c, 0));
+        g.fillStyle = gr;
+        g.fillRect(0, 0, W, H);
+      });
+      g.restore();
+      // washed-out tape colour
+      g.fillStyle = "rgba(255,236,214,0.06)";
+      g.fillRect(0, 0, W, H);
+
+      const L = lines[f.current];
+      if (L && L.words.length) {
+        const j = activeWord(L, t);
+        const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
+        const size = u * 108;
+        const rows = wrapCached(g, `v|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => VHS_FONT(size), safe.w * 0.92, size * 0.42);
+        const lh = size * 0.98;
+        const cy = safe.y + safe.h * 0.5;
+        g.textBaseline = "middle";
+        g.textAlign = "left";
+        g.font = VHS_FONT(size);
+        const split = u * (3 + 6 * pulse);
+        const draw = (dx, col) => {
+          g.fillStyle = col;
+          rows.forEach((row, ri) => {
+            const y = cy + (ri - (rows.length - 1) / 2) * lh;
+            row.items.forEach((it) => g.fillText(it.w.label, safe.x + (safe.w - row.width) / 2 + it.x + dx, y));
+          });
+        };
+        g.save();
+        g.shadowColor = "rgba(0,0,0,0.6)";
+        g.shadowBlur = u * 10;
+        draw(u * 4, "rgba(0,0,0,0.5)");
+        g.shadowBlur = 0;
+        g.globalCompositeOperation = "lighter";
+        draw(-split, "rgba(255,40,60,0.75)");
+        draw(split, "rgba(40,140,255,0.75)");
+        g.globalCompositeOperation = "source-over";
+        draw(0, "#fffbe8");
+        g.restore();
+        // blinking block cursor while the line is being sung
+        const last = rows[rows.length - 1];
+        if (last && t < L.words[L.words.length - 1].t1 + 0.6 && Math.floor(t * 2.4) % 2 === 0) {
+          const y = cy + ((rows.length - 1) / 2) * lh;
+          g.fillStyle = "#fffbe8";
+          g.fillRect(safe.x + (safe.w - last.width) / 2 + last.width + size * 0.12, y - size * 0.32, size * 0.42, size * 0.6);
+        }
+      }
+
+      // on-screen display
+      const d = new Date();
+      g.save();
+      g.font = VHS_FONT(u * 62);
+      g.textBaseline = "top";
+      g.fillStyle = "#fffbe8";
+      g.shadowColor = "rgba(0,0,0,0.7)";
+      g.shadowOffsetX = g.shadowOffsetY = Math.max(1, u * 3);
+      g.textAlign = "left";
+      g.fillText("PLAY ►", safe.x, safe.y + u * 10);
+      g.textAlign = "right";
+      g.fillText("SP", safe.x + safe.w, safe.y + u * 10);
+      g.textBaseline = "bottom";
+      g.font = VHS_FONT(u * 54);
+      const sec = Math.floor(t);
+      const counter = `${Math.floor(sec / 3600)}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+      g.fillText(counter, safe.x + safe.w, safe.y + safe.h - u * 10);
+      g.textAlign = "left";
+      g.fillText(`${VHS_MONTHS[d.getMonth()]}. ${String(d.getDate()).padStart(2, "0")} ${d.getFullYear()}`, safe.x, safe.y + safe.h - u * 10);
+      g.restore();
+
+      // tape damage: tracking band, line jitter, snow, scanlines
+      const band = ((t * 0.13) % 1.3 - 0.15) * H;
+      shiftStrip(g, W, band, u * 46, u * (14 + 20 * rand(Math.floor(t * 30))));
+      g.fillStyle = "rgba(255,255,255,0.10)";
+      for (let i = 0; i < 26; i++) {
+        const y = band + rand(i + Math.floor(t * 30) * 3) * u * 46;
+        g.fillRect(rand(i * 7 + Math.floor(t * 30)) * W, y, u * (30 + rand(i) * 140), Math.max(1, u * 2));
+      }
+      if (rand(Math.floor(t * 6)) > 0.82 || (L && t - L.start < 0.12)) {
+        const y = rand(Math.floor(t * 12) + 5) * H;
+        shiftStrip(g, W, y, u * (20 + rand(Math.floor(t * 12)) * 60), (rand(Math.floor(t * 24)) - 0.5) * u * 50);
+      }
+      g.fillStyle = "rgba(255,255,255,0.5)";
+      for (let i = 0; i < 40; i++) {
+        const s = Math.max(1, u * 2);
+        g.fillRect(rand(i * 3.3 + Math.floor(t * 30)) * W, rand(i * 5.1 + Math.floor(t * 30)) * H, s, s);
+      }
+      g.fillStyle = "rgba(0,0,0,0.16)";
+      for (let y = 0; y < H; y += Math.max(3, u * 4)) g.fillRect(0, y, W, Math.max(1, u * 1.4));
+      const vig = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+      vig.addColorStop(0, "rgba(0,0,0,0)");
+      vig.addColorStop(1, "rgba(0,0,0,0.6)");
+      g.fillStyle = vig;
+      g.fillRect(0, 0, W, H);
+    },
+  };
+
+  // ======================================================================
+  // 12. VINILO — 70s sleeve: sunburst, a spinning record, groovy type
+  // ======================================================================
+  const VIN = { cream: "#f6e7c8", orange: "#e8632b", mustard: "#f2a93b", brown: "#4e2414", teal: "#2e6e68" };
+  const VIN_FONT = (size) => `400 ${size}px Shrikhand, 'Cooper Black', Georgia, serif`;
+  const vinilo = {
+    id: "vinilo",
+    label: "Vinilo",
+    tag: "70s",
+    fonts: ["400 100px Shrikhand", "700 100px Inter"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      const R = safe.w * 0.54;
+      const rcx = safe.x + safe.w / 2;
+      const rcy = safe.y + safe.h - R * 0.45;
+      g.fillStyle = VIN.cream;
+      g.fillRect(0, 0, W, H);
+      // sunburst turning slowly behind the record
+      g.save();
+      g.translate(rcx, rcy);
+      g.rotate(t * 0.06);
+      const N = 28;
+      for (let i = 0; i < N; i++) {
+        g.fillStyle = i % 2 ? hexA(VIN.mustard, 0.32) : hexA(VIN.orange, 0.16);
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.arc(0, 0, H * 1.2, (i / N) * Math.PI * 2, ((i + 1) / N) * Math.PI * 2);
+        g.closePath();
+        g.fill();
+      }
+      g.restore();
+      // 70s stripes arching over the record
+      [VIN.brown, VIN.orange, VIN.mustard].forEach((c, i) => {
+        g.strokeStyle = c;
+        g.lineWidth = u * 22;
+        g.beginPath();
+        g.arc(rcx, rcy, R + u * (40 + i * 26), Math.PI * 1.05, Math.PI * 1.95);
+        g.stroke();
+      });
+      this.drawRecord(g, f, u, rcx, rcy, R * (1 + 0.012 * pulse));
+      // header
+      g.save();
+      g.font = `700 ${u * 24}px Inter, sans-serif`;
+      if ("letterSpacing" in g) g.letterSpacing = `${u * 5}px`;
+      g.fillStyle = VIN.teal;
+      g.textBaseline = "top";
+      g.textAlign = "left";
+      g.fillText("LADO A", safe.x, safe.y + u * 8);
+      g.textAlign = "right";
+      g.fillText("33⅓ RPM", safe.x + safe.w, safe.y + u * 8);
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      g.restore();
+      this.drawLyric(g, f, u, safe.y + u * 70, rcy - R - u * 100);
+      grainOver(g, W, H, t, 0.06);
+    },
+    drawRecord(g, f, u, cx, cy, R) {
+      const { t } = f;
+      const meta = f.meta || {};
+      g.save();
+      g.shadowColor = "rgba(78,36,20,0.45)";
+      g.shadowBlur = u * 40;
+      g.shadowOffsetY = u * 16;
+      g.fillStyle = "#111";
+      g.beginPath();
+      g.arc(cx, cy, R, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+      g.lineWidth = Math.max(1, u * 1.2);
+      for (let r = R * 0.4; r < R * 0.97; r += u * 7) {
+        g.strokeStyle = (r / (u * 7)) % 2 < 1 ? "#1d1d1d" : "#0b0b0b";
+        g.beginPath();
+        g.arc(cx, cy, r, 0, Math.PI * 2);
+        g.stroke();
+      }
+      // fixed light catching the grooves
+      g.save();
+      g.beginPath();
+      g.arc(cx, cy, R * 0.97, 0, Math.PI * 2);
+      g.clip();
+      [-0.75, 2.39].forEach((a) => {
+        const gr = g.createConicGradient ? g.createConicGradient(a - 0.35, cx, cy) : null;
+        if (!gr) return;
+        gr.addColorStop(0, "rgba(255,255,255,0)");
+        gr.addColorStop(0.055, "rgba(255,255,255,0.16)");
+        gr.addColorStop(0.11, "rgba(255,255,255,0)");
+        gr.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = gr;
+        g.fillRect(cx - R, cy - R, R * 2, R * 2);
+      });
+      g.restore();
+      // label, turning at 33⅓
+      const lr = R * 0.36;
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(t * ((33.333 / 60) * Math.PI * 2));
+      g.fillStyle = VIN.orange;
+      g.beginPath();
+      g.arc(0, 0, lr, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = VIN.mustard;
+      g.lineWidth = lr * 0.08;
+      g.beginPath();
+      g.arc(0, 0, lr * 0.86, 0, Math.PI * 2);
+      g.stroke();
+      g.fillStyle = VIN.cream;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.font = VIN_FONT(lr * 0.2);
+      g.fillText(meta.title || "Wave Music", 0, -lr * 0.42, lr * 1.5);
+      g.font = `700 ${lr * 0.11}px Inter, sans-serif`;
+      g.fillText(upper(meta.artist || "Lado A"), 0, lr * 0.45, lr * 1.4);
+      g.fillStyle = "#111";
+      g.beginPath();
+      g.arc(0, 0, lr * 0.07, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+      // tone arm resting on the outer grooves
+      const px = cx + R * 0.98;
+      const py = cy - R * 0.98;
+      const ex = cx + R * 0.52;
+      const ey = cy - R * 0.32;
+      g.save();
+      g.lineCap = "round";
+      g.strokeStyle = "#c9c2b4";
+      g.lineWidth = u * 12;
+      g.beginPath();
+      g.moveTo(px, py);
+      g.lineTo(ex, ey);
+      g.stroke();
+      g.fillStyle = "#3a3a3a";
+      g.save();
+      g.translate(ex, ey);
+      g.rotate(Math.atan2(ey - py, ex - px));
+      rrect(g, -u * 10, -u * 14, u * 46, u * 28, u * 5);
+      g.fill();
+      g.restore();
+      g.fillStyle = "#b9b2a4";
+      g.beginPath();
+      g.arc(px, py, u * 30, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#8d8676";
+      g.beginPath();
+      g.arc(px, py, u * 14, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+    },
+    /** Groovy lyric with a stacked retro drop shadow; words drop in. */
+    drawLyric(g, f, u, top, bottom) {
+      const { t, safe } = f;
+      const L = f.lines[f.current];
+      const prev = f.lines[f.current - 1];
+      const show = (line, exit) => {
+        if (!line || !line.words.length) return;
+        let size = u * 104;
+        const words = line.words.map((w) => ({ ...w, label: w.text }));
+        let rows = wrapCached(g, `vi|${line.index}|${line.text}|${Math.round(size * 10)}`, words, () => VIN_FONT(size), safe.w * 0.9, size * 0.26);
+        const lh0 = size * 1.08;
+        if (rows.length * lh0 > bottom - top) {
+          size *= (bottom - top) / (rows.length * lh0);
+          rows = wrapCached(g, `vi|${line.index}|${line.text}|${Math.round(size * 10)}`, words, () => VIN_FONT(size), safe.w * 0.9, size * 0.26);
+        }
+        const lh = size * 1.08;
+        const cy = (top + bottom) / 2;
+        g.textBaseline = "middle";
+        g.textAlign = "left";
+        g.font = VIN_FONT(size);
+        rows.forEach((row, ri) => {
+          const y0 = cy + (ri - (rows.length - 1) / 2) * lh;
+          row.items.forEach((it) => {
+            const w = it.w;
+            let dy = 0;
+            let a = 1;
+            let rot = 0;
+            if (exit != null) {
+              dy = u * 60 * ease.inOut(exit);
+              a = 1 - exit;
+            } else {
+              const p = clamp((t - w.t0 + 0.05) / 0.4);
+              if (p <= 0) return;
+              dy = -u * 70 * (1 - ease.back(p));
+              a = clamp(p * 3);
+              rot = (rand(w.index + line.index * 7) - 0.5) * 0.12 * (1 - p);
+            }
+            const x = safe.x + (safe.w - row.width) / 2 + it.x;
+            g.save();
+            g.globalAlpha = a;
+            g.translate(x + it.width / 2, y0 + dy);
+            g.rotate(rot);
+            const depth = Math.max(1, Math.round(size * 0.07));
+            g.fillStyle = VIN.brown;
+            for (let d = depth; d > 0; d--) g.fillText(w.label, -it.width / 2 + d * 0.9, d * 0.9);
+            g.fillStyle = (w.index + line.index) % 3 === 0 ? VIN.orange : (w.index + line.index) % 3 === 1 ? VIN.mustard : VIN.teal;
+            g.fillText(w.label, -it.width / 2, 0);
+            g.restore();
+          });
+        });
+      };
+      if (L && prev) {
+        const e = clamp((t - L.start) / 0.3);
+        if (e < 1) show(prev, e);
+      }
+      show(L, null);
+    },
+  };
+
   const fmt = (t) => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
 
   function hexA(hex, a) {
@@ -1601,7 +2158,7 @@
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, notes, aurora };
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, notes, aurora, couture, blackout, vhs, vinilo };
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
