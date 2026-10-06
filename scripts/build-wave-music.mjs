@@ -15,11 +15,11 @@ const dir = join(root, "public/wave-music");
 const read = (p) => readFileSync(join(dir, p), "utf8");
 const dataUri = (buf, mime) => `data:${mime};base64,${buf.toString("base64")}`;
 
-// The original background PNG is ~1.8MB; a high-quality JPEG looks the
+// The background PNG is large; a high-quality JPEG looks the
 // same behind the bubbles at a fraction of the size, if ImageMagick is
 // around. Falls back to the PNG as-is.
 function backgroundUri() {
-  const png = join(root, "public/fake-chat/background.png");
+  const png = join(root, "public/fake-chat/background-alt.png");
   try {
     const jpg = execFileSync("convert", [png, "-quality", "86", "jpg:-"], { maxBuffer: 1 << 26 });
     return dataUri(jpg, "image/jpeg");
@@ -30,13 +30,15 @@ function backgroundUri() {
 
 let html = read("index.html");
 
+html = html.replace(/src="(assets\/[^"]+\.jpg)"/g, (_, src) => `src="${dataUri(readFileSync(join(dir, src)), "image/jpeg")}"`);
+
 html = html.replace(/<link rel="stylesheet" href="styles.css" \/>/, () => `<style>\n${read("styles.css")}</style>`);
 
 html = html.replace(/<script src="(js\/[^"]+)"><\/script>/g, (_, src) => {
   let js = read(src);
   if (src === "js/demo.js") {
     js = js
-      .replace('"../fake-chat/background.png"', () => JSON.stringify(backgroundUri()))
+      .replace('"../fake-chat/background-alt.png"', () => JSON.stringify(backgroundUri()))
       .replace('"../fake-chat/song.mp3"', () =>
         JSON.stringify(dataUri(readFileSync(join(root, "public/fake-chat/song.mp3")), "audio/mpeg")),
       );

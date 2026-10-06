@@ -1,14 +1,18 @@
 :root {
-  --bg: #0a0b0d;
-  --surface: #121418;
-  --surface-2: #181b20;
+  /* Palette taken from the Wave Music logo: near-black ground, the
+     ribbon's electric blue + cyan highlight, violet sound lines. */
+  --bg: #020307;
+  --surface: #0b0e16;
+  --surface-2: #111522;
   --line: rgba(255, 255, 255, 0.07);
   --line-2: rgba(255, 255, 255, 0.12);
-  --text: #eceef1;
-  --muted: #8a9099;
-  --faint: #5b616b;
-  --accent: #25d366;
-  --accent-2: #53bdeb;
+  --text: #eef1f7;
+  --muted: #8790a3;
+  --faint: #545c6e;
+  --accent: #1e8bff;
+  --accent-2: #22d3f5;
+  --accent-3: #8b3df5;
+  --accent-rgb: 30, 139, 255;
   --radius: 14px;
   --topbar: 60px;
   color-scheme: dark;
@@ -56,10 +60,18 @@ button:disabled {
   letter-spacing: -0.01em;
   font-size: 15px;
 }
+/* Logo crops sit on the logo's own black, blended into the page. */
+.brand-mark,
+.brand-word,
+.empty-logo {
+  mix-blend-mode: screen;
+  display: block;
+}
 .brand-mark {
-  width: 26px;
   height: 26px;
-  color: var(--accent);
+}
+.brand-word {
+  height: 26px;
 }
 .badge {
   font-size: 11px;
@@ -81,24 +93,26 @@ button:disabled {
   border: 1px solid transparent;
   font-weight: 600;
   font-size: 13px;
+  white-space: nowrap;
   transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s;
 }
 .btn:active:not(:disabled) {
   transform: scale(0.97);
 }
 .btn-primary {
-  background: var(--text);
-  color: #0a0b0d;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  color: #fff;
+  box-shadow: 0 6px 24px -8px rgba(var(--accent-rgb), 0.7);
 }
 .btn-primary:hover {
-  background: #fff;
+  filter: brightness(1.08);
 }
 .btn-ghost {
   background: var(--surface-2);
   border-color: var(--line-2);
 }
 .btn-ghost:hover:not(:disabled) {
-  border-color: rgba(37, 211, 102, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 .btn.wide {
   width: 100%;
@@ -128,7 +142,9 @@ button:disabled {
   align-items: center;
   padding: 20px 16px 16px;
   gap: 16px;
-  background: radial-gradient(ellipse at 50% 30%, rgba(37, 211, 102, 0.05), transparent 60%);
+  background:
+    radial-gradient(ellipse at 30% 25%, rgba(var(--accent-rgb), 0.07), transparent 55%),
+    radial-gradient(ellipse at 75% 80%, rgba(139, 61, 245, 0.06), transparent 55%);
 }
 
 /* ---------- cards ---------- */
@@ -165,7 +181,7 @@ button:disabled {
 .card.done .num {
   background: var(--accent);
   border-color: var(--accent);
-  color: #06140c;
+  color: #fff;
 }
 .hint {
   margin-left: auto;
@@ -185,7 +201,7 @@ button:disabled {
   transition: border-color 0.2s;
 }
 .audio-pick:hover {
-  border-color: rgba(37, 211, 102, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
 }
 .audio-icon {
   width: 36px;
@@ -193,7 +209,7 @@ button:disabled {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: rgba(37, 211, 102, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent);
   flex: none;
 }
@@ -235,7 +251,7 @@ input[type="number"],
 textarea:focus,
 select:focus,
 input:focus {
-  border-color: rgba(37, 211, 102, 0.6);
+  border-color: rgba(var(--accent-rgb), 0.6);
 }
 textarea {
   resize: vertical;
@@ -293,7 +309,7 @@ select option:disabled {
   transition: background 0.2s;
 }
 .ts-row.active {
-  background: rgba(37, 211, 102, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 .ts-time {
   height: 30px;
@@ -303,7 +319,7 @@ select option:disabled {
   border-radius: 7px;
 }
 .ts-row.active .ts-time {
-  border-color: rgba(37, 211, 102, 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
   color: var(--accent);
 }
 .ts-text {
@@ -368,8 +384,7 @@ select option:disabled {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(11, 20, 26, 0.55);
-  backdrop-filter: blur(2px);
+  background: var(--bg);
   text-align: center;
 }
 .empty-cta p {
@@ -379,6 +394,10 @@ select option:disabled {
 }
 .stage-host.is-empty .empty-cta {
   display: flex;
+}
+.empty-logo {
+  width: 72%;
+  max-width: 280px;
 }
 .eq-logo {
   display: flex;
@@ -413,7 +432,7 @@ select option:disabled {
   width: 2.5px;
   height: 100%;
   border-radius: 1px;
-  background: #25d366;
+  background: var(--accent-2);
   transform-origin: bottom;
   transform: scaleY(0.45);
 }
@@ -462,7 +481,7 @@ select option:disabled {
 }
 .is-playing .now-dot {
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.15);
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.15);
 }
 .scrub-wrap {
   position: relative;
@@ -481,7 +500,7 @@ select option:disabled {
 .progress {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(90deg, var(--accent-3), var(--accent), var(--accent-2));
 }
 .markers {
   position: absolute;
@@ -617,6 +636,10 @@ select option:disabled {
   }
   .topbar {
     padding: 0 16px;
+  }
+  .badge,
+  .brand-mark {
+    display: none;
   }
   .layout {
     display: flex;
