@@ -27,7 +27,7 @@
 
   function statusBar(color) {
     return el(
-      `<span style="font-weight:600;font-size:30px">09:38</span>` +
+      `<span class="sb-time" style="font-weight:600;font-size:30px">${WM.clockNow()}</span>` +
         `<span style="display:flex;gap:10px;align-items:center">` +
         `<svg width="34" height="22" viewBox="0 0 17 11" fill="${color}"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>` +
         `<svg width="30" height="22" viewBox="0 0 15 11" fill="${color}"><path d="M7.5 2.2c2 0 3.9.8 5.3 2.1l1.1-1.2A9 9 0 0 0 7.5.6 9 9 0 0 0 1.1 3.1l1.1 1.2a7.5 7.5 0 0 1 5.3-2.1zm0 3.1c1.2 0 2.3.5 3.1 1.2l1.1-1.2a6.1 6.1 0 0 0-8.4 0l1.1 1.2c.8-.7 1.9-1.2 3.1-1.2zm0 3.1c.4 0 .8.2 1.1.4L7.5 10 6.4 8.8c.3-.2.7-.4 1.1-.4z"/></svg>` +
@@ -42,6 +42,7 @@
   // ---------- Spotify ----------
   function spotifyChrome(theme, ctx) {
     const nodes = [statusBar("#fff")];
+    const statusTime = nodes[0].querySelector(".sb-time");
     const head = el(
       `<span style="position:absolute;left:30px;top:24px">${icon("chevron", 54, "#fff", { sw: 2.4 })}</span>` +
         `<b class="sp-title" style="display:block;font-family:${LYRICS_ATTR};font-size:31px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 120px"></b>` +
@@ -68,9 +69,10 @@
       nodes,
       update({ time = 0, duration = 0, playing = false, title = "", artist = "" }) {
         const pct = duration ? Math.min(100, (time / duration) * 100) : 0;
-        const key = [pct.toFixed(2), playing, title, artist, Math.floor(time), Math.floor(duration)].join("|");
+        const key = [pct.toFixed(2), playing, title, artist, Math.floor(time), Math.floor(duration), WM.clockNow()].join("|");
         if (key === lastKey) return;
         lastKey = key;
+        statusTime.textContent = WM.clockNow();
         $(".sp-title").textContent = title || "Sin título";
         $(".sp-artist").textContent = artist || "";
         $(".sp-fill").style.width = pct + "%";

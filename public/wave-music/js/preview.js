@@ -33,9 +33,11 @@
   const WA_CROP = { x: 26, y: 46, w: 800, h: 1751 };
   const META_CROP = { x: 14, y: 40, w: 819, h: 1792 };
   const MOCKUPS = {
-    whatsapp: { asset: "mockup", img: [853, 1843], crop: WA_CROP, bg: { x: 62, y: 286, w: 728, h: 1336 }, chat: { x: 62, y: 286, w: 728, bottom: 1598 } },
-    instagram: { asset: "mockupInstagram", img: [840, 1872], crop: META_CROP, bg: { x: 55, y: 252, w: 729, h: 1340 }, chat: { x: 59, y: 260, w: 721, bottom: 1574 } },
-    messenger: { asset: "mockupMessenger", img: [840, 1872], crop: META_CROP, bg: { x: 53, y: 270, w: 733, h: 1318 }, chat: { x: 57, y: 287, w: 726, bottom: 1571 } },
+    // clock: the status-bar time baked into each mockup (its digits' box),
+    // covered with the real time.
+    whatsapp: { asset: "mockup", img: [853, 1843], crop: WA_CROP, bg: { x: 62, y: 286, w: 728, h: 1336 }, chat: { x: 62, y: 286, w: 728, bottom: 1598 }, clock: { x: 125, y: 108, w: 80, h: 22, bg: "#011816", weight: 600 } },
+    instagram: { asset: "mockupInstagram", img: [840, 1872], crop: META_CROP, bg: { x: 55, y: 252, w: 729, h: 1340 }, chat: { x: 59, y: 260, w: 721, bottom: 1574 }, clock: { x: 92, y: 114, w: 71, h: 23, bg: "#000", weight: 400 } },
+    messenger: { asset: "mockupMessenger", img: [840, 1872], crop: META_CROP, bg: { x: 53, y: 270, w: 733, h: 1318 }, chat: { x: 57, y: 287, w: 726, bottom: 1571 }, clock: { x: 92, y: 115, w: 70, h: 22, bg: "#000", weight: 400 } },
     spotify: { asset: "frame", img: [853, 1843], crop: WA_CROP, bg: { x: 63, y: 77, w: 726, h: 1690 }, bgRadius: 92, chat: { x: 103, y: 282, w: 646, bottom: 1416 }, chrome: true },
   };
   const BOX_ASPECT = WA_CROP.w / WA_CROP.h;
@@ -87,6 +89,7 @@
       },
       chrome: !!M.chrome,
       frame: { asset: M.asset, x: -c.x, y: -c.y, w: M.img[0], h: M.img[1] },
+      clock: M.clock ? { ...M.clock, x: M.clock.x - c.x, y: M.clock.y - c.y } : null,
       fit: "contain",
     };
   }
@@ -234,6 +237,28 @@
         stage.appendChild(frame);
       }
 
+      // 6. Real time over the time baked into the mockup's status bar.
+      this.clockEl = null;
+      if (L.clock) {
+        const k = L.clock;
+        const t = (this.clockEl = document.createElement("div"));
+        box(t, { x: k.x - 6, y: k.y - 8, w: k.w + 18, h: k.h + 16 });
+        Object.assign(t.style, {
+          background: k.bg,
+          color: "#fff",
+          fontFamily: WM.Themes.FONT_STACK,
+          fontWeight: String(k.weight),
+          fontSize: Math.round(k.h * 1.36) + "px",
+          lineHeight: k.h + 16 + "px",
+          paddingLeft: "6px",
+          boxSizing: "border-box",
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+        });
+        t.textContent = WM.clockNow();
+        stage.appendChild(t);
+      }
+
       this.host.appendChild(stage);
       this.fit();
       this.setTimeline(this.timeline);
@@ -273,8 +298,13 @@
         });
         return;
       }
+      // Real time: the first message carries the current time and the
+      // rest advance with the song.
+      const now = new Date();
+      const base = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() - entries[0].start;
+      const clockAt = (t) => clockFor(base + t);
       if (theme.bubble === "whatsapp") this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
-      else this.content.appendChild(WM.Bubbles.createChatDate("Hoy " + clockFor(entries[0].start)));
+      if (theme.bubble !== "whatsapp") this.content.appendChild(WM.Bubbles.createChatDate("Hoy " + clockAt(entries[0].start)));
       entries.forEach((e, i) => {
         const from = e.from || "me";
         const prevFrom = i > 0 ? entries[i - 1].from || "me" : from;
@@ -284,7 +314,7 @@
             : WM.Bubbles.createBubble({
                 text: e.text,
                 from,
-                clock: clockFor(e.start),
+                clock: clockAt(e.start),
                 marginTop: i === 0 ? 0 : prevFrom !== from ? SENDER_CHANGE_GAP : SAME_SENDER_GAP,
               });
         this.content.appendChild(b.root);
@@ -324,6 +354,10 @@
      */
     render(state, { playing = false, time = state.time, duration = 0 } = {}) {
       if (this.chrome) this.chrome.update({ time, duration, playing, ...this.meta });
+      if (this.clockEl) {
+        const now = WM.clockNow();
+        if (this.clockEl.textContent !== now) this.clockEl.textContent = now;
+      }
       if (!this.bubbles.length) return { scroll: 0, looks: [] };
       if (!this.bottoms) this.measure();
 
@@ -364,11 +398,15 @@
     }
   }
 
-  // WhatsApp-style clock on each bubble, advancing with the song.
+  /** "HH:MM" for a time of day given in seconds since midnight. */
   function clockFor(seconds) {
-    const mins = 21 * 60 + 12 + Math.floor(seconds / 60);
-    return String(Math.floor(mins / 60) % 24).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0");
+    const mins = Math.floor(seconds / 60);
+    return String(Math.floor(mins / 60) % 24).padStart(2, "0") + ":" + String(((mins % 60) + 60) % 60).padStart(2, "0");
   }
+  WM.clockNow = () => {
+    const d = new Date();
+    return clockFor(d.getHours() * 3600 + d.getMinutes() * 60);
+  };
 
   WM.Preview = Preview;
 })((window.WaveMusic = window.WaveMusic || {}));
