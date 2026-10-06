@@ -416,7 +416,11 @@
     if (introShown || !$("full").hidden) return;
     introShown = true;
     const touch = !window.matchMedia("(hover: hover)").matches;
-    $("full-hint-text").textContent = (touch ? "Tocá" : "Hacé clic") + " para ver en pantalla completa";
+    // Touch screens are narrow: break it into two even lines.
+    $("full-hint-text").innerHTML = touch
+      ? "Tocá para ver<br />en pantalla completa"
+      : "Hacé clic para ver en pantalla completa";
+    $("full-hint").classList.toggle("two-lines", touch);
     $("full-hint").hidden = false;
     hintTimer = setTimeout(hideHint, 5000);
   }

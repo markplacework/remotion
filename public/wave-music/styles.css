@@ -1142,17 +1142,15 @@ kbd {
   left: 50%;
   bottom: 5%;
   z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: block;
   width: max-content;
-  max-width: 84%;
-  padding: 9px 15px;
+  max-width: 76%;
+  padding: 9px 16px;
   border: 0;
   border-radius: 18px;
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
   text-align: center;
   color: #fff;
   background: linear-gradient(120deg, rgba(30, 139, 255, 0.95), rgba(34, 211, 245, 0.95));
@@ -1160,8 +1158,19 @@ kbd {
   transform: translateX(-50%);
   animation: hint-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+/* The icon flows with the text, so icon + words centre as one block
+   even when the text wraps on narrow phones. */
+/* Touch: two fixed lines ("Tocá para ver" / "en pantalla completa"). */
+.full-hint.two-lines {
+  max-width: 90%;
+  padding: 8px 13px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
 .full-hint svg {
-  flex: none;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 2px;
 }
 .full-hint.leaving {
   animation: hint-out 0.35s ease both;
