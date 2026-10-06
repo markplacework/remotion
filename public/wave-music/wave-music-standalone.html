@@ -2013,8 +2013,8 @@ canvas.th-pro {
               <label class="field grow">
                 <span>Animación del texto</span>
                 <select id="text-mode">
+                  <option value="line">Por frase (línea completa)</option>
                   <option value="word">Palabra por palabra</option>
-                  <option value="line">Línea completa</option>
                 </select>
               </label>
             </div>
@@ -3677,7 +3677,7 @@ canvas.th-pro {
     };
   }
 
-  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "word" };
+  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
   WM.Energy = { current: null };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>

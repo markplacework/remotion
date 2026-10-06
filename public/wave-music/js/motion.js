@@ -183,6 +183,6 @@
     };
   }
 
-  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "word" };
+  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
   WM.Energy = { current: null };
 })((window.WaveMusic = window.WaveMusic || {}));
