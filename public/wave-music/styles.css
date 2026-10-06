@@ -137,6 +137,7 @@ button:disabled {
 }
 .preview {
   min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -529,11 +530,42 @@ kbd {
 }
 
 /* ---------- 9:16 stage ---------- */
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+/* Wide screens: controls beside the phone, so they never cover it. */
+@media (min-width: 1200px) {
+  .preview-body {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+  }
+  .preview-body .transport {
+    position: sticky;
+    top: calc(50% - 90px);
+    bottom: auto;
+    align-self: flex-start;
+    margin: 380px 0 0;
+    width: 400px;
+    flex: none;
+    border-radius: 18px;
+    border-bottom: 1px solid var(--line);
+    padding: 16px 20px 18px;
+  }
+}
+
+/* Near real size: 920px tall is the supplied 853x1843 mockup at its
+   native resolution on a 2x (retina) screen. The preview column
+   scrolls if the window is shorter; the controls stay pinned below. */
 .stage-host {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  height: 100%;
+  flex: none;
+  height: 920px;
   aspect-ratio: var(--stage-aspect, 9 / 16);
   max-width: 100%;
   border-radius: 22px;
@@ -677,8 +709,19 @@ kbd {
 /* ---------- transport ---------- */
 .transport {
   width: 100%;
-  max-width: 460px;
+  max-width: 500px;
   flex: none;
+  position: sticky;
+  bottom: -16px;
+  z-index: 4;
+  margin-top: -8px;
+  padding: 12px 20px 22px;
+  border-radius: 18px 18px 0 0;
+  background: rgba(6, 8, 14, 0.82);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-bottom: 0;
   transition: opacity 0.2s;
 }
 .transport.disabled {
@@ -876,15 +919,14 @@ kbd {
     height: auto;
   }
   .preview {
+    overflow: visible;
     order: -1;
     padding: 16px;
   }
   .stage-host {
     flex: none;
     height: auto;
-    /* fit the phone/video in ~62% of the screen height so the
-       playback controls stay visible below it */
-    width: min(100%, 360px, calc(62vh * var(--stage-ratio, 0.5625)));
+    width: min(100%, 430px);
   }
   .editor {
     border-right: 0;
