@@ -30,7 +30,9 @@ function backgroundUri() {
 
 let html = read("index.html");
 
-html = html.replace(/src="(assets\/[^"]+\.jpg)"/g, (_, src) => `src="${dataUri(readFileSync(join(dir, src)), "image/jpeg")}"`);
+html = html.replace(/src="(assets\/[^"]+\.(jpg|png))"/g, (_, src, ext) =>
+  `src="${dataUri(readFileSync(join(dir, src)), ext === "png" ? "image/png" : "image/jpeg")}"`,
+);
 
 html = html.replace(/<link rel="stylesheet" href="styles.css" \/>/, () => `<style>\n${read("styles.css")}</style>`);
 

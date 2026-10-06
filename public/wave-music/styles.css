@@ -384,7 +384,8 @@ select option:disabled {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: var(--bg);
+  /* The WhatsApp wallpaper stays visible behind the logo. */
+  background: radial-gradient(ellipse at 50% 45%, rgba(2, 3, 7, 0.15), rgba(2, 3, 7, 0.55));
   text-align: center;
 }
 .empty-cta p {
@@ -396,6 +397,8 @@ select option:disabled {
   display: flex;
 }
 .empty-logo {
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 8px 30px rgba(var(--accent-rgb), 0.35));
   width: 72%;
   max-width: 280px;
 }
