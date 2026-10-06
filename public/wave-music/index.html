@@ -6,7 +6,7 @@
     <title>Wave Music Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Figtree:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -120,7 +120,22 @@
         </div>
 
         <div class="card" data-step="5">
-          <div class="card-head"><span class="num">5</span><h2>Descargar</h2><span class="hint">9:16 · 1080 × 1920</span></div>
+          <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
+          <div id="styles" class="styles" role="group" aria-label="Estilo"></div>
+          <div id="spotify-opts" class="style-opts" hidden>
+            <span class="opt-label">Color de fondo</span>
+            <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
+            <div class="fields">
+              <label class="field grow"><span>Canción</span><input id="sp-title" type="text" placeholder="Título de la canción" /></label>
+            </div>
+            <div class="fields">
+              <label class="field grow"><span>Artista</span><input id="sp-artist" type="text" placeholder="Artista" /></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" data-step="6">
+          <div class="card-head"><span class="num">6</span><h2>Descargar</h2><span class="hint">9:16 · 1080 × 1920</span></div>
           <p class="card-note">El video final, sin el teléfono, con tu ajuste de tiempos y el audio de la canción.</p>
           <button id="btn-export" class="btn btn-primary wide btn-export" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
@@ -283,6 +298,8 @@
     <script src="js/adjust.js"></script>
     <script src="js/adjust-slider.js"></script>
     <script src="js/bubbles.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/chrome.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/video-renderer.js"></script>
     <script src="js/exporter.js"></script>

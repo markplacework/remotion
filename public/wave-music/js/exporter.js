@@ -37,7 +37,7 @@
     const type = pickType();
     if (!type) throw new Error("Este navegador no puede grabar video");
 
-    const renderer = await WM.VideoRenderer.create(o.timeline, o.backgroundSrc);
+    const renderer = await WM.VideoRenderer.create(o.timeline, o.backgroundSrc, o.style);
     if (o.onCanvas) o.onCanvas(renderer.canvas);
     const sync = new WM.SyncEngine();
     sync.setTimeline(o.timeline);

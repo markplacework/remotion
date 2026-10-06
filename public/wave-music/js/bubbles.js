@@ -148,5 +148,128 @@
     };
   }
 
-  WM.Bubbles = { createBubble, createHoyPill, makeSpring, WA, FONT_STACK };
+  /** Entrance animation shared by every bubble style. */
+  function entranceLook(s) {
+    const enter = spring(s.age);
+    return {
+      visible: true,
+      scale: lerp(0.85, 1, enter),
+      ty: lerp(14, 0, enter),
+      opacity: Math.min(enter, 1) * (s.active ? 1 : 0.78),
+      active: s.active,
+    };
+  }
+
+  /**
+   * Instagram / Messenger bubble: plain rounded bubble, no timestamp.
+   * Its fill is a slice of a screen-fixed gradient and its right-hand
+   * corners tighten inside a group, so the preview passes both in.
+   * @param {{ text:string, marginTop:number, theme:object }} o
+   */
+  function createFlatBubble(o) {
+    const f = o.theme.flat;
+    const row = el("div", {
+      display: "none",
+      justifyContent: "flex-end",
+      transformOrigin: "top right",
+      marginTop: o.marginTop + "px",
+      willChange: "transform, opacity",
+    });
+    const bubble = el("div", {
+      color: f.text,
+      fontFamily: WM.Themes.FONT_STACK,
+      fontSize: f.fontSize + "px",
+      lineHeight: "1.3",
+      padding: f.padding,
+      maxWidth: "76%",
+      borderRadius: f.radius + "px",
+      transition: "filter 260ms ease",
+    });
+    bubble.textContent = o.text;
+    row.appendChild(bubble);
+    let last = "";
+    let lastFill = "";
+    let lastCorners = "";
+    return {
+      root: row,
+      box: bubble,
+      reset() {
+        row.style.display = "none";
+        last = lastFill = lastCorners = "";
+      },
+      /** @param s {age, active, fill:[top,bottom], corners:[tr,br]} */
+      update(s) {
+        if (s.age < 0) {
+          if (last !== "hidden") row.style.display = "none";
+          last = "hidden";
+          return { visible: false };
+        }
+        const look = entranceLook(s);
+        look.fill = s.fill;
+        look.corners = s.corners;
+        const fill = s.fill.join();
+        if (fill !== lastFill) {
+          lastFill = fill;
+          bubble.style.background = `linear-gradient(${s.fill[0]}, ${s.fill[1]})`;
+        }
+        const corners = s.corners.join();
+        if (corners !== lastCorners) {
+          lastCorners = corners;
+          const R = f.radius;
+          bubble.style.borderRadius = `${R}px ${s.corners[0]}px ${s.corners[1]}px ${R}px`;
+        }
+        const key = [look.scale.toFixed(4), look.ty.toFixed(2), look.opacity.toFixed(3), s.active].join();
+        if (key === last) return look;
+        last = key;
+        row.style.display = "flex";
+        row.style.opacity = look.opacity;
+        row.style.transform = `translateY(${look.ty}px) scale(${look.scale})`;
+        bubble.style.filter = s.active ? "brightness(1.1)" : "none";
+        return look;
+      },
+    };
+  }
+
+  /**
+   * Spotify-style lyric line: every line is visible from the start; the
+   * one being sung is white and a touch larger, the rest a light tint.
+   */
+  function createLyricLine(o) {
+    const L = o.theme.lyrics;
+    const row = el("div", {
+      fontFamily: WM.Themes.LYRICS_FONT,
+      fontWeight: "700",
+      fontSize: L.fontSize + "px",
+      lineHeight: String(L.lineHeight),
+      letterSpacing: "-0.01em",
+      marginTop: o.marginTop + "px",
+      // leaves room for the sung line's slight enlargement
+      width: "93%",
+      transformOrigin: "left center",
+      transition: "color 220ms ease",
+    });
+    row.textContent = o.text;
+    let last = "";
+    return {
+      root: row,
+      reset() {
+        last = "";
+      },
+      /** @param s {age, active, color, activeColor} */
+      update(s) {
+        // Ease the highlight in over ~0.18 s (same on every frame of an export).
+        const k = s.active ? Math.min(1, Math.max(0, s.age / 0.18)) : 0;
+        const scale = 1 + (L.activeScale - 1) * k;
+        const look = { visible: true, active: s.active, k, scale };
+        const key = [scale.toFixed(4), s.active, s.color].join();
+        if (key === last) return look;
+        last = key;
+        row.style.color = s.active ? s.activeColor : s.color;
+        row.style.transform = `scale(${scale})`;
+        return look;
+      },
+    };
+  }
+
+  WM.Bubbles = { createBubble, createFlatBubble, createLyricLine, createHoyPill, makeSpring, WA, FONT_STACK };
 })((window.WaveMusic = window.WaveMusic || {}));

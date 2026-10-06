@@ -1,6 +1,6 @@
 // Wave Music · RENDER DE VIDEO
-// Paints the "Video final" framing (1080x1920: wallpaper + chat, never the
-// mockup) onto a canvas, one frame per call. Layout is not re-invented
+// Paints the "Video final" framing (1080x1920: background + lyrics in the
+// chosen style, never the mockup) onto a canvas, one frame per call. Layout is not re-invented
 // here: an off-screen Preview in the "video" layout lays the bubbles out
 // with the real DOM/CSS, we read their boxes once, and every frame reuses
 // the Preview's own animation values (entrance spring, scroll).
@@ -55,11 +55,41 @@
     return out;
   }
 
+  /** The lines exactly as the browser wrapped `el`'s text (so the canvas
+   * never breaks a line differently from the preview). */
+  function domLines(el) {
+    const node = el.firstChild;
+    if (!node || node.nodeType !== 3) return [el.textContent];
+    const text = node.textContent;
+    const range = document.createRange();
+    const lines = [];
+    let lastTop = null;
+    const re = /\S+/g;
+    let m;
+    while ((m = re.exec(text))) {
+      range.setStart(node, m.index);
+      range.setEnd(node, m.index + m[0].length);
+      const top = Math.round(range.getClientRects()[0].top);
+      if (lastTop === null || Math.abs(top - lastTop) > 3) lines.push(m[0]);
+      else lines[lines.length - 1] += " " + m[0];
+      lastTop = top;
+    }
+    return lines.length ? lines : [text];
+  }
+
+  function fitText(g, text, width) {
+    if (g.measureText(text).width <= width) return text;
+    let t = text;
+    while (t.length > 1 && g.measureText(t + "…").width > width) t = t.slice(0, -1);
+    return t + "…";
+  }
+
   class VideoRenderer {
     /** Use create(): it waits for the background image. */
-    constructor(timeline, bg) {
+    constructor(timeline, bg, style = {}) {
       this.timeline = timeline;
       this.bg = bg;
+      this.theme = WM.Themes.get(style.theme);
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
@@ -77,15 +107,25 @@
         pointerEvents: "none",
       });
       document.body.appendChild(this.host);
-      this.preview = new WM.Preview(this.host, { backgroundSrc: bg.src, layout: "video" });
+      this.preview = new WM.Preview(this.host, {
+        backgroundSrc: bg ? bg.src : "",
+        layout: "video",
+        theme: this.theme.id,
+        spotifyColor: style.spotifyColor,
+      });
+      this.preview.setMeta(style.meta || {});
       this.preview.setTimeline(timeline);
       this.L = this.preview.layout;
       this.measure();
     }
 
-    static async create(timeline, backgroundSrc) {
-      const bg = await loadImage(backgroundSrc);
-      return new VideoRenderer(timeline, bg);
+    static async create(timeline, backgroundSrc, style = {}) {
+      const theme = WM.Themes.get(style.theme);
+      const bg = theme.background.type === "wallpaper" ? await loadImage(backgroundSrc) : null;
+      if (theme.kind === "lyrics" && document.fonts) {
+        await document.fonts.load(`700 40px ${WM.Themes.LYRICS_FONT}`).catch(() => {});
+      }
+      return new VideoRenderer(timeline, bg, style);
     }
 
     measure() {
@@ -107,6 +147,35 @@
           h: r.height / scale,
         };
       };
+      if (this.theme.kind === "lyrics") {
+        const Ly = this.theme.lyrics;
+        g.font = `700 ${Ly.fontSize}px ${WM.Themes.LYRICS_FONT}`;
+        this.lineH = Ly.fontSize * Ly.lineHeight;
+        this.items = bubbles.map((b, i) => ({
+          row: box(b.root),
+          lines: domLines(b.root),
+        }));
+        return;
+      }
+      if (this.theme.bubble === "flat") {
+        const f = this.theme.flat;
+        g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
+        this.lineH = f.fontSize * 1.3;
+        this.items = bubbles.map((b, i) => {
+          const cs = getComputedStyle(b.box);
+          const pl = parseFloat(cs.paddingLeft);
+          const pt = parseFloat(cs.paddingTop);
+          const bx = box(b.box);
+          return {
+            row: box(b.root),
+            box: bx,
+            text: { x: bx.x + pl, y: bx.y + pt },
+            lines: domLines(b.box),
+          };
+        });
+        bubbles.forEach((b) => b.reset());
+        return;
+      }
       const pill = content.firstChild.firstChild;
       this.pill = { ...box(pill), text: pill.textContent };
       g.font = `${FONT_SIZE}px ${FONT_STACK}`;
@@ -133,14 +202,28 @@
     draw(t, state) {
       const g = this.g;
       const L = this.L;
-      const { scroll, looks } = this.preview.render(state, { playing: true });
+      const { scroll, looks } = this.preview.render(state, { playing: true, time: t });
+      const theme = this.theme;
 
-      // wallpaper, object-fit: cover
-      const { width: iw, height: ih } = this.bg;
-      const k = Math.max(L.stageW / iw, L.stageH / ih);
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalAlpha = 1;
-      g.drawImage(this.bg, (L.stageW - iw * k) / 2, (L.stageH - ih * k) / 2, iw * k, ih * k);
+      if (theme.background.type === "wallpaper") {
+        // wallpaper, object-fit: cover
+        const { width: iw, height: ih } = this.bg;
+        const k = Math.max(L.stageW / iw, L.stageH / ih);
+        g.drawImage(this.bg, (L.stageW - iw * k) / 2, (L.stageH - ih * k) / 2, iw * k, ih * k);
+      } else if (theme.background.type === "solid") {
+        g.fillStyle = theme.background.color;
+        g.fillRect(0, 0, L.stageW, L.stageH);
+      } else {
+        const p = this.preview.palette;
+        const grad = g.createLinearGradient(0, 0, 0, L.stageH);
+        grad.addColorStop(0, p.bgTop);
+        grad.addColorStop(1, p.bgBottom);
+        g.fillStyle = grad;
+        g.fillRect(0, 0, L.stageW, L.stageH);
+      }
+      if (L.header) this.drawHeader(L.header);
 
       // chat viewport: same origin, scale and clip as the DOM
       g.save();
@@ -151,10 +234,85 @@
       g.clip();
       g.translate(0, -scroll);
 
-      this.drawPill();
-      this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawBubble(it, looks[i], t));
+      if (theme.kind === "lyrics") {
+        const p = this.preview.palette;
+        this.items.forEach((it, i) => looks[i] && this.drawLyric(it, looks[i], p));
+      } else if (theme.bubble === "flat") {
+        this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawFlat(it, looks[i]));
+      } else {
+        this.drawPill();
+        this.items.forEach((it, i) => looks[i] && looks[i].visible && this.drawBubble(it, looks[i], t));
+      }
       g.restore();
+      const fade = this.preview.fade;
+      if (fade) {
+        const p = this.preview.palette;
+        const grad = g.createLinearGradient(0, fade.y, 0, fade.y + fade.h);
+        grad.addColorStop(0, p.at(fade.pos));
+        grad.addColorStop(1, p.at(fade.pos + fade.h / L.bg.h, 0));
+        g.fillStyle = grad;
+        g.fillRect(fade.x, fade.y, fade.w, fade.h);
+      }
       return this.canvas;
+    }
+
+    drawHeader(h) {
+      const g = this.g;
+      const { title, artist } = this.preview.meta;
+      g.save();
+      g.fillStyle = "#fff";
+      g.textAlign = "center";
+      g.textBaseline = "top";
+      const cx = h.x + h.w / 2;
+      g.font = `700 ${h.size}px ${WM.Themes.LYRICS_FONT}`;
+      g.fillText(fitText(g, title || "", h.w), cx, h.y + 18);
+      g.globalAlpha = 0.9;
+      g.font = `${Math.round(h.size * 0.88)}px ${WM.Themes.LYRICS_FONT}`;
+      g.fillText(fitText(g, artist || "", h.w), cx, h.y + 18 + h.size * 1.35);
+      g.restore();
+    }
+
+    drawLyric(it, look, p) {
+      const g = this.g;
+      const Ly = this.theme.lyrics;
+      g.save();
+      const oy = it.row.y + it.row.h / 2;
+      g.translate(it.row.x, oy);
+      g.scale(look.scale, look.scale);
+      g.translate(-it.row.x, -oy);
+      g.fillStyle = look.active ? "#ffffff" : p.line;
+      g.font = `700 ${Ly.fontSize}px ${WM.Themes.LYRICS_FONT}`;
+      if ("letterSpacing" in g) g.letterSpacing = `${-0.01 * Ly.fontSize}px`; // as the CSS
+      g.textBaseline = "middle";
+      it.lines.forEach((line, n) => g.fillText(line, it.row.x, it.row.y + n * this.lineH + this.lineH / 2));
+      g.restore();
+    }
+
+    drawFlat(it, look) {
+      const g = this.g;
+      const f = this.theme.flat;
+      g.save();
+      g.globalAlpha = look.opacity;
+      const ox = it.row.x + it.row.w;
+      const oy = it.row.y;
+      g.translate(ox, oy + look.ty);
+      g.scale(look.scale, look.scale);
+      g.translate(-ox, -oy);
+      const b = it.box;
+      const cap = (r) => Math.min(r, b.h / 2);
+      roundRect(g, b.x, b.y, b.w, b.h, [cap(f.radius), cap(look.corners[0]), cap(look.corners[1]), cap(f.radius)]);
+      const grad = g.createLinearGradient(0, b.y, 0, b.y + b.h);
+      grad.addColorStop(0, look.fill[0]);
+      grad.addColorStop(1, look.fill[1]);
+      g.fillStyle = grad;
+      if (look.active) g.filter = "brightness(1.1)";
+      g.fill();
+      g.filter = "none";
+      g.fillStyle = f.text;
+      g.font = `${f.fontSize}px ${WM.Themes.FONT_STACK}`;
+      g.textBaseline = "middle";
+      it.lines.forEach((line, n) => g.fillText(line, it.text.x, it.text.y + n * this.lineH + this.lineH / 2));
+      g.restore();
     }
 
     drawPill() {

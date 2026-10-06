@@ -7,11 +7,15 @@
     background: "../fake-chat/background-alt.png",
     // Preview-only device frame; never part of the exported video.
     mockup: "assets/mockup-whatsapp.png",
+    // Same phone with an empty screen, for styles that draw their own UI.
+    frame: "assets/phone-frame.png",
   };
 
   WM.DEMO = {
     audioSrc: "../fake-chat/song.mp3",
     audioName: "Canción de amor · demo",
+    title: "Todavía una canción de amor",
+    artist: "Los Rodríguez",
     lyrics: [
       "Estoy tratando de decirte que...",
       "Me desespero de esperarte",

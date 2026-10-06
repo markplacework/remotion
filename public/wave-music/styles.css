@@ -988,6 +988,91 @@ kbd {
   font-size: 14px;
   margin-top: 0;
 }
+.styles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.styles button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 4px 9px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.styles button:hover {
+  color: var(--text);
+}
+.styles button[aria-pressed="true"] {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.75);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+.style-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+.style-swatch i {
+  display: block;
+  width: 20px;
+  height: 9px;
+  border-radius: 5px 5px 2px 5px;
+  background: #fff;
+  opacity: 0.9;
+}
+.style-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.opt-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.swatches button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transition: transform 0.15s;
+}
+.swatches button:hover {
+  transform: scale(1.08);
+}
+.swatches button[aria-pressed="true"] {
+  border-color: #fff;
+}
+.style-opts input[type="text"] {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+.style-opts input[type="text"]:focus {
+  border-color: rgba(var(--accent-rgb), 0.6);
+}
 .card-note {
   margin: 0 0 12px;
   font-size: 12px;

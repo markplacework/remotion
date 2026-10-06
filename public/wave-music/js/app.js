@@ -12,6 +12,7 @@
   const preview = new WM.Preview($("stage-host"), {
     backgroundSrc: WM.ASSETS.background,
     mockupSrc: WM.ASSETS.mockup,
+    frameSrc: WM.ASSETS.frame,
     layout: "mockup",
   });
 
@@ -193,7 +194,7 @@
       listenUntil = null;
     }
     const state = sync.stateAt(t);
-    preview.render(state, { playing: audio.playing, snap: needsSnap });
+    preview.render(state, { playing: audio.playing, time: t, duration: audio.duration });
     needsSnap = false;
     renderAdjust(t, state);
 
@@ -460,6 +461,7 @@
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
+        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
         onProgress: (t, d) => {
@@ -535,6 +537,9 @@
     if (!f) return;
     try {
       await audio.loadFile(f);
+      $("sp-title").value = audio.name;
+      $("sp-artist").value = "";
+      syncMeta();
       toast("Audio cargado");
       if (timeline) applyTimeline(T.buildTimeline(parsed.lines, timeline.entries.map((e) => e.start), audio.duration, timeline.source));
     } catch (e) {
@@ -562,6 +567,45 @@
   $("sync-mode").onchange = onModeChange;
   $("btn-generate").onclick = generate;
 
+  // ---------- estilo ----------
+  const STYLE_SWATCH = {
+    whatsapp: "background:#005c4b",
+    instagram: "background:linear-gradient(160deg,#cc06cb,#7f33f5 55%,#4f5bf9)",
+    messenger: "background:linear-gradient(160deg,#1270ff,#3a62ff)",
+    spotify: "background:linear-gradient(#6e0a08,#8e2f25)",
+  };
+  function chooseStyle(id) {
+    document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
+    $("spotify-opts").hidden = id !== "spotify";
+    preview.setTheme(id);
+    needsSnap = true;
+  }
+  WM.Themes.list.forEach((t) => {
+    const b = document.createElement("button");
+    b.dataset.style = t.id;
+    b.innerHTML = `<span class="style-swatch" style="${STYLE_SWATCH[t.id]}">` + (t.kind === "lyrics" ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>' : "<i></i>") + `</span>${t.label}`;
+    b.onclick = () => chooseStyle(t.id);
+    $("styles").appendChild(b);
+  });
+  WM.Themes.SPOTIFY_COLORS.forEach((c) => {
+    const b = document.createElement("button");
+    b.dataset.color = c.id;
+    b.title = c.label;
+    b.setAttribute("aria-label", c.label);
+    b.style.background = WM.Themes.spotifyPalette(c.id).swatch;
+    b.onclick = () => {
+      document.querySelectorAll("#sp-colors button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      preview.setSpotifyColor(c.id);
+      needsSnap = true;
+    };
+    $("sp-colors").appendChild(b);
+  });
+  document.querySelector('#sp-colors [data-color="rojo"]').setAttribute("aria-pressed", "true");
+  const syncMeta = () => preview.setMeta({ title: $("sp-title").value.trim(), artist: $("sp-artist").value.trim() });
+  $("sp-title").addEventListener("input", syncMeta);
+  $("sp-artist").addEventListener("input", syncMeta);
+  chooseStyle("whatsapp");
+
   // Framing: the mockup is a preview aid; "Video final" is exactly what
   // gets exported (9:16, no device frame).
   document.querySelectorAll("[data-framing]").forEach((b) => {
@@ -577,6 +621,9 @@
   async function loadDemo() {
     const D = WM.DEMO;
     $("lyrics").value = D.lyrics;
+    $("sp-title").value = D.title;
+    $("sp-artist").value = D.artist;
+    syncMeta();
     parsed = WM.Lyrics.parseLyrics(D.lyrics);
     try {
       await audio.load(D.audioSrc, D.audioName);

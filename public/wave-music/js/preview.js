@@ -1,94 +1,146 @@
 // Wave Music · PREVISUALIZADOR
-// Renders the sync state into a stage. The chat itself (wallpaper +
-// bubbles + AutoScrollChatLog-style scrolling) is the same in every
-// framing; only the framing changes:
+// Renders the sync state into a stage, in the chosen style (themes.js)
+// and framing:
 //
-//   "video"  — the exported 9:16 video (1080x1920): wallpaper full-bleed,
-//              chat inside src/lyricSyncDefaults.ts' TikTok-safe margins.
-//   "mockup" — preview only: the same chat shown inside the WhatsApp
-//              phone mockup's screen. The mockup is never part of the
-//              exported video.
+//   "video"  — the exported 9:16 video (1080x1920): background full-bleed,
+//              content inside src/lyricSyncDefaults.ts' TikTok-safe margins.
+//   "mockup" — preview only: the same content inside the phone mockup's
+//              screen. WhatsApp uses the mockup with its UI baked in;
+//              the other styles draw their UI (chrome.js) inside a
+//              frame-only phone. The mockup is never exported.
 //
 // It never reads the audio — it only receives state.
 (function (WM) {
   const BOTTOM_PADDING = 18; // AutoScrollChatLog
   const SAME_SENDER_GAP = 14;
   const SENDER_CHANGE_GAP = 26;
+  const LYRIC_ANCHOR = 0.28; // Spotify: the sung line sits ~28% down
   const scrollSpring = WM.Bubbles.makeSpring(18, 0.7);
 
   // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
   const LS = { top: 190, bottom: 320, left: 40, safeRight: 935, scale: 1.6 };
 
-  // Mockup screen hole, measured from the PNG's own transparent pixels
-  // (853x1843): x 63-788, from under the header (y 288) to the bottom
-  // of the screen behind the input bar (y ~1620).
-  // The phone itself spans x 26-826, y 46-1797 of the PNG; the stage is
-  // cropped to that so no transparent margin eats preview space.
+  // Mockup geometry, measured from the PNGs' own pixels (853x1843): the
+  // phone spans x 26-826, y 46-1797, so the stage is cropped to that.
+  // WhatsApp's chat area runs from under its header (y 286) to its input
+  // bar (y 1604); the whole screen (frame-only PNG) is x 63-788, y 77-1766.
   const CROP = { x: 26, y: 46, w: 800, h: 1751 };
   const SCREEN = { x: 62 - CROP.x, y: 286 - CROP.y, w: 728, h: 1336 };
+  const SCREEN_FULL = { x: 63 - CROP.x, y: 77 - CROP.y, w: 726, h: 1690 };
   const INPUT_BAR_TOP = 1604 - CROP.y;
-  const MOCKUP_SCALE = 1.45; // bubble size relative to a real phone screen
+  const MOCKUP_SCALE = 1.45; // content size relative to a real phone screen
+  const FRAME = { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 };
 
-  const LAYOUTS = {
-    video: {
-      id: "video",
-      stageW: 1080,
-      stageH: 1920,
-      bg: { x: 0, y: 0, w: 1080, h: 1920 },
-      // Lyric-sync standard: the chat starts at the top of the safe area.
-      anchor: "top",
-      chat: {
-        x: LS.left,
-        y: LS.top,
-        scale: LS.scale,
-        width: Math.round((LS.safeRight - LS.left) / LS.scale),
-        height: Math.round((1920 - LS.top - LS.bottom) / LS.scale),
-      },
-    },
-    mockup: {
+  function layoutFor(framing, theme) {
+    const lyrics = theme.kind === "lyrics";
+    if (framing === "video") {
+      const scale = lyrics ? 2.0 : LS.scale;
+      const top = lyrics ? LS.top + 150 : LS.top; // room for title/artist
+      // Left-aligned lyrics keep clear of the ~100px each side that the
+      // phone-shaped preview box crops off the 9:16 frame.
+      const left = lyrics ? 110 : LS.left;
+      return {
+        id: "video",
+        stageW: 1080,
+        stageH: 1920,
+        bg: { x: 0, y: 0, w: 1080, h: 1920 },
+        header: lyrics ? { x: LS.left, y: LS.top, w: LS.safeRight - LS.left, h: 130, size: 40 } : null,
+        chat: {
+          x: left,
+          y: top,
+          scale,
+          width: Math.round((LS.safeRight - left) / scale),
+          height: Math.round((1920 - top - LS.bottom) / scale),
+        },
+        fit: "cover",
+      };
+    }
+    if (theme.mockup === "baked") {
+      return {
+        id: "mockup",
+        stageW: CROP.w,
+        stageH: CROP.h,
+        bg: SCREEN,
+        chat: {
+          // 12px side inset + the chat's own 12px padding (x1.45) ≈ real
+          // WhatsApp's bubble margin to the screen edge.
+          x: SCREEN.x + 12,
+          y: SCREEN.y,
+          scale: MOCKUP_SCALE,
+          width: Math.round((SCREEN.w - 24) / MOCKUP_SCALE),
+          height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
+        },
+        frame: { src: "mockup", ...FRAME },
+        fit: "contain",
+      };
+    }
+    // Drawn UI inside the frame-only phone.
+    const chat = lyrics
+      ? { x: SCREEN_FULL.x + 40, y: SCREEN.y + 6, w: SCREEN_FULL.w - 80, bottom: 1370 }
+      : { x: SCREEN.x + 12, y: SCREEN.y, w: SCREEN.w - 24, bottom: INPUT_BAR_TOP - 8 };
+    return {
       id: "mockup",
       stageW: CROP.w,
       stageH: CROP.h,
-      bg: SCREEN,
+      bg: SCREEN_FULL,
+      bgRadius: 92,
       chat: {
-        // 12px side inset + the chat's own 12px padding (x1.45) ≈ real
-        // WhatsApp's bubble margin to the screen edge.
-        x: SCREEN.x + 12,
-        y: SCREEN.y,
+        x: chat.x,
+        y: chat.y,
         scale: MOCKUP_SCALE,
-        width: Math.round((SCREEN.w - 24) / MOCKUP_SCALE),
-        height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
+        width: Math.round(chat.w / MOCKUP_SCALE),
+        height: Math.round((chat.bottom - chat.y) / MOCKUP_SCALE),
       },
-      frame: { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 },
-      // Same as the video: the conversation starts at the top and scrolls
-      // once it reaches the input bar.
-      anchor: "top",
-    },
-  };
+      chrome: true,
+      frame: { src: "frame", ...FRAME },
+      fit: "contain",
+    };
+  }
 
   const px = (n) => n + "px";
   const box = (el, r) => Object.assign(el.style, { position: "absolute", left: px(r.x), top: px(r.y), width: px(r.w), height: px(r.h) });
 
   class Preview {
-    constructor(host, { backgroundSrc, mockupSrc, layout = "mockup" }) {
+    constructor(host, { backgroundSrc, mockupSrc, frameSrc, layout = "mockup", theme = "whatsapp", spotifyColor = "rojo" }) {
       this.host = host;
       this.backgroundSrc = backgroundSrc;
       this.mockupSrc = mockupSrc;
+      this.frameSrc = frameSrc;
+      this.theme = WM.Themes.get(theme);
+      this.spotifyColor = spotifyColor;
+      this.meta = { title: "", artist: "" };
       this.timeline = null;
+      this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
       this.setLayout(layout);
     }
 
-    setLayout(id) {
-      const L = LAYOUTS[id] || LAYOUTS.mockup;
-      this.layout = L;
+    setTheme(id) {
+      this.theme = WM.Themes.get(id);
+      this.setLayout(this.framing);
+    }
+    setSpotifyColor(id) {
+      this.spotifyColor = id;
+      if (this.theme.kind === "lyrics") this.setLayout(this.framing);
+    }
+    setMeta(meta) {
+      this.meta = { ...this.meta, ...meta };
+      if (this.headerEl) this.fillHeader();
+    }
+    get palette() {
+      return WM.Themes.spotifyPalette(this.spotifyColor);
+    }
+
+    setLayout(framing) {
+      this.framing = framing;
+      const theme = this.theme;
+      const L = (this.layout = layoutFor(framing, theme));
       if (this.stage) this.stage.remove();
       this.host.dataset.layout = L.id;
+      this.host.dataset.theme = theme.id;
       // The preview box keeps the phone's proportions in both framings, so
       // switching never changes its size. "Video final" fills it like
-      // object-fit: cover — the exported file is still the full 1080x1920;
-      // only the wallpaper at the sides falls outside the box (the chat
-      // stays inside the TikTok-safe area, so every bubble is visible).
+      // object-fit: cover — the exported file is still the full 1080x1920.
       this.host.style.setProperty("--stage-aspect", `${CROP.w} / ${CROP.h}`);
       this.host.style.setProperty("--stage-ratio", CROP.w / CROP.h);
 
@@ -97,17 +149,40 @@
       stage.style.width = px(L.stageW);
       stage.style.height = px(L.stageH);
 
-      // 1. Wallpaper
+      // 1. Background
       const bg = document.createElement("div");
       box(bg, L.bg);
-      Object.assign(bg.style, {
-        backgroundImage: `url("${this.backgroundSrc}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      });
+      if (L.bgRadius) bg.style.borderRadius = px(L.bgRadius);
+      const b = theme.background;
+      if (b.type === "wallpaper") {
+        Object.assign(bg.style, { backgroundImage: `url("${this.backgroundSrc}")`, backgroundSize: "cover", backgroundPosition: "center" });
+      } else if (b.type === "solid") {
+        bg.style.background = b.color;
+      } else {
+        const p = this.palette;
+        bg.style.background = `linear-gradient(${p.bgTop}, ${p.bgBottom})`;
+      }
       stage.appendChild(bg);
 
-      // 2. Chat: scaled wrapper + fixed viewport that clips overflow.
+      // 2. Title / artist (Spotify, exported framing)
+      this.headerEl = null;
+      if (L.header) {
+        const h = (this.headerEl = document.createElement("div"));
+        box(h, L.header);
+        Object.assign(h.style, {
+          textAlign: "center",
+          color: "#fff",
+          fontFamily: WM.Themes.LYRICS_FONT,
+          lineHeight: "1.35",
+          paddingTop: "18px",
+          boxSizing: "border-box",
+        });
+        h.innerHTML = `<b style="display:block;font-size:${L.header.size}px"></b><span style="display:block;font-size:${Math.round(L.header.size * 0.88)}px;opacity:.9"></span>`;
+        stage.appendChild(h);
+        this.fillHeader();
+      }
+
+      // 3. Content: scaled wrapper + fixed viewport that clips overflow.
       const scaler = document.createElement("div");
       Object.assign(scaler.style, {
         position: "absolute",
@@ -124,20 +199,40 @@
         position: "relative",
       });
       this.content = document.createElement("div");
-      this.content.style.padding = "24px 12px 0";
+      this.content.style.padding = theme.kind === "lyrics" ? "0" : "24px 12px 0";
       viewport.appendChild(this.content);
       scaler.appendChild(viewport);
       stage.appendChild(scaler);
 
-      // 3. Device frame on top (preview only)
+      // 3b. Spotify: lines scrolling up fade out instead of being cut.
+      this.fade = null;
+      if (theme.kind === "lyrics") {
+        const pos = (L.chat.y - L.bg.y) / L.bg.h;
+        const fade = (this.fade = { x: L.bg.x, y: L.chat.y, w: L.bg.w, h: 60, pos });
+        const f = document.createElement("div");
+        box(f, fade);
+        const p = this.palette;
+        f.style.background = `linear-gradient(${p.at(pos)}, ${p.at(pos + 60 / L.bg.h, 0)})`;
+        f.style.pointerEvents = "none";
+        stage.appendChild(f);
+      }
+
+      // 4. App UI drawn in HTML (non-WhatsApp mockups)
+      this.chrome = null;
+      if (L.chrome) {
+        this.chrome = WM.Chrome.build(theme);
+        this.chrome.nodes.forEach((n) => stage.appendChild(n));
+      }
+
+      // 5. Device frame on top (preview only)
       if (L.frame) {
         const frame = document.createElement("img");
-        frame.src = this.mockupSrc;
+        frame.src = L.frame.src === "mockup" ? this.mockupSrc : this.frameSrc;
         frame.alt = "";
         box(frame, L.frame);
         // The frame is deliberately wider than the cropped stage; hosts
         // that reset img { max-width: 100% } (the claude.ai viewer does)
-        // would squash it out of line with the chat.
+        // would squash it out of line with the content.
         frame.style.maxWidth = "none";
         frame.style.maxHeight = "none";
         frame.style.pointerEvents = "none";
@@ -149,16 +244,22 @@
       this.setTimeline(this.timeline);
     }
 
+    fillHeader() {
+      const [t, a] = this.headerEl.children;
+      t.textContent = this.meta.title || "";
+      a.textContent = this.meta.artist || "";
+    }
+
     fit() {
       if (!this.stage) return;
       const r = this.host.getBoundingClientRect();
       const fx = r.width / this.layout.stageW;
       const fy = r.height / this.layout.stageH;
-      const k = this.layout.frame ? Math.min(fx, fy) : Math.max(fx, fy);
+      const k = this.layout.fit === "contain" ? Math.min(fx, fy) : Math.max(fx, fy);
       this.stage.style.transform = `translate(-50%, -50%) scale(${k})`;
     }
 
-    /** Build one bubble per lyric line. */
+    /** Build one item (bubble or lyric line) per lyric line. */
     setTimeline(timeline) {
       this.timeline = timeline;
       this.content.innerHTML = "";
@@ -167,64 +268,102 @@
       const entries = timeline ? timeline.entries : [];
       this.host.classList.toggle("is-empty", !entries.length);
       if (!entries.length) return;
+      const theme = this.theme;
 
-      this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
+      if (theme.kind === "lyrics") {
+        entries.forEach((e, i) => {
+          const line = WM.Bubbles.createLyricLine({ text: e.text, theme, marginTop: i === 0 ? 0 : theme.lyrics.gap });
+          this.content.appendChild(line.root);
+          this.bubbles.push(line);
+        });
+        return;
+      }
+      if (theme.bubble === "whatsapp") this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
       entries.forEach((e, i) => {
         const from = e.from || "me";
         const prevFrom = i > 0 ? entries[i - 1].from || "me" : from;
-        const b = WM.Bubbles.createBubble({
-          text: e.text,
-          from,
-          clock: clockFor(e.start),
-          marginTop: i === 0 ? 0 : prevFrom !== from ? SENDER_CHANGE_GAP : SAME_SENDER_GAP,
-        });
+        const b =
+          theme.bubble === "flat"
+            ? WM.Bubbles.createFlatBubble({ text: e.text, theme, marginTop: i === 0 ? 0 : theme.flat.gap })
+            : WM.Bubbles.createBubble({
+                text: e.text,
+                from,
+                clock: clockFor(e.start),
+                marginTop: i === 0 ? 0 : prevFrom !== from ? SENDER_CHANGE_GAP : SAME_SENDER_GAP,
+              });
         this.content.appendChild(b.root);
         this.bubbles.push(b);
       });
     }
 
-    // Bottom edge of each bubble inside the content, measured once with
-    // every bubble laid out (layout never changes afterwards, only
-    // opacity/transform) — same approach as AutoScrollChatLog.
+    // Item boxes inside the content, measured once with everything laid
+    // out (layout never changes afterwards, only opacity/transform) —
+    // same approach as AutoScrollChatLog.
     measure() {
-      this.bubbles.forEach((b) => (b.root.style.display = "flex"));
+      const lyrics = this.theme.kind === "lyrics";
+      if (!lyrics) this.bubbles.forEach((b) => (b.root.style.display = "flex"));
+      this.tops = this.bubbles.map((b) => b.root.offsetTop);
       this.bottoms = this.bubbles.map((b) => b.root.offsetTop + b.root.offsetHeight);
-      const pill = this.content.firstChild;
-      this.pillBottom = pill.offsetTop + pill.offsetHeight;
-      this.bubbles.forEach((b) => b.reset());
+      const first = this.content.firstChild;
+      this.pillBottom = lyrics || this.theme.bubble === "flat" ? 0 : first.offsetTop + first.offsetHeight;
+      if (!lyrics) this.bubbles.forEach((b) => b.reset());
     }
 
-    /** How far the content is moved up so line `index` (-1 = none yet)
-     * is in place; negative when bottom-anchored content is pushed down. */
+    /** How far the content is moved up so item `index` (-1 = none yet) is in place. */
     scrollFor(index) {
       if (!this.bottoms) return 0;
       const h = this.layout.chat.height;
+      if (this.theme.kind === "lyrics") {
+        return index >= 0 ? Math.max(0, this.tops[index] - h * LYRIC_ANCHOR) : 0;
+      }
       const bottom = index >= 0 ? this.bottoms[index] : this.pillBottom;
-      const s = bottom - h + BOTTOM_PADDING;
-      return this.layout.anchor === "bottom" ? s : Math.max(0, s);
+      return Math.max(0, bottom - h + BOTTOM_PADDING);
     }
 
     /**
      * Pure function of the sync state, so seeking renders the exact frame.
+     * @param opts { playing, time, duration }
      * @returns {{ scroll:number, looks:object[] }} what was drawn, for the
      *   video renderer
      */
-    render(state, { playing = false } = {}) {
+    render(state, { playing = false, time = state.time, duration = 0 } = {}) {
+      if (this.chrome) this.chrome.update({ time, duration, playing, ...this.meta });
       if (!this.bubbles.length) return { scroll: 0, looks: [] };
       if (!this.bottoms) this.measure();
 
-      const looks = state.entries.map((s, i) =>
-        this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, playing }),
-      );
-
-      // AutoScrollChatLog: glide from the previous line's scroll to the
-      // newest line's, keyed off the newest line's start.
+      // Scroll glides from the previous item's position to the newest
+      // one's, keyed off the newest line's start.
       const last = state.visibleCount - 1;
       const ease = last >= 0 ? Math.min(scrollSpring(state.entries[last].age), 1) : 0;
       const prev = this.scrollFor(last - 1);
       const next = this.scrollFor(last);
       const scroll = prev + (next - prev) * ease;
       this.content.style.transform = `translateY(${-scroll}px)`;
+
+      const theme = this.theme;
+      const H = this.layout.chat.height;
+      let looks;
+      if (theme.kind === "lyrics") {
+        const p = this.palette;
+        looks = state.entries.map((s, i) =>
+          this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, color: p.line, activeColor: "#ffffff" }),
+        );
+      } else if (theme.bubble === "flat") {
+        const f = theme.flat;
+        looks = state.entries.map((s, i) => {
+          const y0 = (this.tops[i] - scroll) / H;
+          const y1 = (this.bottoms[i] - scroll) / H;
+          return this.bubbles[i].update({
+            age: s.age,
+            active: i === state.activeIndex,
+            fill: [WM.Themes.gradientAt(f.stops, y0), WM.Themes.gradientAt(f.stops, y1)],
+            // one group: inner corners tighten on the right-hand side
+            corners: [i > 0 ? f.tight : f.radius, i < last ? f.tight : f.radius],
+          });
+        });
+      } else {
+        looks = state.entries.map((s, i) => this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, playing }));
+      }
       return { scroll, looks };
     }
   }
@@ -236,5 +375,4 @@
   }
 
   WM.Preview = Preview;
-  WM.Preview.LAYOUTS = LAYOUTS;
 })((window.WaveMusic = window.WaveMusic || {}));
