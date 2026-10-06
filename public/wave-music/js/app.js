@@ -348,7 +348,6 @@
 
   function openFull() {
     if (!timeline) return;
-    host.classList.remove("ui-on");
     hideHint();
     $("full-name").textContent = audio.name || "Wave Music";
     $("full-stage").appendChild(host);
@@ -364,29 +363,15 @@
     needsSnap = true;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
-  // Player overlay on the preview (like a video player): hover shows it
-  // on desktop; on touch a tap shows it for a moment. Clicking the
-  // picture itself plays/pauses; the overlay buttons do the rest.
-  let uiTimer = 0;
-  function showControls(ms = 2500) {
-    host.classList.add("ui-on");
-    clearTimeout(uiTimer);
-    uiTimer = setTimeout(() => host.classList.remove("ui-on"), ms);
-  }
-  host.addEventListener("pointerup", (e) => {
-    if (!$("full").hidden || e.target.closest(".empty-cta, button")) return;
-    if (e.pointerType === "mouse") playPause();
-    else if (host.classList.contains("ui-on")) host.classList.remove("ui-on");
-    else showControls();
-  });
-  // Double-click the picture = full screen (as in most video players).
-  host.addEventListener("dblclick", (e) => {
-    if ($("full").hidden && !e.target.closest(".empty-cta, button")) openFull();
+  // One tap/click on the picture opens full screen. On desktop, hovering
+  // also shows a small player overlay (play/pause + "Pantalla completa").
+  host.addEventListener("click", (e) => {
+    if (!$("full").hidden || !timeline || e.target.closest(".empty-cta, button")) return;
+    openFull();
   });
   $("ui-play").onclick = (e) => {
     e.stopPropagation();
     playPause();
-    showControls();
   };
   $("ui-full").onclick = (e) => {
     e.stopPropagation();

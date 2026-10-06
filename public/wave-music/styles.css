@@ -1209,10 +1209,6 @@ kbd {
   inset: 13.8% 4.8% 11% 4.6%;
   border-radius: 0;
 }
-.stage-host.ui-on .stage-ui {
-  opacity: 1;
-  pointer-events: auto;
-}
 @media (hover: hover) {
   .stage-host:hover .stage-ui {
     opacity: 1;
@@ -1221,6 +1217,9 @@ kbd {
 }
 .stage-host.is-empty .stage-ui {
   display: none;
+}
+.stage-host:not(.is-empty) {
+  cursor: pointer;
 }
 .ui-play {
   width: 64px;
