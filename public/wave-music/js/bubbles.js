@@ -1,5 +1,5 @@
 // Wave Music · BURBUJAS
-// DOM port of src/components/DarkChatLog.tsx — same WhatsApp dark
+// DOM port of src/components/DarkChatLog.tsx (current version) — same WhatsApp dark
 // palette, radii, padding, font, read ticks, "Hoy" pill and the same
 // spring entrance (damping 15, mass 0.6). Not a redesign: if the
 // Remotion bubbles change, this file should follow them.
@@ -13,24 +13,34 @@
   };
   const FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
-  // Same physics as remotion's spring({ config: { damping: 15, mass: 0.6 } })
-  // (stiffness 100), solved in closed form so it depends only on time.
-  const STIFF = 100;
-  const MASS = 0.6;
-  const DAMP = 15;
-  const W0 = Math.sqrt(STIFF / MASS);
-  const ZETA = DAMP / (2 * Math.sqrt(STIFF * MASS));
-  const WD = W0 * Math.sqrt(1 - ZETA * ZETA);
-  function spring(t) {
-    if (t <= 0) return 0;
-    if (t > 2) return 1;
-    const e = Math.exp(-ZETA * W0 * t);
-    return 1 - e * (Math.cos(WD * t) + ((ZETA * W0) / WD) * Math.sin(WD * t));
+  // Same physics as remotion's spring() (stiffness 100), solved in closed
+  // form so the result depends only on time — seeking is exact.
+  //   bubble entrance: { damping: 15, mass: 0.6 }  (DarkChatBubble)
+  //   chat scroll:     { damping: 18, mass: 0.7 }  (AutoScrollChatLog)
+  function makeSpring(damping, mass, stiffness = 100) {
+    const w0 = Math.sqrt(stiffness / mass);
+    const z = damping / (2 * Math.sqrt(stiffness * mass));
+    return function (t) {
+      if (t <= 0) return 0;
+      if (t > 3) return 1;
+      if (z < 1) {
+        const wd = w0 * Math.sqrt(1 - z * z);
+        return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + ((z * w0) / wd) * Math.sin(wd * t));
+      }
+      if (z === 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+      const r = w0 * Math.sqrt(z * z - 1);
+      const r1 = -z * w0 + r;
+      const r2 = -z * w0 - r;
+      return 1 - (r2 * Math.exp(r1 * t) - r1 * Math.exp(r2 * t)) / (r2 - r1);
+    };
   }
+  const spring = makeSpring(15, 0.6);
   const lerp = (a, b, k) => a + (b - a) * k;
 
-  const TICKS_SVG =
-    '<svg width="16" height="11" viewBox="0 0 18 13" fill="none">' +
+  // Read ticks sized to the timestamp digits (as in DarkChatLog's
+  // IconReadTicks size={timestampFontSize}).
+  const ticksSvg = (h) =>
+    `<svg width="${(h * 18) / 13}" height="${h}" viewBox="0 0 18 13" fill="none">` +
     `<path d="M1 6.8l3.6 3.6L11 3.6" stroke="${WA.readTick}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` +
     `<path d="M6.3 6.8l3.6 3.6L17 3.6" stroke="${WA.readTick}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` +
     "</svg>";
@@ -45,7 +55,7 @@
   function createHoyPill(label) {
     const wrap = el("div", { display: "flex", justifyContent: "center", marginBottom: "30px" });
     const pill = el("div", {
-      background: "rgba(255,255,255,0.08)",
+      background: "rgba(24, 34, 41, 0.92)",
       color: WA.timestamp,
       fontFamily: FONT_STACK,
       fontSize: "15px",
@@ -87,22 +97,27 @@
       display: "flex",
       justifyContent: "flex-end",
       alignItems: "center",
-      gap: "4px",
+      gap: "6px",
       marginTop: "2px",
     });
     // "Now playing" marker — the only addition to the original bubble.
     const eq = el("span", {}, "<i></i><i></i><i></i>");
     eq.className = "wm-eq";
-    const clock = el("span", { fontFamily: FONT_STACK, fontSize: fontSize * 0.68 + "px", color: WA.timestamp });
+    const timestampFontSize = fontSize * 0.68;
+    const clock = el("span", { fontFamily: FONT_STACK, fontSize: timestampFontSize + "px", color: WA.timestamp });
     clock.textContent = o.clock;
     meta.append(eq, clock);
-    if (outgoing) meta.appendChild(el("span", { display: "inline-flex" }, TICKS_SVG));
+    if (outgoing) meta.appendChild(el("span", { display: "inline-flex" }, ticksSvg(timestampFontSize)));
     bubble.append(text, meta);
     row.appendChild(bubble);
 
     let last = "";
     return {
       root: row,
+      reset() {
+        row.style.display = "none";
+        last = "";
+      },
       /** @param {{ age:number, active:boolean, playing:boolean }} s */
       update(s) {
         if (s.age < 0) {
@@ -127,5 +142,5 @@
     };
   }
 
-  WM.Bubbles = { createBubble, createHoyPill, WA, FONT_STACK };
+  WM.Bubbles = { createBubble, createHoyPill, makeSpring, WA, FONT_STACK };
 })((window.WaveMusic = window.WaveMusic || {}));

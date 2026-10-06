@@ -1,25 +1,32 @@
 // Wave Music · PREVISUALIZADOR
-// 9:16 stage (1080x1920, scaled to fit) with the FakeChat background and
-// the chat column laid out exactly like FakeChatScene (620px column at
-// 1.6x). Receives sync state and renders it; it never reads the audio.
+// 9:16 stage (1080x1920, scaled to fit) laid out exactly like the
+// lyric-sync standard: background-alt wallpaper, src/lyricSyncDefaults.ts
+// margins (TikTok-safe) and AutoScrollChatLog's scrolling. Receives
+// sync state and renders it; it never reads the audio.
 (function (WM) {
   const STAGE_W = 1080;
   const STAGE_H = 1920;
-  const COLUMN_W = 620;
-  const COLUMN_SCALE = 1.6;
-  const TOP = 300; // where the conversation starts
-  const BOTTOM_LIMIT = STAGE_H - 280; // newest bubble never goes below this
+
+  // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
+  const TOP_MARGIN = 190;
+  const BOTTOM_MARGIN = 320;
+  const LEFT_MARGIN = 40;
+  const SAFE_RIGHT_EDGE = 935;
+  const SCALE = 1.6;
+  const CONTENT_WIDTH = Math.round((SAFE_RIGHT_EDGE - LEFT_MARGIN) / SCALE);
+  const VIEWPORT_HEIGHT = Math.round((STAGE_H - TOP_MARGIN - BOTTOM_MARGIN) / SCALE);
+
+  // Mirrors src/components/AutoScrollChatLog.tsx
+  const BOTTOM_PADDING = 18;
   const SAME_SENDER_GAP = 14;
   const SENDER_CHANGE_GAP = 26;
+  const scrollSpring = WM.Bubbles.makeSpring(18, 0.7);
 
   class Preview {
     constructor(host, { backgroundSrc }) {
       this.host = host;
       this.bubbles = [];
-      this.scroll = 0;
-      this.lastFrameTs = 0;
-      this.lastVisible = -1;
-      this.contentH = 0;
+      this.bottoms = null;
 
       this.stage = document.createElement("div");
       this.stage.className = "wm-stage";
@@ -27,20 +34,28 @@
       this.stage.style.height = STAGE_H + "px";
       this.stage.style.backgroundImage = `url("${backgroundSrc}")`;
 
-      this.viewport = document.createElement("div");
-      this.viewport.className = "wm-viewport";
-      this.column = document.createElement("div");
-      this.column.className = "wm-column";
-      Object.assign(this.column.style, {
-        width: COLUMN_W + "px",
-        left: (STAGE_W - COLUMN_W * COLUMN_SCALE) / 2 + "px",
-        top: TOP + "px",
+      // Scaled wrapper, same as the scene's scale(1.6) top-left div.
+      const scaler = document.createElement("div");
+      Object.assign(scaler.style, {
+        position: "absolute",
+        left: LEFT_MARGIN + "px",
+        top: TOP_MARGIN + "px",
+        transform: `scale(${SCALE})`,
         transformOrigin: "top left",
-        padding: "0 12px",
       });
-      this.viewport.appendChild(this.column);
-
-      this.stage.appendChild(this.viewport);
+      // Fixed viewport that clips overflow, like real WhatsApp.
+      this.viewport = document.createElement("div");
+      Object.assign(this.viewport.style, {
+        width: CONTENT_WIDTH + "px",
+        height: VIEWPORT_HEIGHT + "px",
+        overflow: "hidden",
+        position: "relative",
+      });
+      this.content = document.createElement("div");
+      this.content.style.padding = "24px 12px 0";
+      this.viewport.appendChild(this.content);
+      scaler.appendChild(this.viewport);
+      this.stage.appendChild(scaler);
       host.appendChild(this.stage);
 
       new ResizeObserver(() => this.fit()).observe(host);
@@ -55,15 +70,14 @@
 
     /** Build one bubble per lyric line. */
     setTimeline(timeline) {
-      this.column.innerHTML = "";
+      this.content.innerHTML = "";
       this.bubbles = [];
-      this.lastVisible = -1;
-      this.scroll = 0;
+      this.bottoms = null;
       const entries = timeline ? timeline.entries : [];
       this.host.classList.toggle("is-empty", !entries.length);
       if (!entries.length) return;
 
-      this.column.appendChild(WM.Bubbles.createHoyPill("Hoy"));
+      this.content.appendChild(WM.Bubbles.createHoyPill("Hoy"));
       entries.forEach((e, i) => {
         const from = e.from || "me";
         const prevFrom = i > 0 ? entries[i - 1].from || "me" : from;
@@ -73,33 +87,44 @@
           clock: clockFor(e.start),
           marginTop: i === 0 ? 0 : prevFrom !== from ? SENDER_CHANGE_GAP : SAME_SENDER_GAP,
         });
-        this.column.appendChild(b.root);
+        this.content.appendChild(b.root);
         this.bubbles.push(b);
       });
     }
 
+    // Bottom edge of each bubble inside the content, measured once with
+    // every bubble laid out (layout never changes afterwards, only
+    // opacity/transform) — same approach as AutoScrollChatLog.
+    measure() {
+      this.bubbles.forEach((b) => (b.root.style.display = "flex"));
+      this.bottoms = this.bubbles.map((b) => b.root.offsetTop + b.root.offsetHeight);
+      this.bubbles.forEach((b) => b.reset());
+    }
+
+    scrollFor(index) {
+      return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - VIEWPORT_HEIGHT + BOTTOM_PADDING) : 0;
+    }
+
     /**
-     * @param state  SyncEngine.stateAt(t)
-     * @param opts   { playing, snap } — snap jumps scroll instantly (seek)
+     * Pure function of the sync state, so seeking renders the exact
+     * frame. @param opts { playing }
      */
-    render(state, { playing = false, snap = false } = {}) {
+    render(state, { playing = false } = {}) {
+      if (!this.bubbles.length) return;
+      if (!this.bottoms) this.measure();
+
       state.entries.forEach((s, i) =>
-        this.bubbles[i] &&
         this.bubbles[i].update({ age: s.age, active: i === state.activeIndex, playing }),
       );
 
-      if (state.visibleCount !== this.lastVisible) {
-        this.lastVisible = state.visibleCount;
-        this.contentH = this.column.offsetHeight * COLUMN_SCALE;
-      }
-      const target = Math.max(0, TOP + this.contentH - BOTTOM_LIMIT);
-
-      const now = performance.now();
-      const dt = Math.min(0.1, (now - (this.lastFrameTs || now)) / 1000);
-      this.lastFrameTs = now;
-      this.scroll = snap ? target : this.scroll + (target - this.scroll) * (1 - Math.exp(-dt * 9));
-      if (Math.abs(target - this.scroll) < 0.3) this.scroll = target;
-      this.column.style.transform = `translateY(${-this.scroll}px) scale(${COLUMN_SCALE})`;
+      // AutoScrollChatLog: glide from the previous line's scroll to the
+      // newest line's, keyed off the newest line's start.
+      const last = state.visibleCount - 1;
+      const ease = last >= 0 ? Math.min(scrollSpring(state.entries[last].age), 1) : 0;
+      const prev = this.scrollFor(last - 1);
+      const next = this.scrollFor(last);
+      const y = prev + (next - prev) * ease;
+      this.content.style.transform = `translateY(${-y}px)`;
     }
   }
 

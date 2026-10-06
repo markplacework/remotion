@@ -359,17 +359,6 @@ select option:disabled {
   background-size: cover;
   background-position: center;
 }
-.wm-viewport {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 220px, #000 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 220px, #000 100%);
-}
-.wm-column {
-  position: absolute;
-}
-
 .empty-cta {
   position: absolute;
   inset: 0;

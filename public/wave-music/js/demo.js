@@ -1,10 +1,10 @@
 // Wave Music · DEMO
-// Same song, lyrics and Whisper-measured timestamps as the FakeChat
+// Song, lyrics and Whisper-measured timestamps from the FakeChat
 // compositions (src/scenes/FakeChatScene.tsx), so the demo sounds right
 // out of the box.
 (function (WM) {
   WM.ASSETS = {
-    background: "../fake-chat/background.png",
+    background: "../fake-chat/background-alt.png",
   };
 
   WM.DEMO = {
