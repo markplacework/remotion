@@ -60,9 +60,9 @@
         height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
       },
       frame: { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 },
-      // Like a real phone: the newest message sits just above the input
-      // bar and the conversation grows upwards.
-      anchor: "bottom",
+      // Same as the video: the conversation starts at the top and scrolls
+      // once it reaches the input bar.
+      anchor: "top",
     },
   };
 
