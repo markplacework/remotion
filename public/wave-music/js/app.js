@@ -349,6 +349,7 @@
   function openFull() {
     if (!timeline) return;
     host.classList.remove("ui-on");
+    hideHint();
     $("full-name").textContent = audio.name || "Wave Music";
     $("full-stage").appendChild(host);
     $("full").hidden = false;
@@ -407,14 +408,32 @@
   });
   fs.addEventListener("change", () => (fullScrubbing = false));
 
-  // Discoverability: the first time there is something to watch, the
-  // overlay shows itself for a few seconds so people see it exists.
+  // Discoverability: the first time there is something to watch, a short
+  // hint says the preview opens full screen (and opens it if tapped).
   let introShown = false;
-  function introduceControls() {
-    if (introShown) return;
+  let hintTimer = 0;
+  function introduceFullscreen() {
+    if (introShown || !$("full").hidden) return;
     introShown = true;
-    showControls(3200);
+    const touch = !window.matchMedia("(hover: hover)").matches;
+    $("full-hint-text").textContent = (touch ? "Tocá" : "Hacé clic") + " para ver en pantalla completa";
+    $("full-hint").hidden = false;
+    hintTimer = setTimeout(hideHint, 5000);
   }
+  function hideHint() {
+    clearTimeout(hintTimer);
+    const h = $("full-hint");
+    if (h.hidden) return;
+    h.classList.add("leaving");
+    setTimeout(() => {
+      h.hidden = true;
+      h.classList.remove("leaving");
+    }, 350);
+  }
+  $("full-hint").onclick = (e) => {
+    e.stopPropagation();
+    openFull();
+  };
 
   // ---------- descargar video ----------
   let exportCtl = null;
@@ -581,7 +600,7 @@
     audio.seek(0);
     audio.play();
     document.body.classList.add("has-demo");
-    setTimeout(introduceControls, 900);
+    setTimeout(introduceFullscreen, 1200);
   }
 
   document.addEventListener("keydown", (ev) => {

@@ -134,6 +134,11 @@
         <div class="preview-body">
         <div class="preview-main">
           <div id="stage-host" class="stage-host is-empty">
+            <!-- First-time hint; tapping it opens full screen -->
+            <button id="full-hint" class="full-hint" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+              <span id="full-hint-text">Tocá para ver en pantalla completa</span>
+            </button>
             <!-- Player overlay: hover (desktop) / tap (touch) shows it -->
             <div id="stage-ui" class="stage-ui">
               <button id="ui-play" class="ui-play" aria-label="Reproducir o pausar">
