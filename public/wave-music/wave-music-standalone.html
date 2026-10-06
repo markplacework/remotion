@@ -640,6 +640,9 @@ kbd {
     order: 1;
     max-width: 460px;
   }
+  .preview-side .btn-export {
+    order: 2;
+  }
 }
 @media (max-width: 420px) {
   .preview-side #btn-restart,
@@ -687,6 +690,7 @@ kbd {
 }
 .btn-export {
   flex: none;
+  align-self: center;
 }
 .wm-stage img {
   max-width: none;
@@ -1296,10 +1300,6 @@ kbd {
               <button id="btn-demo-empty" class="btn btn-primary">Iniciar demo</button>
             </div>
           </div>
-          <button id="btn-export" class="btn btn-primary btn-export" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-            Descargar video
-          </button>
         </div>
         <div class="preview-side">
           <div class="framing">
@@ -1337,6 +1337,10 @@ kbd {
             <span id="time-dur" class="time right">00:00</span>
           </div>
         </div>
+          <button id="btn-export" class="btn btn-primary btn-export" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
         </div>
         </div>
       </section>

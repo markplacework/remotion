@@ -628,6 +628,9 @@ kbd {
     order: 1;
     max-width: 460px;
   }
+  .preview-side .btn-export {
+    order: 2;
+  }
 }
 @media (max-width: 420px) {
   .preview-side #btn-restart,
@@ -675,6 +678,7 @@ kbd {
 }
 .btn-export {
   flex: none;
+  align-self: center;
 }
 .wm-stage img {
   max-width: none;
