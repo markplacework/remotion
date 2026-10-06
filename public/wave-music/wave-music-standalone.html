@@ -624,25 +624,30 @@ kbd {
 .preview-side .transport {
   max-width: none;
 }
-/* Narrow: a compact one-row transport above the phone. */
+/* Narrow: Mockup/Video final above the phone, playback below the
+   download button (the side column's children join the main flow). */
 @media (max-width: 899px) {
   .preview-main {
     width: 100%;
   }
-  .preview-side .now,
+  .preview-side {
+    display: contents;
+  }
+  .preview-side .framing {
+    order: -1;
+  }
+  .preview-side .transport {
+    order: 1;
+    max-width: 460px;
+  }
+}
+@media (max-width: 420px) {
   .preview-side #btn-restart,
   .preview-side .icon-btn.ghost {
     display: none;
   }
-  .preview-side .transport {
-    padding: 8px 14px 10px;
-  }
   .preview-side .controls {
-    margin-top: 4px;
-  }
-  .preview-side .play-btn {
-    width: 40px;
-    height: 40px;
+    grid-template-columns: 48px 1fr 48px;
   }
 }
 /* Wide: framing + playback in a column beside the phone. */
@@ -1161,7 +1166,7 @@ kbd {
     height: auto;
     /* phone + controls fit on one phone screen */
     flex: none;
-    width: min(100%, 430px, calc((100svh - 290px) * var(--stage-ratio, 0.5625)));
+    width: min(100%, 430px, calc((100svh - 340px) * var(--stage-ratio, 0.5625)));
   }
   .editor {
     border-right: 0;
