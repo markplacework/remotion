@@ -71,20 +71,6 @@
   src: url(fonts/Montserrat-variable.woff2) format('woff2');
 }
 @font-face {
-  font-family: 'Poppins';
-  font-style: normal;
-  font-weight: 800;
-  font-display: block;
-  src: url(fonts/Poppins-normal-800.woff2) format('woff2');
-}
-@font-face {
-  font-family: 'Poppins';
-  font-style: normal;
-  font-weight: 900;
-  font-display: block;
-  src: url(fonts/Poppins-normal-900.woff2) format('woff2');
-}
-@font-face {
   font-family: 'Bodoni Moda';
   font-style: normal;
   font-weight: 400 900;
@@ -118,4 +104,11 @@
   font-weight: 400;
   font-display: block;
   src: url(fonts/Shrikhand-normal-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url(fonts/Caveat-variable.woff2) format('woff2');
 }

@@ -1033,164 +1033,216 @@
   };
 
   // ======================================================================
-  // 6. WORD POP — subtitles the way creators edit them (big, word by word)
+  // 6. POLAROID — each line is an instant photo dropped on the table
   // ======================================================================
-  const POP_ACCENTS = ["#ffe600", "#3dff8b", "#ff4fa3", "#4fd8ff"];
-  const POP_FONT = (size) => `900 ${size}px Poppins, 'Arial Black', sans-serif`;
-  /** Split a line into chunks of up to three words / ~14 letters. */
-  const chunkCache = new Map();
-  function chunksOf(line) {
-    const key = line.index + "|" + line.text;
-    let c = chunkCache.get(key);
-    if (c) return c;
-    c = [];
-    let cur = [];
-    let chars = 0;
-    line.words.forEach((w) => {
-      if (cur.length && (cur.length >= 3 || chars + w.text.length > 14)) {
-        c.push(cur);
-        cur = [];
-        chars = 0;
+  const POLA_HAND = (size) => `600 ${size}px Caveat, 'Segoe Print', cursive`;
+  const POLA_INK = "#1f2a44";
+  /** Little hand-made "photos", one per line, cycling through four scenes. */
+  function polaScene(g, kind, x, y, s, t, seed) {
+    const sky = (stops) => {
+      const gr = g.createLinearGradient(0, y, 0, y + s);
+      stops.forEach(([o, c]) => gr.addColorStop(o, c));
+      g.fillStyle = gr;
+      g.fillRect(x, y, s, s);
+    };
+    const hz = y + s * (0.58 + 0.06 * rand(seed));
+    if (kind === 0) {
+      // sunset over the sea
+      sky([[0, "#f58a63"], [0.45, "#ffc98a"], [1, "#ffe3b0"]]);
+      const sx = x + s * (0.35 + 0.3 * rand(seed + 1));
+      g.fillStyle = "#fff1c9";
+      g.beginPath();
+      g.arc(sx, hz - s * 0.04, s * 0.11, 0, Math.PI * 2);
+      g.fill();
+      const sea = g.createLinearGradient(0, hz, 0, y + s);
+      sea.addColorStop(0, "#5a8fa8");
+      sea.addColorStop(1, "#1f4b63");
+      g.fillStyle = sea;
+      g.fillRect(x, hz, s, y + s - hz);
+      g.fillStyle = "rgba(255,226,170,0.7)";
+      for (let i = 0; i < 9; i++) {
+        const w = s * (0.18 - i * 0.015) * (0.8 + 0.2 * Math.sin(t * 2 + i));
+        g.fillRect(sx - w / 2, hz + s * 0.02 + i * s * 0.035, w, s * 0.008);
       }
-      cur.push(w);
-      chars += w.text.length + 1;
-    });
-    if (cur.length) c.push(cur);
-    if (chunkCache.size > 400) chunkCache.clear();
-    chunkCache.set(key, c);
-    return c;
+    } else if (kind === 1) {
+      // city at dusk
+      sky([[0, "#1b2340"], [0.6, "#6b4c7a"], [1, "#f29a6b"]]);
+      for (let i = 0; i < 16; i++) {
+        const bw = s * (0.05 + rand(seed * 3 + i) * 0.07);
+        const bx = x + (i / 16) * s * 1.05 - s * 0.02;
+        const bh = s * (0.18 + rand(seed + i * 7) * 0.35);
+        g.fillStyle = i % 2 ? "#141826" : "#1d2133";
+        g.fillRect(bx, y + s - bh, bw, bh);
+        g.fillStyle = "rgba(255,214,140,0.85)";
+        for (let k = 0; k < 10; k++) {
+          if (rand(seed + i * 31 + k) < 0.55) continue;
+          g.fillRect(bx + bw * (0.2 + 0.5 * rand(i + k * 3)), y + s - bh + bh * (0.1 + 0.8 * rand(i * 5 + k)), s * 0.008, s * 0.012);
+        }
+      }
+    } else if (kind === 2) {
+      // mountains in the morning
+      sky([[0, "#9fcfe3"], [1, "#f6e6c6"]]);
+      ["#8aa3ad", "#5f7c88", "#36505c"].forEach((c, l) => {
+        g.fillStyle = c;
+        g.beginPath();
+        g.moveTo(x, y + s);
+        for (let i = 0; i <= 8; i++) {
+          const px = x + (i / 8) * s;
+          const py = y + s * (0.42 + l * 0.12) + (rand(seed * 5 + l * 11 + i) - 0.5) * s * (0.22 - l * 0.04);
+          g.lineTo(px, py);
+        }
+        g.lineTo(x + s, y + s);
+        g.closePath();
+        g.fill();
+      });
+    } else {
+      // palms on the beach
+      sky([[0, "#7ccbd1"], [0.7, "#ffd9b0"], [1, "#ffcf9f"]]);
+      g.fillStyle = "#e8c9a0";
+      g.fillRect(x, hz + s * 0.08, s, y + s - hz);
+      g.fillStyle = "#3f8f9c";
+      g.fillRect(x, hz, s, s * 0.08);
+      g.strokeStyle = g.fillStyle = "#2b2a28";
+      for (let p = 0; p < 2; p++) {
+        const bx = x + s * (0.22 + p * 0.55);
+        const top = y + s * (0.2 + p * 0.1);
+        const sway = Math.sin(t * 0.8 + p) * s * 0.01;
+        g.lineWidth = s * 0.022;
+        g.beginPath();
+        g.moveTo(bx, y + s);
+        g.quadraticCurveTo(bx + s * 0.06, (top + y + s) / 2, bx + s * 0.03 + sway, top);
+        g.stroke();
+        for (let k = 0; k < 6; k++) {
+          const a = -Math.PI / 2 + (k - 2.5) * 0.55;
+          g.lineWidth = s * 0.014;
+          g.beginPath();
+          g.moveTo(bx + s * 0.03 + sway, top);
+          g.quadraticCurveTo(bx + s * 0.03 + Math.cos(a) * s * 0.12, top + Math.sin(a) * s * 0.06 - s * 0.02, bx + s * 0.03 + Math.cos(a) * s * 0.18 + sway, top + s * 0.07);
+          g.stroke();
+        }
+      }
+    }
   }
-  const wordPop = {
-    id: "wordpop",
-    label: "Word Pop",
-    tag: "Redes",
-    fonts: ["900 100px Poppins"],
+  const polaroid = {
+    id: "polaroid",
+    label: "Polaroid",
+    tag: "Recuerdos",
+    fonts: ["600 100px Caveat"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
-      const pulse = f.pulse();
-      const L = f.lines[f.current];
-      const accent = POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length];
-      g.fillStyle = "#0b0b0f";
+      // a kraft-paper table
+      const bg = g.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, H * 0.75);
+      bg.addColorStop(0, "#e2d3b8");
+      bg.addColorStop(1, "#a8916d");
+      g.fillStyle = bg;
       g.fillRect(0, 0, W, H);
-      const bx = W * (0.5 + 0.22 * Math.sin(t * 0.23));
-      const by = H * (0.5 + 0.1 * Math.cos(t * 0.19));
-      const blob = g.createRadialGradient(bx, by, 0, bx, by, H * 0.58);
-      blob.addColorStop(0, hexA(accent, 0.3 + 0.15 * pulse));
-      blob.addColorStop(0.6, hexA(accent, 0.07));
-      blob.addColorStop(1, hexA(accent, 0));
-      g.fillStyle = blob;
-      g.fillRect(0, 0, W, H);
-      // speaker rings travelling out from the centre
       g.save();
-      g.strokeStyle = "#ffffff";
-      g.lineWidth = u * 3;
-      for (let i = 0; i < 5; i++) {
-        const ph = (t * 0.32 + i / 5) % 1;
-        g.globalAlpha = (1 - ph) * (0.05 + 0.1 * pulse);
+      g.globalAlpha = 0.05;
+      g.strokeStyle = "#4a3a24";
+      g.lineWidth = Math.max(1, u);
+      for (let i = 0; i < 60; i++) {
+        const y = rand(i * 3.7) * H;
         g.beginPath();
-        g.arc(W / 2, safe.y + safe.h / 2, ph * H * 0.75, 0, Math.PI * 2);
+        g.moveTo(0, y);
+        g.bezierCurveTo(W * 0.3, y + (rand(i) - 0.5) * u * 40, W * 0.7, y + (rand(i * 2) - 0.5) * u * 40, W, y + (rand(i * 5) - 0.5) * u * 30);
         g.stroke();
       }
       g.restore();
-      // diagonal stripes, very subtle texture
-      g.save();
-      g.globalAlpha = 0.035;
-      g.fillStyle = "#ffffff";
-      g.translate(W / 2, H / 2);
-      g.rotate(-0.5);
-      const sp = u * 60;
-      const off = (t * u * 20) % sp;
-      for (let x = -H; x < H; x += sp) g.fillRect(x + off, -H, u * 18, H * 2);
-      g.restore();
+      grainOver(g, W, H, t, 0.08);
+      const cur = f.current;
       g.save();
       g.translate(f.shift.x, f.shift.y);
-      if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
+      // the last two photos stay on the pile under the new one
+      for (let i = Math.max(0, cur - 2); i <= cur; i++) this.drawCard(g, f, u, f.lines[i], i === cur);
       g.restore();
     },
-    drawChunk(g, f, L, u, accent, pulse) {
-      const { safe } = f;
-      let t = f.t;
-      const ws = L.words;
-      const j = Math.max(0, activeWord(L, t));
-      const last = ws[ws.length - 1];
-      const out = clamp(1 - (t - last.t1 - 0.9) / 0.2);
-      if (out <= 0) return;
-      const chunks = chunksOf(L);
-      const ci = chunks.findIndex((c) => c.includes(ws[j]));
-      const chunk = chunks[ci];
-      const words = chunk.map((w) => ({ ...w, label: upper(w.text) }));
-      let size = u * 128;
-      g.font = POP_FONT(100);
-      const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
-      size = Math.min(size, (100 * safe.w * 0.86) / widest);
-      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.28);
-      const lh = size * 1.3;
-      const cx = safe.x + safe.w / 2;
-      const cy = safe.y + safe.h * 0.5;
-      const enter = clamp((t - chunk[0].t0) / 0.3);
-      const k = lerp(0.6, 1, ease.back(enter)) * (1 + 0.035 * pulse);
+    drawCard(g, f, u, line, isCur) {
+      if (!line) return;
+      const { t, safe } = f;
+      const cw = safe.w * 0.8;
+      const m = cw * 0.06;
+      const ps = cw - m * 2;
+      const size = u * 70;
+      const lh = size * 1.02;
+      const words = line.words.map((w) => ({ ...w, label: w.text }));
+      const rows = wrapCached(g, `pl|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => POLA_HAND(size), ps, size * 0.28);
+      const capH = Math.max(cw * 0.24, rows.length * lh + m * 1.3);
+      const ch = m + ps + capH;
+      const seed = line.index * 7.31;
+      const rot = (rand(seed) - 0.5) * 0.14;
+      const ox = (rand(seed + 1) - 0.5) * u * 70;
+      const oy = (rand(seed + 2) - 0.5) * u * 50;
+      // drop onto the table
+      const p = isCur ? clamp((t - line.start + 0.05) / 0.6) : 1;
+      const e = ease.back(p);
+      const lift = 1 - e;
+      const cx = safe.x + safe.w / 2 + ox;
+      const cy = safe.y + safe.h / 2 + oy - lift * safe.h * 0.5;
       g.save();
+      g.globalAlpha = clamp(p * 4);
       g.translate(cx, cy);
-      g.scale(k, k);
-      g.rotate((rand(L.index * 7 + ci) - 0.5) * 0.06 * (1 - ease.out(enter)));
-      g.globalAlpha = clamp(enter * 3) * out;
+      g.rotate(rot + lift * 0.4);
+      g.scale(1 + 0.18 * lift, 1 + 0.18 * lift);
+      g.shadowColor = "rgba(40,25,10,0.45)";
+      g.shadowBlur = u * (18 + 50 * lift);
+      g.shadowOffsetY = u * (8 + 40 * lift);
+      g.fillStyle = "#fbfaf5";
+      g.fillRect(-cw / 2, -ch / 2, cw, ch);
+      g.shadowColor = "transparent";
+      // the photo, developing from murky green-grey into colour
+      const px = -ps / 2;
+      const py = -ch / 2 + m;
+      g.save();
+      g.beginPath();
+      g.rect(px, py, ps, ps);
+      g.clip();
+      polaScene(g, line.index % 4, px, py, ps, t, line.index + 3);
+      const dev = isCur ? ease.inOut(clamp((t - line.start - 0.15) / 1.1)) : 1;
+      g.fillStyle = "rgba(255,190,140,0.12)";
+      g.fillRect(px, py, ps, ps);
+      const vg = g.createRadialGradient(0, py + ps / 2, ps * 0.3, 0, py + ps / 2, ps * 0.78);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(30,15,0,0.38)");
+      g.fillStyle = vg;
+      g.fillRect(px, py, ps, ps);
+      if (dev < 1) {
+        g.fillStyle = `rgba(52,56,48,${1 - dev})`;
+        g.fillRect(px, py, ps, ps);
+      }
+      g.restore();
+      g.strokeStyle = "rgba(0,0,0,0.08)";
+      g.lineWidth = Math.max(1, u);
+      g.strokeRect(px, py, ps, ps);
+      // a strip of tape
+      g.save();
+      g.translate((rand(seed + 4) - 0.5) * cw * 0.3, -ch / 2);
+      g.rotate((rand(seed + 5) - 0.5) * 0.3);
+      g.fillStyle = "rgba(250,246,226,0.62)";
+      g.fillRect(-cw * 0.13, -u * 18, cw * 0.26, u * 40);
+      g.restore();
+      // the lyric, handwritten word by word in the bottom margin
+      g.font = POLA_HAND(size);
       g.textBaseline = "middle";
       g.textAlign = "left";
-      g.font = POP_FONT(size);
-      const rects = {};
+      g.fillStyle = POLA_INK;
+      const top = py + ps + (capH - rows.length * lh) / 2;
       rows.forEach((row, ri) => {
-        const ry = (ri - (rows.length - 1) / 2) * lh;
-        row.items.forEach((it) => (rects[it.w.index] = { x: -row.width / 2 + it.x, y: ry, w: it.width }));
-      });
-      // the highlight box glides from the previous word to the active one
-      const act = ws[j];
-      const prevW = ws[j - 1];
-      const A = rects[act.index];
-      if (A && act.t0 <= t) {
-        const B = prevW && rects[prevW.index] ? rects[prevW.index] : A;
-        const m = ease.out(clamp((t - act.t0) / 0.13));
-        const bx = lerp(B.x, A.x, m);
-        const by = lerp(B.y, A.y, m);
-        const bw = lerp(B.w, A.w, m);
-        const pad = size * 0.16;
-        const pop = lerp(1.18, 1, ease.back(clamp((t - act.t0) / 0.22)));
-        g.save();
-        g.translate(bx + bw / 2, by);
-        g.rotate(-0.035);
-        g.scale(pop, pop);
-        g.shadowColor = hexA(accent, 0.6);
-        g.shadowBlur = size * 0.4;
-        g.fillStyle = accent;
-        rrect(g, -bw / 2 - pad, -size * 0.6, bw + pad * 2, size * 1.14, size * 0.2);
-        g.fill();
-        g.restore();
-      }
-      chunk.forEach((w) => {
-        const R = rects[w.index];
-        if (!R) return;
-        // the whole chunk is on screen; each word kicks as it is sung
-        const p = w.t0 <= t ? clamp((t - w.t0) / 0.22) : 1;
-        const sc = lerp(1.16, 1, ease.back(p));
-        const isAct = w === act;
-        g.save();
-        g.translate(R.x + R.w / 2, R.y + size * 0.04);
-        g.scale(sc, sc);
-        g.translate(-R.w / 2, 0);
-        const label = upper(w.text);
-        if (!isAct) {
-          g.lineJoin = "round";
-          g.lineWidth = size * 0.16;
-          g.strokeStyle = "#000000";
-          g.shadowColor = "rgba(0,0,0,0.5)";
-          g.shadowBlur = size * 0.15;
-          g.shadowOffsetY = size * 0.05;
-          g.strokeText(label, 0, 0);
-          g.shadowColor = "transparent";
-        }
-        g.fillStyle = isAct ? "#0b0b0f" : "#ffffff";
-        g.fillText(label, 0, 0);
-        g.restore();
+        const y = top + ri * lh + lh / 2;
+        const x0 = -row.width / 2;
+        row.items.forEach((it) => {
+          const w = it.w;
+          const wp = isCur ? clamp((t - w.t0 + 0.05) / Math.max(0.25, (w.t1 - w.t0) * 0.9)) : 1;
+          if (wp <= 0) return;
+          g.save();
+          if (wp < 1) {
+            g.beginPath();
+            g.rect(x0 + it.x - size * 0.2, y - lh, it.width * wp + size * 0.2, lh * 2);
+            g.clip();
+          }
+          g.fillText(w.label, x0 + it.x, y);
+          g.restore();
+        });
       });
       g.restore();
     },
@@ -1975,14 +2027,9 @@
   // ======================================================================
   // 12. VINILO — a record on the turntable: sleeve, spinning vinyl, tone arm
   // ======================================================================
-  const VIN = { cream: "#f3e9d8", amber: "#e9a35b", mute: "rgba(243,233,216,0.55)" };
+  // black & white: like an old record-shop photo
+  const VIN = { cream: "#e4e4e4", amber: "#ffffff", mute: "rgba(228,228,228,0.55)" };
   const VIN_SERIF = (size, it) => `${it ? "italic " : ""}400 ${size}px 'Instrument Serif', Georgia, serif`;
-  const SLEEVES = [
-    ["#b8452f", "#f0a046", "#2a120b"],
-    ["#1f5e5e", "#e2b65c", "#0b1f1f"],
-    ["#4b2f7a", "#e8706a", "#160c26"],
-    ["#183f66", "#e9a35b", "#08172a"],
-  ];
   const vinilo = {
     id: "vinilo",
     label: "Vinilo",
@@ -1993,12 +2040,12 @@
       const u = safe.w / 825;
       const pulse = f.pulse();
       // a dark listening room under one warm spotlight
-      g.fillStyle = "#0c0907";
+      g.fillStyle = "#080808";
       g.fillRect(0, 0, W, H);
       const spot = g.createRadialGradient(W * 0.5, H * 0.05, 0, W * 0.5, H * 0.05, H * 0.95);
-      spot.addColorStop(0, "rgba(255,196,128,0.30)");
-      spot.addColorStop(0.45, "rgba(255,160,90,0.08)");
-      spot.addColorStop(1, "rgba(255,160,90,0)");
+      spot.addColorStop(0, "rgba(255,255,255,0.24)");
+      spot.addColorStop(0.45, "rgba(255,255,255,0.06)");
+      spot.addColorStop(1, "rgba(255,255,255,0)");
       g.fillStyle = spot;
       g.fillRect(0, 0, W, H);
       g.save();
@@ -2007,7 +2054,7 @@
         const depth = 0.3 + rand(i * 5.3) * 0.7;
         const x = (rand(i * 1.9) * W + t * u * 8 * depth + Math.sin(t * 0.4 + i) * u * 16) % W;
         const y = (rand(i * 8.3) * H * 0.75 + H * 10 - t * u * 6 * depth) % (H * 0.75);
-        g.fillStyle = `rgba(255,220,170,${0.35 * depth * (0.5 + 0.5 * Math.sin(t + i))})`;
+        g.fillStyle = `rgba(255,255,255,${0.3 * depth * (0.5 + 0.5 * Math.sin(t + i))})`;
         g.beginPath();
         g.arc(x, y, u * (1 + 2 * depth), 0, Math.PI * 2);
         g.fill();
@@ -2022,9 +2069,8 @@
       const cy = safe.y + safe.h - sleeveS / 2 - u * 90;
       const rcx = scx + sleeveS * 0.36;
       const meta = f.meta || {};
-      const pal = SLEEVES[Math.floor(rand((meta.title || "x").length * 3.7) * SLEEVES.length)];
-      this.drawSleeve(g, u, scx, cy, sleeveS, pal, meta);
-      this.drawRecord(g, f, u, rcx, cy, R * (1 + 0.008 * pulse), pal, meta);
+      this.drawSleeve(g, u, scx, cy, sleeveS, meta);
+      this.drawRecord(g, f, u, rcx, cy, R * (1 + 0.006 * pulse), meta);
       this.drawArm(g, f, u, rcx, cy, R);
       // caption under the turntable
       g.save();
@@ -2064,120 +2110,137 @@
       g.translate(f.shift.x, f.shift.y);
       this.drawLyric(g, f, u, safe.y + u * 70, cy - sleeveS / 2 - u * 40);
       g.restore();
-      grainOver(g, W, H, t, 0.07);
+      grainOver(g, W, H, t, 0.1);
     },
-    drawSleeve(g, u, cx, cy, S, pal, meta) {
+    /** White sleeve with a halftone print, a little worn. */
+    drawSleeve(g, u, cx, cy, S, meta) {
       g.save();
       g.translate(cx, cy);
       g.rotate(-0.05);
-      g.shadowColor = "rgba(0,0,0,0.6)";
+      g.shadowColor = "rgba(0,0,0,0.7)";
       g.shadowBlur = u * 50;
       g.shadowOffsetY = u * 24;
-      g.fillStyle = pal[2];
+      g.fillStyle = "#e9e9e6";
       g.fillRect(-S / 2, -S / 2, S, S);
       g.shadowColor = "transparent";
       g.save();
       g.beginPath();
       g.rect(-S / 2, -S / 2, S, S);
       g.clip();
-      // cover art: duotone sun and rings
-      const bg = g.createLinearGradient(0, -S / 2, 0, S / 2);
-      bg.addColorStop(0, pal[0]);
-      bg.addColorStop(1, pal[2]);
-      g.fillStyle = bg;
-      g.fillRect(-S / 2, -S / 2, S, S);
-      const sun = g.createRadialGradient(0, -S * 0.08, 0, 0, -S * 0.08, S * 0.3);
-      sun.addColorStop(0, pal[1]);
-      sun.addColorStop(1, hexA(pal[1], 0.9));
-      g.fillStyle = sun;
-      g.beginPath();
-      g.arc(0, -S * 0.08, S * 0.24, 0, Math.PI * 2);
-      g.fill();
-      g.strokeStyle = hexA(pal[1], 0.5);
-      g.lineWidth = Math.max(1, u * 2);
-      for (let i = 1; i <= 4; i++) {
-        g.beginPath();
-        g.arc(0, -S * 0.08, S * (0.24 + i * 0.06), 0, Math.PI * 2);
-        g.stroke();
+      // halftone: dots grow towards a dark disc off-centre
+      const step = S / 34;
+      const dx = -S * 0.12;
+      const dy = -S * 0.06;
+      g.fillStyle = "#111";
+      for (let yy = -S / 2 + step / 2; yy < S / 2; yy += step) {
+        for (let xx = -S / 2 + step / 2; xx < S / 2; xx += step) {
+          const d = Math.hypot(xx - dx, yy - dy) / (S * 0.42);
+          const k = clamp(1.15 - d * d);
+          if (k <= 0.03) continue;
+          g.beginPath();
+          g.arc(xx, yy, (step / 2) * Math.sqrt(k) * 0.95, 0, Math.PI * 2);
+          g.fill();
+        }
       }
-      // ring wear from the record inside, and a worn edge
-      g.strokeStyle = "rgba(255,255,255,0.07)";
-      g.lineWidth = S * 0.04;
+      g.font = `700 ${S * 0.04}px Inter, sans-serif`;
+      if ("letterSpacing" in g) g.letterSpacing = `${S * 0.012}px`;
+      g.textBaseline = "top";
+      g.textAlign = "left";
+      g.fillText("WAVE", -S * 0.44, -S * 0.44);
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      // ring wear and a soft fold of light
+      g.strokeStyle = "rgba(0,0,0,0.08)";
+      g.lineWidth = S * 0.035;
       g.beginPath();
       g.arc(S * 0.03, 0, S * 0.44, 0, Math.PI * 2);
       g.stroke();
       const sheen = g.createLinearGradient(-S / 2, -S / 2, S / 2, S / 2);
-      sheen.addColorStop(0, "rgba(255,255,255,0.14)");
-      sheen.addColorStop(0.4, "rgba(255,255,255,0)");
-      sheen.addColorStop(1, "rgba(0,0,0,0.25)");
+      sheen.addColorStop(0, "rgba(255,255,255,0.25)");
+      sheen.addColorStop(0.45, "rgba(255,255,255,0)");
+      sheen.addColorStop(1, "rgba(0,0,0,0.28)");
       g.fillStyle = sheen;
       g.fillRect(-S / 2, -S / 2, S, S);
       g.restore();
       g.restore();
     },
-    drawRecord(g, f, u, cx, cy, R, pal, meta) {
+    drawRecord(g, f, u, cx, cy, R, meta) {
       const { t } = f;
       g.save();
-      g.shadowColor = "rgba(0,0,0,0.7)";
-      g.shadowBlur = u * 40;
+      g.shadowColor = "rgba(0,0,0,0.8)";
+      g.shadowBlur = u * 44;
       g.shadowOffsetX = u * 10;
-      g.shadowOffsetY = u * 18;
+      g.shadowOffsetY = u * 20;
       const base = g.createRadialGradient(cx, cy, R * 0.3, cx, cy, R);
-      base.addColorStop(0, "#161616");
-      base.addColorStop(1, "#070707");
+      base.addColorStop(0, "#121212");
+      base.addColorStop(1, "#050505");
       g.fillStyle = base;
       g.beginPath();
       g.arc(cx, cy, R, 0, Math.PI * 2);
       g.fill();
       g.restore();
-      // grooves, with the gaps between tracks
-      g.lineWidth = Math.max(0.6, u * 1);
-      for (let i = 0, r = R * 0.38; r < R * 0.965; i++, r += u * 3.2) {
-        const gap = Math.abs(((r / R - 0.38) * 5) % 1 - 0.5) < 0.03;
-        g.strokeStyle = gap ? "rgba(0,0,0,0.9)" : `rgba(255,255,255,${0.025 + 0.03 * rand(i)})`;
+      // fine grooves; four quiet gaps between tracks; smooth lead-in and run-out
+      const gIn = R * 0.43;
+      const gOut = R * 0.955;
+      const gaps = [0.22, 0.43, 0.61, 0.8].map((k) => gIn + (gOut - gIn) * k);
+      g.lineWidth = Math.max(0.5, u * 0.8);
+      for (let i = 0, r = gIn; r < gOut; i++, r += Math.max(1.2, u * 1.7)) {
+        if (gaps.some((gp) => Math.abs(r - gp) < u * 3)) continue;
+        g.strokeStyle = `rgba(255,255,255,${0.018 + 0.04 * rand(i * 1.3)})`;
         g.beginPath();
         g.arc(cx, cy, r, 0, Math.PI * 2);
         g.stroke();
       }
-      g.strokeStyle = "rgba(255,255,255,0.12)";
-      g.lineWidth = Math.max(1, u * 2);
+      g.lineWidth = Math.max(1, u * 1.4);
+      g.strokeStyle = "rgba(255,255,255,0.16)";
       g.beginPath();
-      g.arc(cx, cy, R - u, 0, Math.PI * 2);
+      g.arc(cx, cy, R - u * 1.2, 0, Math.PI * 2);
       g.stroke();
-      // the light catching the grooves stays still while the record spins
+      g.strokeStyle = "rgba(255,255,255,0.06)";
+      g.beginPath();
+      g.arc(cx, cy, gOut + u * 4, 0, Math.PI * 2);
+      g.stroke();
+      // the bow-tie of light a real record shows: fixed while it spins
       if (g.createConicGradient) {
         g.save();
         g.beginPath();
-        g.arc(cx, cy, R * 0.97, 0, Math.PI * 2);
-        g.arc(cx, cy, R * 0.37, 0, Math.PI * 2, true);
+        g.arc(cx, cy, R * 0.99, 0, Math.PI * 2);
+        g.arc(cx, cy, R * 0.36, 0, Math.PI * 2, true);
         g.clip("evenodd");
-        const sh = g.createConicGradient(-0.9, cx, cy);
+        const sh = g.createConicGradient(-2.35, cx, cy);
         [0, 0.5].forEach((o) => {
           sh.addColorStop(o, "rgba(255,255,255,0)");
-          sh.addColorStop(o + 0.04, "rgba(255,236,210,0.22)");
-          sh.addColorStop(o + 0.06, "rgba(190,220,255,0.14)");
-          sh.addColorStop(o + 0.12, "rgba(255,255,255,0)");
+          sh.addColorStop(o + 0.06, "rgba(255,255,255,0.06)");
+          sh.addColorStop(o + 0.105, "rgba(255,255,255,0.3)");
+          sh.addColorStop(o + 0.15, "rgba(255,255,255,0.06)");
+          sh.addColorStop(o + 0.24, "rgba(255,255,255,0.02)");
+          sh.addColorStop(o + 0.33, "rgba(255,255,255,0.05)");
+          sh.addColorStop(o + 0.42, "rgba(255,255,255,0)");
         });
         sh.addColorStop(1, "rgba(255,255,255,0)");
         g.fillStyle = sh;
         g.fillRect(cx - R, cy - R, R * 2, R * 2);
         g.restore();
       }
-      // label, turning at 33⅓ with the title running round it
+      // paper label, turning at 33⅓ with the title running round it
       const lr = R * 0.34;
       g.save();
       g.translate(cx, cy);
       g.rotate(t * ((33.333 / 60) * Math.PI * 2));
-      const lab = g.createRadialGradient(0, 0, 0, 0, 0, lr);
-      lab.addColorStop(0, pal[1]);
-      lab.addColorStop(1, pal[0]);
+      const lab = g.createRadialGradient(-lr * 0.2, -lr * 0.2, 0, 0, 0, lr);
+      lab.addColorStop(0, "#f1efe9");
+      lab.addColorStop(1, "#cfcbc2");
       g.fillStyle = lab;
       g.beginPath();
       g.arc(0, 0, lr, 0, Math.PI * 2);
       g.fill();
+      g.strokeStyle = "rgba(0,0,0,0.75)";
+      g.lineWidth = Math.max(1, lr * 0.012);
+      g.beginPath();
+      g.arc(0, 0, lr * 0.92, 0, Math.PI * 2);
+      g.stroke();
       const ring = upper(`${meta.title || "Wave Music"} · ${meta.artist || "Lado A"} · `);
-      g.fillStyle = "rgba(20,10,5,0.75)";
-      g.font = `600 ${lr * 0.12}px Inter, sans-serif`;
+      g.fillStyle = "#151515";
+      g.font = `600 ${lr * 0.105}px Inter, sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       const n = ring.length;
@@ -2187,14 +2250,14 @@
         g.fillText(ring[i], 0, -lr * 0.8);
         g.restore();
       }
-      g.fillStyle = "rgba(20,10,5,0.8)";
-      g.font = VIN_SERIF(lr * 0.26, true);
-      g.fillText("Wave", 0, -lr * 0.22);
-      g.font = `600 ${lr * 0.1}px Inter, sans-serif`;
-      g.fillText("33⅓ RPM  ·  STEREO", 0, lr * 0.36);
+      g.font = VIN_SERIF(lr * 0.28, true);
+      g.fillText("Wave", 0, -lr * 0.24);
+      g.fillRect(-lr * 0.42, lr * 0.2, lr * 0.84, Math.max(1, lr * 0.01));
+      g.font = `600 ${lr * 0.085}px Inter, sans-serif`;
+      g.fillText("33⅓ RPM  ·  STEREO  ·  LADO A", 0, lr * 0.38);
       const pin = g.createRadialGradient(-lr * 0.02, -lr * 0.02, 0, 0, 0, lr * 0.07);
-      pin.addColorStop(0, "#f2f2f2");
-      pin.addColorStop(1, "#7a7a7a");
+      pin.addColorStop(0, "#f7f7f7");
+      pin.addColorStop(1, "#6d6d6d");
       g.fillStyle = pin;
       g.beginPath();
       g.arc(0, 0, lr * 0.065, 0, Math.PI * 2);
@@ -2248,7 +2311,7 @@
       g.fillStyle = "#1d1c1a";
       rrect(g, -u * 12, -u * 18, u * 58, u * 36, u * 6);
       g.fill();
-      g.fillStyle = "#c9a45c";
+      g.fillStyle = "#bdbdbd";
       g.fillRect(u * 30, -u * 6, u * 12, u * 12);
       g.restore();
       g.fillStyle = "#9b968c";
@@ -2317,7 +2380,7 @@
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, notes, aurora, couture, blackout, vhs, vinilo };
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, polaroid, notes, aurora, couture, blackout, vhs, vinilo };
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
