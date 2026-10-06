@@ -14,7 +14,7 @@
   const BOTTOM_PADDING = 18; // AutoScrollChatLog
   const SAME_SENDER_GAP = 14;
   const SENDER_CHANGE_GAP = 26;
-  const LYRIC_ANCHOR = 0.28; // Spotify: the sung line sits ~28% down
+  const LYRIC_ANCHOR = 0.32; // Spotify: the sung line sits ~a third down
   const scrollSpring = WM.Bubbles.makeSpring(18, 0.7);
 
   // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
@@ -191,7 +191,11 @@
         position: "relative",
       });
       this.content = document.createElement("div");
-      this.content.style.padding = theme.kind === "lyrics" ? "0" : "24px 12px 0";
+      // Breathing room under the header / title: Spotify's first line
+      // starts below the top fade, chat bubbles a little lower than
+      // WhatsApp's (which already has its "Hoy" pill there).
+      this.content.style.padding =
+        theme.kind === "lyrics" ? "56px 0 0" : theme.bubble === "flat" ? "44px 12px 0" : "24px 12px 0";
       viewport.appendChild(this.content);
       scaler.appendChild(viewport);
       stage.appendChild(scaler);
