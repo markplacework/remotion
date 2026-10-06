@@ -173,7 +173,6 @@
       justifyContent: "flex-end",
       transformOrigin: "top right",
       marginTop: o.marginTop + "px",
-      position: "relative",
       willChange: "transform, opacity",
     });
     const bubble = el("div", {
@@ -188,32 +187,15 @@
     });
     bubble.textContent = o.text;
     row.appendChild(bubble);
-    // Read receipt under the newest message: "Visto" (Instagram) or the
-    // contact's tiny avatar (Messenger). Absolutely positioned so it never
-    // changes the layout the scroll is measured from.
-    const seen =
-      f.seen === "text"
-        ? el("span", { position: "absolute", right: "4px", top: "calc(100% + 5px)", fontFamily: WM.Themes.FONT_STACK, fontSize: "13px", color: "#a8a8a8", display: "none" })
-        : el(
-            "span",
-            { position: "absolute", right: "2px", top: "calc(100% + 5px)", width: "16px", height: "16px", display: "none" },
-            '<svg width="16" height="16" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#3a3b3c"/><circle cx="20" cy="15" r="7" fill="#b0b3b8"/><path d="M7 34c2-7 7-10 13-10s11 3 13 10a20 20 0 0 1-26 0z" fill="#b0b3b8"/></svg>',
-          );
-    if (f.seen === "text") seen.textContent = "Visto";
-    row.appendChild(seen);
-    let lastSeen = false;
     let last = "";
     let lastFill = "";
     let lastCorners = "";
     return {
       root: row,
       box: bubble,
-      seen,
       reset() {
         row.style.display = "none";
         last = lastFill = lastCorners = "";
-        lastSeen = false;
-        seen.style.display = "none";
       },
       /** @param s {age, active, fill:[top,bottom], corners:[tr,br]} */
       update(s) {
@@ -225,11 +207,6 @@
         const look = entranceLook(s);
         look.fill = s.fill;
         look.corners = s.corners;
-        look.seen = !!s.seen;
-        if (look.seen !== lastSeen) {
-          lastSeen = look.seen;
-          seen.style.display = look.seen ? "block" : "none";
-        }
         const fill = s.fill.join();
         if (fill !== lastFill) {
           lastFill = fill;

@@ -94,7 +94,6 @@
         text: "#ffffff",
         radius: 24,
         tight: 5, // corner between bubbles of the same group
-        seen: "text", // "Visto" under the newest message
         gap: 4,
         fontSize: 21,
         padding: "12px 17px",
@@ -115,7 +114,6 @@
         text: "#ffffff",
         radius: 22,
         tight: 5,
-        seen: "avatar", // contact's tiny avatar under the newest message
         gap: 4,
         fontSize: 21,
         padding: "11px 16px",

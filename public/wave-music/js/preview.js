@@ -313,9 +313,7 @@
         return index >= 0 ? Math.max(0, this.tops[index] - h * LYRIC_ANCHOR) : 0;
       }
       const bottom = index >= 0 ? this.bottoms[index] : this.pillBottom;
-      // Instagram / Messenger keep room for "Visto" under the newest bubble.
-      const pad = this.theme.bubble === "flat" ? BOTTOM_PADDING + 26 : BOTTOM_PADDING;
-      return Math.max(0, bottom - h + pad);
+      return Math.max(0, bottom - h + BOTTOM_PADDING);
     }
 
     /**
@@ -357,7 +355,6 @@
             fill: [WM.Themes.gradientAt(f.stops, y0), WM.Themes.gradientAt(f.stops, y1)],
             // one group: inner corners tighten on the right-hand side
             corners: [i > 0 ? f.tight : f.radius, i < last ? f.tight : f.radius],
-            seen: i === last && s.age > 0.9,
           });
         });
       } else {
