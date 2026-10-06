@@ -187,6 +187,16 @@
     }
     for (let i = 1; i < starts.length; i++) starts[i] = Math.max(starts[i], starts[i - 1]);
 
+    // clean Whisper's word times on music: in order, no word longer than
+    // ~0.9 s (held notes get stretched), none shorter than 80 ms
+    let lastT = -1;
+    L.forEach((w) => {
+      if (w.t0 == null) return;
+      if (w.t0 < lastT + 0.04) w.t0 = lastT + 0.04;
+      w.t1 = Math.min(Math.max(w.t1, w.t0 + 0.08), w.t0 + 0.9);
+      lastT = w.t0;
+    });
+
     // per-word times inside each line, relative to the line start
     const words = byLine.map((ws, li) => {
       const s = starts[li];

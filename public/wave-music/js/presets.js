@@ -446,7 +446,7 @@
           row.items.forEach((it) => {
             const w = it.w;
             // focus pull: each word starts soft and racks into focus
-            const a = out ? 1 : clamp((t - w.t0 + 0.12) / 0.75);
+            const a = out ? 1 : clamp((t - w.t0 + 0.1) / 0.45);
             if (a <= 0) return;
             g.font = fontOf(w);
             const x = -row.width / 2 + it.x;
@@ -793,7 +793,7 @@
           let dy;
           if (exit != null) dy = -lh * ease.inOut(exit);
           else {
-            const a = clamp((t - w.t0 + 0.06) / 0.5);
+            const a = clamp((t - w.t0 + 0.06) / 0.32);
             if (a <= 0) return;
             dy = lh * 1.4 * (1 - ease.out(a));
           }
@@ -820,11 +820,14 @@
     let v = wrapCache.get(key);
     if (!v) {
       if (wrapCache.size > 600) wrapCache.clear();
-      v = wrapWords(g, words, fontOf, maxW, spaceW);
+      // keep only the layout (which word goes where), never the timing
+      v = wrapWords(g, words, fontOf, maxW, spaceW).map((row) => ({ width: row.width, items: row.items.map((it) => ({ k: words.indexOf(it.w), width: it.width, x: it.x })) }));
       wrapCache.set(key, v);
     }
-    return v;
+    // re-attach the words as they are now (AI sync, manual nudges)
+    return v.map((row) => ({ width: row.width, items: row.items.map((it) => ({ w: words[it.k], width: it.width, x: it.x })) }));
   }
+
   function rrect(g, x, y, w, h, r) {
     r = Math.min(r, w / 2, h / 2);
     g.beginPath();
@@ -851,7 +854,8 @@
   }
   const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
-  const sung = (w, t) => clamp((t - w.t0) / Math.max(0.06, w.t1 - w.t0));
+  // capped: a word stretched over a long held note still "lands" on time
+  const sung = (w, t) => clamp((t - w.t0) / Math.min(0.45, Math.max(0.06, w.t1 - w.t0)));
   /** Index of the word being sung (or last sung) in a line, -1 before it. */
   function activeWord(line, t) {
     let j = -1;
@@ -1093,7 +1097,8 @@
   function chunksOf(line) {
     const key = line.index + "|" + line.text;
     let c = chunkCache.get(key);
-    if (c) return c;
+    // cached as word positions; re-attached so timings are always current
+    if (c) return c.map((ch) => ch.map((k) => line.words[k]));
     c = [];
     let cur = [];
     let chars = 0;
@@ -1108,7 +1113,7 @@
     });
     if (cur.length) c.push(cur);
     if (chunkCache.size > 400) chunkCache.clear();
-    chunkCache.set(key, c);
+    chunkCache.set(key, c.map((ch) => ch.map((w) => line.words.indexOf(w))));
     return c;
   }
   const wordPop = {
@@ -2575,7 +2580,7 @@
               a = 1 - exit;
               dy = -u * 30 * ease.out(exit);
             } else {
-              const p = clamp((t - w.t0 + 0.04) / 0.55);
+              const p = clamp((t - w.t0 + 0.04) / 0.35);
               if (p <= 0) return;
               a = ease.out(p);
               dy = u * 26 * (1 - ease.out(p));

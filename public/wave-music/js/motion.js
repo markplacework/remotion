@@ -15,6 +15,10 @@
 
   /** Split one line into words with start/end times inside the line. */
   function wordsFor(entry) {
+    // "Línea completa": every word of the line shows at the line's start
+    if (WM.Motion && WM.Motion.wordMode === "line") {
+      return entry.text.split(/\s+/).filter(Boolean).map((text, i) => ({ text, t0: entry.start, t1: entry.start + 0.3, index: i }));
+    }
     if (entry.words && entry.words.length) return entry.words;
     // real word times from the AI sync, kept relative to the line start
     // so a manual nudge of the line moves its words with it
@@ -179,6 +183,6 @@
     };
   }
 
-  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand };
+  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "word" };
   WM.Energy = { current: null };
 })((window.WaveMusic = window.WaveMusic || {}));

@@ -791,6 +791,11 @@
       preview.font = f ? f.family : null;
       needsSnap = true;
     };
+    $("text-mode").onchange = () => {
+      WM.Motion.wordMode = $("text-mode").value;
+      preview.linesFor = null; // re-time the words
+      needsSnap = true;
+    };
     const size = $("text-size");
     size.oninput = () => {
       preview.textScale = Number(size.value) / 100;
