@@ -535,6 +535,7 @@
     if (!f) return;
     try {
       await audio.loadFile(f);
+      analyzeEnergy();
       $("sp-title").value = audio.name;
       $("sp-artist").value = "";
       syncMeta();
@@ -565,6 +566,22 @@
   $("sync-mode").onchange = onModeChange;
   $("btn-generate").onclick = generate;
 
+  // ---------- ritmo (Lyrics Pro) ----------
+  // Decoded once per song; presets read WM.Energy.current for the beat.
+  let energyFor = null;
+  async function analyzeEnergy() {
+    const src = audio.sourceUrl;
+    if (energyFor === src) return;
+    energyFor = src;
+    WM.Energy.current = null;
+    try {
+      const track = await WM.Motion.analyze(await audio.getArrayBuffer());
+      if (energyFor === src) WM.Energy.current = track;
+    } catch (e) {
+      /* presets fall back to word onsets */
+    }
+  }
+
   // ---------- estilo ----------
   // Each option shows a tiny live-looking thumbnail of the style.
   const bars = (widths, cls) => widths.map((w) => `<i class="${cls}" style="width:${w}%"></i>`).join("");
@@ -574,19 +591,60 @@
     messenger: `<div class="th th-ms">${bars([58, 44, 72], "b")}</div>`,
     spotify: `<div class="th th-sp"><i class="t"></i>${bars([78, 62, 84, 56], "l")}</div>`,
   };
+  // Lyrics Pro thumbnails are the real presets, animated on a short sample.
+  const SAMPLE = WM.Motion.prepare({
+    entries: [
+      { lineId: "a", text: "Nunca voy a olvidarte", start: 0.2, end: 2.4 },
+      { lineId: "b", text: "Siempre vuelvo a vos", start: 2.4, end: 4.8 },
+    ],
+  });
+  const proThumbs = [];
+  function drawThumbs(now) {
+    const t = ((now / 1000) % 5.2) + 0.1;
+    proThumbs.forEach(({ canvas, preset }) => {
+      const r = canvas.getBoundingClientRect();
+      if (!r.width) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round(r.width * dpr);
+      const h = Math.round(r.height * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      const g = canvas.getContext("2d");
+      const W = 180;
+      const H = (180 * h) / w;
+      g.setTransform(w / W, 0, 0, h / H, 0, 0);
+      preset.draw(g, WM.Motion.frame({ lines: SAMPLE, t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "demo" } }));
+    });
+  }
+  let lastThumb = 0;
+  (function thumbLoop(now) {
+    if (now - lastThumb > 50 && !document.hidden) {
+      lastThumb = now;
+      drawThumbs(now);
+    }
+    requestAnimationFrame(thumbLoop);
+  })(0);
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
+    $("meta-opts").hidden = !(id === "spotify" || id === "minimal");
     preview.setTheme(id);
     needsSnap = true;
   }
   WM.Themes.list.forEach((t) => {
     const b = document.createElement("button");
     b.dataset.style = t.id;
-    b.innerHTML = `${THUMB[t.id]}<span class="style-name">${t.label}</span><span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
+    const thumb = t.kind === "motion" ? `<canvas class="th th-pro" aria-hidden="true"></canvas>` : THUMB[t.id];
+    const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
+    b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
     b.onclick = () => chooseStyle(t.id);
-    $("styles").appendChild(b);
+    $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(b);
+    if (t.kind === "motion") proThumbs.push({ canvas: b.querySelector("canvas"), preset: WM.Presets.get(t.preset) });
   });
+  WM.Presets.loadFonts();
   function paintSpotifyThumb(id) {
     const p = WM.Themes.spotifyPalette(id);
     const th = document.querySelector("#styles .th-sp");
@@ -634,6 +692,7 @@
     parsed = WM.Lyrics.parseLyrics(D.lyrics);
     try {
       await audio.load(D.audioSrc, D.audioName);
+      analyzeEnergy();
     } catch (e) {
       toast(e.message);
     }

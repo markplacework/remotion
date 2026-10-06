@@ -1047,6 +1047,40 @@ kbd {
   opacity: 1;
   transform: scale(1);
 }
+.style-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.styles + .style-group-head {
+  margin-top: 18px;
+}
+.pro-badge {
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent-3), var(--accent), var(--accent-2));
+}
+.style-tag {
+  margin-top: -5px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--faint);
+}
+canvas.th-pro {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: #000;
+}
 /* Mini screens: three bubbles / lyric lines in each style's own colours. */
 .th {
   aspect-ratio: 9 / 14;

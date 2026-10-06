@@ -38,13 +38,41 @@
     whatsapp: { asset: "mockup", img: [853, 1843], crop: WA_CROP, bg: { x: 62, y: 286, w: 728, h: 1336 }, chat: { x: 62, y: 286, w: 728, bottom: 1598 }, clock: { x: 125, y: 108, w: 80, h: 22, bg: "#011816", weight: 600 } },
     instagram: { asset: "mockupInstagram", img: [840, 1872], crop: META_CROP, bg: { x: 55, y: 252, w: 729, h: 1340 }, chat: { x: 59, y: 260, w: 721, bottom: 1574 }, clock: { x: 92, y: 114, w: 71, h: 23, bg: "#000", weight: 400 } },
     messenger: { asset: "mockupMessenger", img: [840, 1872], crop: META_CROP, bg: { x: 53, y: 270, w: 733, h: 1318 }, chat: { x: 57, y: 287, w: 726, bottom: 1571 }, clock: { x: 92, y: 115, w: 70, h: 22, bg: "#000", weight: 400 } },
+    // Lyrics Pro styles: the frame-only phone, the preset fills the screen.
+    motion: { asset: "frame", img: [853, 1843], crop: WA_CROP, bg: { x: 63, y: 77, w: 726, h: 1690 }, bgRadius: 92, chat: { x: 63, y: 77, w: 726, bottom: 1767 }, chrome: "status" },
     spotify: { asset: "frame", img: [853, 1843], crop: WA_CROP, bg: { x: 63, y: 77, w: 726, h: 1690 }, bgRadius: 92, chat: { x: 103, y: 282, w: 646, bottom: 1416 }, chrome: true },
   };
   const BOX_ASPECT = WA_CROP.w / WA_CROP.h;
   const MOCKUP_SCALE = 1.45; // content size relative to a real phone screen
 
+  // Lyrics Pro: where text may go. Video: inside the TikTok-safe area and
+  // the preview's visible box; mockup: the phone screen minus status bar
+  // and home indicator (canvas-local coordinates).
+  const MOTION_SAFE = { video: { x: 110, y: 230, w: 825, h: 1310 }, mockup: { x: 46, y: 150, w: 634, h: 1390 } };
+  const NO_CHAT = { x: 0, y: 0, scale: 1, width: 1, height: 1 };
+
   function layoutFor(framing, theme) {
     const lyrics = theme.kind === "lyrics";
+    if (theme.kind === "motion") {
+      if (framing === "video") {
+        return { id: "video", stageW: 1080, stageH: 1920, bg: { x: 0, y: 0, w: 1080, h: 1920 }, chat: NO_CHAT, motion: true, safe: MOTION_SAFE.video, fit: "cover" };
+      }
+      const M = MOCKUPS.motion;
+      const c = M.crop;
+      return {
+        id: "mockup",
+        stageW: c.w,
+        stageH: c.h,
+        bg: { x: M.bg.x - c.x, y: M.bg.y - c.y, w: M.bg.w, h: M.bg.h },
+        bgRadius: M.bgRadius,
+        chat: NO_CHAT,
+        chrome: "status",
+        motion: true,
+        safe: MOTION_SAFE.mockup,
+        frame: { asset: M.asset, x: -c.x, y: -c.y, w: M.img[0], h: M.img[1] },
+        fit: "contain",
+      };
+    }
     if (framing === "video") {
       // TikTok-safe margins (lyricSyncDefaults). Spotify's left-aligned
       // lyrics also keep clear of the ~100px each side that the
@@ -144,12 +172,16 @@
       stage.style.width = px(L.stageW);
       stage.style.height = px(L.stageH);
 
-      // 1. Background
-      const bg = document.createElement("div");
+      // 1. Background (Lyrics Pro: the preset's canvas)
+      this.motionCanvas = null;
+      const bg = document.createElement(L.motion ? "canvas" : "div");
+      if (L.motion) this.motionCanvas = bg;
       box(bg, L.bg);
       if (L.bgRadius) bg.style.borderRadius = px(L.bgRadius);
       const b = theme.background;
-      if (b.type === "wallpaper") {
+      if (b.type === "motion") {
+        bg.style.background = "#000";
+      } else if (b.type === "wallpaper") {
         Object.assign(bg.style, { backgroundImage: `url("${this.backgroundSrc}")`, backgroundSize: "cover", backgroundPosition: "center" });
       } else if (b.type === "solid") {
         bg.style.background = b.color;
@@ -218,7 +250,7 @@
       // 4. App UI drawn in HTML (non-WhatsApp mockups)
       this.chrome = null;
       if (L.chrome) {
-        this.chrome = WM.Chrome.build(theme);
+        this.chrome = L.chrome === "status" ? WM.Chrome.status(theme.statusInk || "#fff") : WM.Chrome.build(theme);
         this.chrome.nodes.forEach((n) => stage.appendChild(n));
       }
 
@@ -264,6 +296,29 @@
       this.setTimeline(this.timeline);
     }
 
+    /** Lyrics Pro: draw the preset into the screen canvas at display resolution. */
+    renderMotion(t) {
+      const L = this.layout;
+      const c = this.motionCanvas;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const scale = Math.max(0.2, (this.k || 1) * dpr);
+      const w = Math.max(2, Math.round(L.bg.w * scale));
+      const h = Math.max(2, Math.round(L.bg.h * scale));
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
+      // timeline may be re-timed in place by the manual adjust
+      if (this.linesFor !== this.timeline) {
+        this.linesFor = this.timeline;
+        this.lines = WM.Motion.prepare(this.timeline);
+      }
+      const g = c.getContext("2d");
+      g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
+      const preset = WM.Presets.get(this.theme.preset);
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta }));
+    }
+
     fillHeader() {
       const [t, a] = this.headerEl.children;
       t.textContent = this.meta.title || "";
@@ -275,13 +330,18 @@
       const r = this.host.getBoundingClientRect();
       const fx = r.width / this.layout.stageW;
       const fy = r.height / this.layout.stageH;
-      const k = this.layout.fit === "contain" ? Math.min(fx, fy) : Math.max(fx, fy);
+      const k = (this.k = this.layout.fit === "contain" ? Math.min(fx, fy) : Math.max(fx, fy));
       this.stage.style.transform = `translate(-50%, -50%) scale(${k})`;
     }
 
     /** Build one item (bubble or lyric line) per lyric line. */
     setTimeline(timeline) {
       this.timeline = timeline;
+      if (this.theme.kind === "motion") {
+        this.bubbles = [];
+        this.host.classList.toggle("is-empty", !(timeline && timeline.entries.length));
+        return;
+      }
       this.content.innerHTML = "";
       this.bubbles = [];
       this.bottoms = null;
@@ -354,6 +414,10 @@
      */
     render(state, { playing = false, time = state.time, duration = 0 } = {}) {
       if (this.chrome) this.chrome.update({ time, duration, playing, ...this.meta });
+      if (this.motionCanvas) {
+        this.renderMotion(time);
+        return { scroll: 0, looks: [] };
+      }
       if (this.clockEl) {
         const now = WM.clockNow();
         if (this.clockEl.textContent !== now) this.clockEl.textContent = now;

@@ -89,5 +89,17 @@
     build(theme, ctx) {
       return spotifyChrome(theme, ctx);
     },
+    /** Just the status bar (and home indicator), for Lyrics Pro mockups. */
+    status(ink) {
+      const bar = statusBar(ink);
+      const time = bar.querySelector(".sb-time");
+      return {
+        nodes: [bar, homeBar(ink)],
+        update() {
+          const now = WM.clockNow();
+          if (time.textContent !== now) time.textContent = now;
+        },
+      };
+    },
   };
 })((window.WaveMusic = window.WaveMusic || {}));

@@ -128,6 +128,11 @@
       mockup: "chrome",
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
+    // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
+    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", pro: true, background: { type: "motion" } },
+    cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" } },
+    neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", pro: true, background: { type: "motion" } },
+    minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f" },
   };
 
   WM.Themes = {

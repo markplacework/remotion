@@ -121,6 +121,10 @@
 
     static async create(timeline, backgroundSrc, style = {}) {
       const theme = WM.Themes.get(style.theme);
+      if (theme.kind === "motion") {
+        await WM.Presets.loadFonts();
+        return new MotionRenderer(timeline, theme, style);
+      }
       const bg = theme.background.type === "wallpaper" ? await loadImage(backgroundSrc) : null;
       if (theme.kind === "lyrics" && document.fonts) {
         await document.fonts.load(`700 40px ${WM.Themes.LYRICS_FONT}`).catch(() => {});
@@ -408,6 +412,29 @@
     dispose() {
       this.host.remove();
     }
+  }
+
+  /**
+   * Lyrics Pro: the preset draws straight onto the 1080x1920 canvas with the
+   * same frame() the preview uses — the export matches the preview exactly.
+   */
+  class MotionRenderer {
+    constructor(timeline, theme, style) {
+      this.preset = WM.Presets.get(theme.preset);
+      this.lines = WM.Motion.prepare(timeline);
+      this.meta = style.meta || {};
+      this.canvas = document.createElement("canvas");
+      this.canvas.width = 1080;
+      this.canvas.height = 1920;
+      this.g = this.canvas.getContext("2d");
+      this.safe = { x: 110, y: 230, w: 825, h: 1310 }; // = preview.js MOTION_SAFE.video
+    }
+    draw(t) {
+      this.g.setTransform(1, 0, 0, 1, 0, 0);
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta }));
+      return this.canvas;
+    }
+    dispose() {}
   }
 
   WM.VideoRenderer = VideoRenderer;

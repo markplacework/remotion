@@ -9,6 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Figtree:wght@700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -121,10 +122,17 @@
 
         <div class="card" data-step="5">
           <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
-          <div id="styles" class="styles" role="group" aria-label="Estilo"></div>
+          <div id="styles" role="group" aria-label="Estilo">
+            <div class="style-group-head"><span>Lyrics Pro</span><span class="pro-badge">PRO</span></div>
+            <div id="styles-pro" class="styles"></div>
+            <div class="style-group-head"><span>Conversación y reproductor</span></div>
+            <div id="styles-classic" class="styles"></div>
+          </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
+          </div>
+          <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">
               <label class="field grow"><span>Canción</span><input id="sp-title" type="text" placeholder="Título de la canción" /></label>
             </div>
@@ -299,6 +307,8 @@
     <script src="js/adjust-slider.js"></script>
     <script src="js/bubbles.js"></script>
     <script src="js/themes.js"></script>
+    <script src="js/motion.js"></script>
+    <script src="js/presets.js"></script>
     <script src="js/chrome.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/video-renderer.js"></script>

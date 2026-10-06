@@ -34,6 +34,13 @@ html = html.replace(/src="(assets\/[^"]+\.(jpg|png))"/g, (_, src, ext) =>
   `src="${dataUri(readFileSync(join(dir, src)), ext === "png" ? "image/png" : "image/jpeg")}"`,
 );
 
+// Lyrics Pro fonts: inline the woff2 files so canvas text and exports never
+// depend on a network font.
+html = html.replace(/<link rel="stylesheet" href="fonts.css" \/>/, () => {
+  const css = read("fonts.css").replace(/url\((fonts\/[^)]+\.woff2)\)/g, (_, f) => `url(${dataUri(readFileSync(join(dir, f)), "font/woff2")})`);
+  return `<style>\n${css}</style>`;
+});
+
 html = html.replace(/<link rel="stylesheet" href="styles.css" \/>/, () => `<style>\n${read("styles.css")}</style>`);
 
 html = html.replace(/<script src="(js\/[^"]+)"><\/script>/g, (_, src) => {
