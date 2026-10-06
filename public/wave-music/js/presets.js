@@ -253,7 +253,7 @@
         if ("letterSpacing" in g) g.letterSpacing = strong ? `${size * 0.16}px` : "0px";
         const rows = wrapWords(g, words, () => font, safe.w * 0.86, size * (strong ? 0.5 : 0.28));
         const lh = size * 1.25;
-        const cy = safe.y + safe.h * 0.64;
+        const cy = safe.y + safe.h * 0.5;
         let y = cy - ((rows.length - 1) * lh) / 2;
         g.textBaseline = "middle";
         g.textAlign = "left";

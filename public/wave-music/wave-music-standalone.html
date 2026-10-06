@@ -1795,10 +1795,10 @@ canvas.th-pro {
         <div class="card" data-step="5">
           <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
           <div id="styles" role="group" aria-label="Estilo">
-            <div class="style-group-head"><span>Lyrics Pro</span><span class="pro-badge">PRO</span></div>
-            <div id="styles-pro" class="styles"></div>
             <div class="style-group-head"><span>Conversación y reproductor</span></div>
             <div id="styles-classic" class="styles"></div>
+            <div class="style-group-head"><span>Lyrics Pro</span><span class="pro-badge">PRO</span></div>
+            <div id="styles-pro" class="styles"></div>
           </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
@@ -3387,7 +3387,7 @@ canvas.th-pro {
         if ("letterSpacing" in g) g.letterSpacing = strong ? `${size * 0.16}px` : "0px";
         const rows = wrapWords(g, words, () => font, safe.w * 0.86, size * (strong ? 0.5 : 0.28));
         const lh = size * 1.25;
-        const cy = safe.y + safe.h * 0.64;
+        const cy = safe.y + safe.h * 0.5;
         let y = cy - ((rows.length - 1) * lh) / 2;
         g.textBaseline = "middle";
         g.textAlign = "left";
