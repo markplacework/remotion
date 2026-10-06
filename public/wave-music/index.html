@@ -118,6 +118,15 @@
 
           <div id="ts-list" class="ts-list"></div>
         </div>
+
+        <div class="card" data-step="5">
+          <div class="card-head"><span class="num">5</span><h2>Descargar</h2><span class="hint">9:16 · 1080 × 1920</span></div>
+          <p class="card-note">El video final, sin el teléfono, con tu ajuste de tiempos y el audio de la canción.</p>
+          <button id="btn-export" class="btn btn-primary wide btn-export" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
+        </div>
       </section>
 
       <!-- ========== Preview ========== -->
@@ -125,6 +134,7 @@
         <div class="preview-body">
         <div class="preview-main">
           <div id="stage-host" class="stage-host is-empty">
+            <div id="full-hint" class="full-hint" hidden>Tocá para ver en pantalla completa</div>
             <div class="empty-cta">
               <img class="empty-logo" src="assets/logo.png" alt="Wave Music" />
               <p>Audio + letra + sincronización</p>
@@ -138,6 +148,9 @@
               <button data-framing="mockup" aria-pressed="true" title="Solo para la vista previa: el video descargado no incluye el teléfono">Mockup</button>
               <button data-framing="video" aria-pressed="false" title="El video sin el teléfono. La descarga es 9:16 (1080 × 1920) completa">Video final</button>
             </div>
+            <button id="btn-full" class="full-btn" aria-label="Ver en pantalla completa" title="Pantalla completa">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+            </button>
           </div>
         <div id="transport" class="transport disabled">
 
@@ -168,16 +181,29 @@
             <span id="time-dur" class="time right">00:00</span>
           </div>
         </div>
-          <button id="btn-export" class="btn btn-primary btn-export" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-            Descargar video
-          </button>
         </div>
         </div>
       </section>
     </main>
 
     <div id="toast" class="toast"></div>
+
+    <!-- Pantalla completa: the stage is moved in here while open -->
+    <div id="full" class="full" hidden>
+      <button id="full-close" class="full-close" aria-label="Salir de pantalla completa">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+      <div id="full-stage" class="full-stage"></div>
+      <div class="full-bar">
+        <button id="full-play" class="play-btn small" aria-label="Reproducir o pausar">
+          <svg class="i-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          <svg class="i-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+        </button>
+        <span id="full-cur" class="time">00:00</span>
+        <input id="full-scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
+        <span id="full-dur" class="time">00:00</span>
+      </div>
+    </div>
 
     <!-- Export dialog: setup -> recording -> ready -->
     <div id="export" class="export" hidden>

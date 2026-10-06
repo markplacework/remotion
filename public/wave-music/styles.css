@@ -628,9 +628,6 @@ kbd {
     order: 1;
     max-width: 460px;
   }
-  .preview-side .btn-export {
-    order: 2;
-  }
 }
 @media (max-width: 420px) {
   .preview-side #btn-restart,
@@ -676,10 +673,7 @@ kbd {
     display: none;
   }
 }
-.btn-export {
-  flex: none;
-  align-self: center;
-}
+
 .wm-stage img {
   max-width: none;
 }
@@ -825,7 +819,11 @@ kbd {
   border: 1px solid var(--line);
   transition: opacity 0.2s;
 }
-.transport.disabled {
+/* Without a song only Play works (it starts the demo). */
+.transport.disabled .now,
+.transport.disabled .scrub-wrap,
+.transport.disabled .time,
+.transport.disabled .icon-btn {
   opacity: 0.35;
   pointer-events: none;
 }
@@ -985,10 +983,16 @@ kbd {
 [hidden] {
   display: none !important;
 }
-.btn-export {
-  height: 40px;
-  padding: 0 22px;
-  font-size: 13px;
+.btn.btn-export {
+  height: 44px;
+  font-size: 14px;
+  margin-top: 0;
+}
+.card-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 .export {
   position: fixed;
@@ -1107,6 +1111,115 @@ kbd {
 .export-ready span {
   color: var(--muted);
   font-size: 12px;
+}
+
+/* ---------- pantalla completa ---------- */
+.stage-host {
+  cursor: zoom-in;
+}
+.full-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s, background 0.2s, border-color 0.2s;
+}
+.full-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.18);
+}
+.framing {
+  flex-wrap: nowrap;
+}
+.full-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  z-index: 3;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(var(--accent-rgb), 0.92);
+  box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.45);
+  pointer-events: none;
+  animation: hint-in 0.35s ease both, hint-bob 1.6s ease-in-out 0.35s infinite;
+}
+@keyframes hint-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+}
+@keyframes hint-bob {
+  50% { transform: translate(-50%, -4px); }
+}
+.stage-host.is-empty .full-hint {
+  display: none;
+}
+.full {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  background: #020307;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+}
+.full-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  padding: 16px 16px 8px;
+}
+.full-stage .stage-host {
+  flex: none;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  cursor: default;
+}
+.full-stage .full-hint {
+  display: none;
+}
+.full-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+.full-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100% - 32px, 520px);
+  margin: 0 auto 16px;
+}
+.full-bar input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent-2);
+}
+.play-btn.small {
+  flex: none;
+  width: 44px;
+  height: 44px;
 }
 
 .toast {

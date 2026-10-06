@@ -49,6 +49,7 @@
     $("btn-generate").disabled = !hasLyrics;
     $("transport").classList.toggle("disabled", !hasAudio);
     $("btn-export").disabled = !(hasAudio && timeline);
+    $("btn-full").disabled = !timeline;
     $("audio-name").textContent = hasAudio ? audio.name : "Sin audio";
     $("audio-meta").textContent = hasAudio ? T.format(audio.duration) : "mp3 · wav · m4a";
     $("line-count").textContent = hasLyrics ? parsed.lines.length + " líneas" : "";
@@ -201,6 +202,12 @@
     $("progress").style.width = d ? (t / d) * 100 + "%" : "0";
     $("time-cur").textContent = T.format(t);
     $("time-dur").textContent = T.format(d);
+    if (!$("full").hidden) {
+      if (!fullScrubbing) $("full-scrub").value = t;
+      $("full-scrub").max = d || 1;
+      $("full-cur").textContent = T.format(t);
+      $("full-dur").textContent = T.format(d);
+    }
 
     if (state.activeIndex !== lastActive) {
       lastActive = state.activeIndex;
@@ -331,6 +338,63 @@
     toast("Tiempos restablecidos");
   };
 
+  // ---------- pantalla completa ----------
+  // The stage element itself moves into the overlay (and back), so it's
+  // the same live preview, just bigger. Native fullscreen is tried too,
+  // but the overlay works where it's refused (e.g. inside an app frame).
+  const host = $("stage-host");
+  const homeSlot = { parent: host.parentNode, next: host.nextSibling };
+  let fullScrubbing = false;
+
+  function openFull() {
+    if (!timeline) return;
+    hideHint();
+    $("full-stage").appendChild(host);
+    $("full").hidden = false;
+    needsSnap = true;
+    const el = $("full");
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  }
+  function closeFull() {
+    if ($("full").hidden) return;
+    homeSlot.parent.insertBefore(host, homeSlot.next);
+    $("full").hidden = true;
+    needsSnap = true;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+  host.addEventListener("click", (e) => {
+    if (e.target.closest(".empty-cta")) return;
+    if ($("full").hidden) openFull();
+  });
+  $("btn-full").onclick = (e) => {
+    e.stopPropagation();
+    openFull();
+  };
+  $("full-close").onclick = closeFull;
+  $("full-play").onclick = playPause;
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) closeFull();
+  });
+  const fs = $("full-scrub");
+  fs.addEventListener("input", () => {
+    fullScrubbing = true;
+    audio.seek(Number(fs.value));
+  });
+  fs.addEventListener("change", () => (fullScrubbing = false));
+
+  // Discoverability: a one-time hint the first time the preview has
+  // something to show.
+  let hintShown = false;
+  function showHint() {
+    if (hintShown) return;
+    hintShown = true;
+    $("full-hint").hidden = false;
+    setTimeout(() => hideHint(), 5000);
+  }
+  function hideHint() {
+    $("full-hint").hidden = true;
+  }
+
   // ---------- descargar video ----------
   let exportCtl = null;
   let exported = null;
@@ -344,6 +408,7 @@
   }
 
   $("btn-export").onclick = () => {
+    closeFull();
     if (!WM.Exporter.supported()) return toast("Este navegador no puede grabar video. Probá con Chrome.");
     if (!audio.loaded || !timeline) return;
     audio.pause();
@@ -412,7 +477,11 @@
     refreshReadiness();
   });
 
-  $("btn-play").onclick = () => audio.toggle();
+  // Play with nothing loaded starts the demo.
+  function playPause() {
+    return audio.loaded ? audio.toggle() : loadDemo();
+  }
+  $("btn-play").onclick = playPause;
   $("btn-back").onclick = () => audio.seek(audio.currentTime - 5);
   $("btn-fwd").onclick = () => audio.seek(audio.currentTime + 5);
   $("btn-restart").onclick = () => audio.seek(0);
@@ -491,9 +560,11 @@
     audio.seek(0);
     audio.play();
     document.body.classList.add("has-demo");
+    setTimeout(showHint, 1200);
   }
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("full").hidden && ev.key === "Escape") return closeFull();
     if (!$("export").hidden) {
       if (ev.key === "Escape" && !exportCtl) closeExport();
       return;
@@ -510,7 +581,7 @@
     }
     if (ev.code === "Space") {
       ev.preventDefault();
-      audio.toggle();
+      playPause();
     } else if (ev.key === "ArrowLeft") audio.seek(audio.currentTime - 5);
     else if (ev.key === "ArrowRight") audio.seek(audio.currentTime + 5);
   });
