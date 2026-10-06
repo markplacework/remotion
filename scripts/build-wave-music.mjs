@@ -1,5 +1,5 @@
 // Builds a single self-contained HTML of the Wave Music lyric test
-// (CSS, JS modules, demo audio and background all inlined), so it can be
+// (CSS, JS modules, demo audio, background, logo and mockup all inlined), so it can be
 // opened in any previewer without a server or the public/ folder.
 //
 //   node scripts/build-wave-music.mjs
@@ -41,6 +41,7 @@ html = html.replace(/<script src="(js\/[^"]+)"><\/script>/g, (_, src) => {
   if (src === "js/demo.js") {
     js = js
       .replace('"../fake-chat/background-alt.png"', () => JSON.stringify(backgroundUri()))
+      .replace(/"(assets\/[^"]+\.png)"/g, (_, src) => JSON.stringify(dataUri(readFileSync(join(dir, src)), "image/png")))
       .replace('"../fake-chat/song.mp3"', () =>
         JSON.stringify(dataUri(readFileSync(join(root, "public/fake-chat/song.mp3")), "audio/mpeg")),
       );

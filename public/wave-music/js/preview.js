@@ -1,75 +1,144 @@
 // Wave Music · PREVISUALIZADOR
-// 9:16 stage (1080x1920, scaled to fit) laid out exactly like the
-// lyric-sync standard: background-alt wallpaper, src/lyricSyncDefaults.ts
-// margins (TikTok-safe) and AutoScrollChatLog's scrolling. Receives
-// sync state and renders it; it never reads the audio.
+// Renders the sync state into a stage. The chat itself (wallpaper +
+// bubbles + AutoScrollChatLog-style scrolling) is the same in every
+// framing; only the framing changes:
+//
+//   "video"  — the exported 9:16 video (1080x1920): wallpaper full-bleed,
+//              chat inside src/lyricSyncDefaults.ts' TikTok-safe margins.
+//   "mockup" — preview only: the same chat shown inside the WhatsApp
+//              phone mockup's screen. The mockup is never part of the
+//              exported video.
+//
+// It never reads the audio — it only receives state.
 (function (WM) {
-  const STAGE_W = 1080;
-  const STAGE_H = 1920;
-
-  // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
-  const TOP_MARGIN = 190;
-  const BOTTOM_MARGIN = 320;
-  const LEFT_MARGIN = 40;
-  const SAFE_RIGHT_EDGE = 935;
-  const SCALE = 1.6;
-  const CONTENT_WIDTH = Math.round((SAFE_RIGHT_EDGE - LEFT_MARGIN) / SCALE);
-  const VIEWPORT_HEIGHT = Math.round((STAGE_H - TOP_MARGIN - BOTTOM_MARGIN) / SCALE);
-
-  // Mirrors src/components/AutoScrollChatLog.tsx
-  const BOTTOM_PADDING = 18;
+  const BOTTOM_PADDING = 18; // AutoScrollChatLog
   const SAME_SENDER_GAP = 14;
   const SENDER_CHANGE_GAP = 26;
   const scrollSpring = WM.Bubbles.makeSpring(18, 0.7);
 
+  // Mirrors src/lyricSyncDefaults.ts — keep in sync with it.
+  const LS = { top: 190, bottom: 320, left: 40, safeRight: 935, scale: 1.6 };
+
+  // Mockup screen hole, measured from the PNG's own transparent pixels
+  // (853x1843): x 63-788, from under the header (y 288) to the bottom
+  // of the screen behind the input bar (y ~1620).
+  const SCREEN = { x: 62, y: 286, w: 728, h: 1336 };
+  const INPUT_BAR_TOP = 1604;
+  const MOCKUP_SCALE = 1.45; // bubble size relative to a real phone screen
+
+  const LAYOUTS = {
+    video: {
+      id: "video",
+      stageW: 1080,
+      stageH: 1920,
+      bg: { x: 0, y: 0, w: 1080, h: 1920 },
+      chat: {
+        x: LS.left,
+        y: LS.top,
+        scale: LS.scale,
+        width: Math.round((LS.safeRight - LS.left) / LS.scale),
+        height: Math.round((1920 - LS.top - LS.bottom) / LS.scale),
+      },
+    },
+    mockup: {
+      id: "mockup",
+      stageW: 853,
+      stageH: 1843,
+      bg: SCREEN,
+      chat: {
+        x: SCREEN.x + 4,
+        y: SCREEN.y,
+        scale: MOCKUP_SCALE,
+        width: Math.round((SCREEN.w - 8) / MOCKUP_SCALE),
+        height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
+      },
+      frame: true,
+    },
+  };
+
+  const px = (n) => n + "px";
+  const box = (el, r) => Object.assign(el.style, { position: "absolute", left: px(r.x), top: px(r.y), width: px(r.w), height: px(r.h) });
+
   class Preview {
-    constructor(host, { backgroundSrc }) {
+    constructor(host, { backgroundSrc, mockupSrc, layout = "mockup" }) {
       this.host = host;
-      this.bubbles = [];
-      this.bottoms = null;
+      this.backgroundSrc = backgroundSrc;
+      this.mockupSrc = mockupSrc;
+      this.timeline = null;
+      new ResizeObserver(() => this.fit()).observe(host);
+      this.setLayout(layout);
+    }
 
-      this.stage = document.createElement("div");
-      this.stage.className = "wm-stage";
-      this.stage.style.width = STAGE_W + "px";
-      this.stage.style.height = STAGE_H + "px";
-      this.stage.style.backgroundImage = `url("${backgroundSrc}")`;
+    setLayout(id) {
+      const L = LAYOUTS[id] || LAYOUTS.mockup;
+      this.layout = L;
+      if (this.stage) this.stage.remove();
+      this.host.dataset.layout = L.id;
+      this.host.style.setProperty("--stage-aspect", `${L.stageW} / ${L.stageH}`);
+      this.host.style.setProperty("--stage-ratio", L.stageW / L.stageH);
 
-      // Scaled wrapper, same as the scene's scale(1.6) top-left div.
+      const stage = (this.stage = document.createElement("div"));
+      stage.className = "wm-stage";
+      stage.style.width = px(L.stageW);
+      stage.style.height = px(L.stageH);
+
+      // 1. Wallpaper
+      const bg = document.createElement("div");
+      box(bg, L.bg);
+      Object.assign(bg.style, {
+        backgroundImage: `url("${this.backgroundSrc}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      });
+      stage.appendChild(bg);
+
+      // 2. Chat: scaled wrapper + fixed viewport that clips overflow.
       const scaler = document.createElement("div");
       Object.assign(scaler.style, {
         position: "absolute",
-        left: LEFT_MARGIN + "px",
-        top: TOP_MARGIN + "px",
-        transform: `scale(${SCALE})`,
+        left: px(L.chat.x),
+        top: px(L.chat.y),
+        transform: `scale(${L.chat.scale})`,
         transformOrigin: "top left",
       });
-      // Fixed viewport that clips overflow, like real WhatsApp.
-      this.viewport = document.createElement("div");
-      Object.assign(this.viewport.style, {
-        width: CONTENT_WIDTH + "px",
-        height: VIEWPORT_HEIGHT + "px",
+      const viewport = document.createElement("div");
+      Object.assign(viewport.style, {
+        width: px(L.chat.width),
+        height: px(L.chat.height),
         overflow: "hidden",
         position: "relative",
       });
       this.content = document.createElement("div");
       this.content.style.padding = "24px 12px 0";
-      this.viewport.appendChild(this.content);
-      scaler.appendChild(this.viewport);
-      this.stage.appendChild(scaler);
-      host.appendChild(this.stage);
+      viewport.appendChild(this.content);
+      scaler.appendChild(viewport);
+      stage.appendChild(scaler);
 
-      new ResizeObserver(() => this.fit()).observe(host);
+      // 3. Device frame on top (preview only)
+      if (L.frame) {
+        const frame = document.createElement("img");
+        frame.src = this.mockupSrc;
+        frame.alt = "";
+        box(frame, { x: 0, y: 0, w: L.stageW, h: L.stageH });
+        frame.style.pointerEvents = "none";
+        stage.appendChild(frame);
+      }
+
+      this.host.appendChild(stage);
       this.fit();
+      this.setTimeline(this.timeline);
     }
 
     fit() {
+      if (!this.stage) return;
       const r = this.host.getBoundingClientRect();
-      const k = Math.min(r.width / STAGE_W, r.height / STAGE_H);
+      const k = Math.min(r.width / this.layout.stageW, r.height / this.layout.stageH);
       this.stage.style.transform = `translate(-50%, -50%) scale(${k})`;
     }
 
     /** Build one bubble per lyric line. */
     setTimeline(timeline) {
+      this.timeline = timeline;
       this.content.innerHTML = "";
       this.bubbles = [];
       this.bottoms = null;
@@ -102,13 +171,11 @@
     }
 
     scrollFor(index) {
-      return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - VIEWPORT_HEIGHT + BOTTOM_PADDING) : 0;
+      const h = this.layout.chat.height;
+      return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - h + BOTTOM_PADDING) : 0;
     }
 
-    /**
-     * Pure function of the sync state, so seeking renders the exact
-     * frame. @param opts { playing }
-     */
+    /** Pure function of the sync state, so seeking renders the exact frame. */
     render(state, { playing = false } = {}) {
       if (!this.bubbles.length) return;
       if (!this.bottoms) this.measure();
@@ -123,8 +190,7 @@
       const ease = last >= 0 ? Math.min(scrollSpring(state.entries[last].age), 1) : 0;
       const prev = this.scrollFor(last - 1);
       const next = this.scrollFor(last);
-      const y = prev + (next - prev) * ease;
-      this.content.style.transform = `translateY(${-y}px)`;
+      this.content.style.transform = `translateY(${-(prev + (next - prev) * ease)}px)`;
     }
   }
 
@@ -135,4 +201,5 @@
   }
 
   WM.Preview = Preview;
+  WM.Preview.LAYOUTS = LAYOUTS;
 })((window.WaveMusic = window.WaveMusic || {}));

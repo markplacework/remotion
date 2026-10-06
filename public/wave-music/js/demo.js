@@ -5,6 +5,8 @@
 (function (WM) {
   WM.ASSETS = {
     background: "../fake-chat/background-alt.png",
+    // Preview-only device frame; never part of the exported video.
+    mockup: "assets/mockup-whatsapp.png",
   };
 
   WM.DEMO = {

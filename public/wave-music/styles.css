@@ -359,7 +359,7 @@ select option:disabled {
   flex: 1;
   min-height: 0;
   height: 100%;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: var(--stage-aspect, 9 / 16);
   max-width: 100%;
   border-radius: 22px;
   overflow: hidden;
@@ -375,6 +375,56 @@ select option:disabled {
   background-size: cover;
   background-position: center;
 }
+/* Mockup framing: the phone PNG is the frame, so no box of our own,
+   and the start screen sits inside the phone's screen. */
+.stage-host[data-layout="mockup"] {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.stage-host[data-layout="mockup"] .wm-stage {
+  filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.6));
+}
+.stage-host[data-layout="mockup"] .empty-cta {
+  inset: 15.6% 7.6% 13% 7.4%;
+}
+
+.framing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex: none;
+}
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.segmented button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 99px;
+  transition: background 0.2s, color 0.2s;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45);
+}
+.framing-note {
+  font-size: 12px;
+  color: var(--faint);
+}
+
 .empty-cta {
   position: absolute;
   inset: 0;
@@ -656,7 +706,9 @@ select option:disabled {
   .stage-host {
     flex: none;
     height: auto;
-    width: min(100%, 360px);
+    /* fit the phone/video in ~62% of the screen height so the
+       playback controls stay visible below it */
+    width: min(100%, 360px, calc(62vh * var(--stage-ratio, 0.5625)));
   }
   .editor {
     border-right: 0;

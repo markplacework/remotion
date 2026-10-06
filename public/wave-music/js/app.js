@@ -8,7 +8,11 @@
 
   const audio = new WM.AudioEngine();
   const sync = new WM.SyncEngine();
-  const preview = new WM.Preview($("stage-host"), { backgroundSrc: WM.ASSETS.background });
+  const preview = new WM.Preview($("stage-host"), {
+    backgroundSrc: WM.ASSETS.background,
+    mockupSrc: WM.ASSETS.mockup,
+    layout: "mockup",
+  });
 
   let parsed = { lines: [], embeddedStarts: null };
   let timeline = null;
@@ -223,6 +227,17 @@
   }
   $("sync-mode").onchange = onModeChange;
   $("btn-generate").onclick = generate;
+
+  // Framing: the mockup is a preview aid; "Video final" is exactly what
+  // gets exported (9:16, no device frame).
+  document.querySelectorAll("[data-framing]").forEach((b) => {
+    b.onclick = () => {
+      document.querySelectorAll("[data-framing]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      preview.setLayout(b.dataset.framing);
+      $("framing-note").textContent =
+        b.dataset.framing === "mockup" ? "El mockup es solo para la vista previa" : "Así queda el video descargado · 9:16";
+    };
+  });
 
   $("btn-demo").onclick = loadDemo;
   $("btn-demo-empty").onclick = loadDemo;
