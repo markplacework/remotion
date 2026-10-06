@@ -35,6 +35,8 @@
       stageW: 1080,
       stageH: 1920,
       bg: { x: 0, y: 0, w: 1080, h: 1920 },
+      // Lyric-sync standard: the chat starts at the top of the safe area.
+      anchor: "top",
       chat: {
         x: LS.left,
         y: LS.top,
@@ -49,13 +51,18 @@
       stageH: CROP.h,
       bg: SCREEN,
       chat: {
-        x: SCREEN.x + 4,
+        // 12px side inset + the chat's own 12px padding (x1.45) ≈ real
+        // WhatsApp's bubble margin to the screen edge.
+        x: SCREEN.x + 12,
         y: SCREEN.y,
         scale: MOCKUP_SCALE,
-        width: Math.round((SCREEN.w - 8) / MOCKUP_SCALE),
+        width: Math.round((SCREEN.w - 24) / MOCKUP_SCALE),
         height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
       },
       frame: { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 },
+      // Like a real phone: the newest message sits just above the input
+      // bar and the conversation grows upwards.
+      anchor: "bottom",
     },
   };
 
@@ -123,6 +130,11 @@
         frame.src = this.mockupSrc;
         frame.alt = "";
         box(frame, L.frame);
+        // The frame is deliberately wider than the cropped stage; hosts
+        // that reset img { max-width: 100% } (the claude.ai viewer does)
+        // would squash it out of line with the chat.
+        frame.style.maxWidth = "none";
+        frame.style.maxHeight = "none";
         frame.style.pointerEvents = "none";
         stage.appendChild(frame);
       }
@@ -170,12 +182,19 @@
     measure() {
       this.bubbles.forEach((b) => (b.root.style.display = "flex"));
       this.bottoms = this.bubbles.map((b) => b.root.offsetTop + b.root.offsetHeight);
+      const pill = this.content.firstChild;
+      this.pillBottom = pill.offsetTop + pill.offsetHeight;
       this.bubbles.forEach((b) => b.reset());
     }
 
+    /** How far the content is moved up so line `index` (-1 = none yet)
+     * is in place; negative when bottom-anchored content is pushed down. */
     scrollFor(index) {
+      if (!this.bottoms) return 0;
       const h = this.layout.chat.height;
-      return index >= 0 && this.bottoms ? Math.max(0, this.bottoms[index] - h + BOTTOM_PADDING) : 0;
+      const bottom = index >= 0 ? this.bottoms[index] : this.pillBottom;
+      const s = bottom - h + BOTTOM_PADDING;
+      return this.layout.anchor === "bottom" ? s : Math.max(0, s);
     }
 
     /**

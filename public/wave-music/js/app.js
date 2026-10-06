@@ -470,8 +470,6 @@
     b.onclick = () => {
       document.querySelectorAll("[data-framing]").forEach((x) => x.setAttribute("aria-pressed", x === b));
       preview.setLayout(b.dataset.framing);
-      $("framing-note").textContent =
-        b.dataset.framing === "mockup" ? "El mockup es solo para la vista previa" : "Así queda el video descargado · 9:16";
     };
   });
 

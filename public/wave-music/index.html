@@ -123,25 +123,25 @@
       <!-- ========== Preview ========== -->
       <section class="preview">
         <div class="preview-body">
-        <div id="stage-host" class="stage-host is-empty">
-          <div class="empty-cta">
-            <img class="empty-logo" src="assets/logo.png" alt="Wave Music" />
-            <p>Audio + letra + sincronización</p>
-            <button id="btn-demo-empty" class="btn btn-primary">Iniciar demo</button>
+        <div class="preview-main">
+          <div id="stage-host" class="stage-host is-empty">
+            <div class="empty-cta">
+              <img class="empty-logo" src="assets/logo.png" alt="Wave Music" />
+              <p>Audio + letra + sincronización</p>
+              <button id="btn-demo-empty" class="btn btn-primary">Iniciar demo</button>
+            </div>
           </div>
+          <button id="btn-export" class="btn btn-primary btn-export" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
         </div>
-
         <div class="preview-side">
           <div class="framing">
             <div class="segmented" role="group" aria-label="Encuadre">
-              <button data-framing="mockup" aria-pressed="true">Mockup</button>
-              <button data-framing="video" aria-pressed="false">Video final</button>
+              <button data-framing="mockup" aria-pressed="true" title="Solo para la vista previa: el video descargado no incluye el teléfono">Mockup</button>
+              <button data-framing="video" aria-pressed="false" title="Así queda el video descargado (9:16)">Video final</button>
             </div>
-            <span id="framing-note" class="framing-note">El mockup es solo para la vista previa</span>
-            <button id="btn-export" class="btn btn-primary btn-export" disabled>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-              Descargar video
-            </button>
           </div>
         <div id="transport" class="transport disabled">
 

@@ -565,6 +565,9 @@ kbd {
 /* ---------- 9:16 stage ---------- */
 /* The phone (or 9:16 video) always fits whole: it takes all the height
    the preview column has, and its width follows from the aspect ratio. */
+/* Preview: the phone (or 9:16 video) is as large as the column allows
+   while always whole. Only the download button sits under it; framing
+   and playback live beside it (wide) or above it (narrow). */
 .preview-body {
   flex: 1;
   min-height: 0;
@@ -572,13 +575,21 @@ kbd {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+}
+.preview-main {
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 .stage-host {
   position: relative;
   flex: 1;
   min-height: 0;
-  height: 100%;
   aspect-ratio: var(--stage-aspect, 9 / 16);
   max-width: 100%;
   border-radius: 22px;
@@ -590,30 +601,55 @@ kbd {
 }
 .preview-side {
   flex: none;
+  order: -1; /* narrow: above the phone */
   width: 100%;
   max-width: 460px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 .preview-side .transport {
   max-width: none;
 }
-/* Wide screens: framing, download and playback controls in a column
-   beside the phone, so the phone gets the full column height. */
+/* Narrow: a compact one-row transport above the phone. */
+@media (max-width: 899px) {
+  .preview-main {
+    width: 100%;
+  }
+  .preview-side .now,
+  .preview-side #btn-restart,
+  .preview-side .icon-btn.ghost {
+    display: none;
+  }
+  .preview-side .transport {
+    padding: 8px 14px 10px;
+  }
+  .preview-side .controls {
+    margin-top: 4px;
+  }
+  .preview-side .play-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+/* Wide: framing + playback in a column beside the phone. */
 @media (min-width: 900px) {
   .preview-body {
     flex-direction: row;
     justify-content: center;
+    align-items: stretch;
     gap: clamp(20px, 3vw, 40px);
   }
-  .preview-body .stage-host {
-    flex: none;
-  }
   .preview-side {
+    order: 0;
+    align-self: center;
     width: clamp(250px, 27vw, 380px);
     align-items: stretch;
+    gap: 14px;
+  }
+  .preview-side .framing {
+    justify-content: center;
   }
 }
 /* Medium widths: the side column is narrow, keep the transport compact. */
@@ -631,6 +667,12 @@ kbd {
   .preview-side .icon-btn.ghost {
     display: none;
   }
+}
+.btn-export {
+  flex: none;
+}
+.wm-stage img {
+  max-width: none;
 }
 .wm-stage {
   position: absolute;
@@ -935,9 +977,9 @@ kbd {
   display: none !important;
 }
 .btn-export {
-  height: 32px;
-  padding: 0 14px;
-  font-size: 12px;
+  height: 40px;
+  padding: 0 22px;
+  font-size: 13px;
 }
 .export {
   position: fixed;
@@ -1106,7 +1148,8 @@ kbd {
     flex: none;
     height: auto;
     /* phone + controls fit on one phone screen */
-    width: min(100%, 430px, calc((100svh - 330px) * var(--stage-ratio, 0.5625)));
+    flex: none;
+    width: min(100%, 430px, calc((100svh - 290px) * var(--stage-ratio, 0.5625)));
   }
   .editor {
     border-right: 0;
