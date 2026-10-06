@@ -2,6 +2,7 @@
 // Wires the modules together. Flow:
 //   audio (master clock) -> sync.stateAt(t) -> preview.render(state)
 //   lyrics + provider    -> timestamps timeline -> sync + preview
+//   ajuste manual        -> adjusted timeline   -> sync + preview
 (function (WM) {
   const $ = (id) => document.getElementById(id);
   const T = WM.Timestamps;
@@ -18,6 +19,15 @@
   let timeline = null;
   let scrubbing = false;
   let needsSnap = true;
+
+  // Ajuste manual state
+  const A = WM.Adjust;
+  const history = new A.History();
+  let baseline = null; // timeline as generated, before manual tweaks
+  let selected = -1; // explicitly chosen line (-1 = follow playback)
+  let scope = "line";
+  let listenUntil = null;
+  let dragging = false;
 
   // ---------- helpers ----------
   function toast(msg) {
@@ -46,20 +56,49 @@
   }
 
   // ---------- timeline ----------
+  /** New lyrics/sync: rebuild everything and make it the new baseline. */
   function applyTimeline(tl) {
     timeline = tl;
+    baseline = tl;
+    selected = -1;
+    history.clear();
     sync.setTimeline(tl);
     preview.setTimeline(tl);
     renderTimestampList();
     renderMarkers();
     $("sync-source").textContent = tl ? sourceLabel(tl.source) : "—";
+    $("adjust").classList.toggle("disabled", !tl);
     needsSnap = true;
     refreshReadiness();
+    refreshAdjustButtons();
+  }
+
+  /** Same lines, new times (manual adjust): no DOM rebuild, so dragging
+   * stays smooth. Pass record=false while a drag is in progress. */
+  function commitTimes(tl, record = true) {
+    if (record) history.push(timeline);
+    timeline = tl;
+    sync.setTimeline(tl);
+    preview.timeline = tl;
+    document.querySelectorAll(".ts-row").forEach((row) => {
+      const e = tl.entries[Number(row.dataset.index)];
+      const input = row.querySelector(".ts-time");
+      if (e && document.activeElement !== input) input.value = T.format(e.start, true);
+    });
+    renderMarkers();
+    $("sync-source").textContent = sourceLabel(tl.source);
+    needsSnap = true;
+    refreshAdjustButtons();
+  }
+
+  function refreshAdjustButtons() {
+    $("btn-undo").disabled = !history.canUndo;
+    $("btn-reset").disabled = !timeline || !baseline || timeline === baseline;
   }
 
   function sourceLabel(id) {
     return (
-      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Ajuste manual" }[
+      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Editado a mano" }[
         id
       ] || id
     );
@@ -103,16 +142,22 @@
       const input = row.querySelector(".ts-time");
       input.value = T.format(e.start, true);
       row.querySelector(".ts-text").textContent = e.text;
-      row.querySelector(".ts-text").onclick = () => audio.seek(e.start + 0.01);
+      row.querySelector(".ts-text").onclick = () => {
+        select(i, true);
+        audio.seek(timeline.entries[i].start + 0.01);
+      };
       input.onchange = () => {
         const v = T.parse(input.value);
-        if (Number.isNaN(v)) return (input.value = T.format(e.start, true));
-        applyTimeline(T.withStart(timeline, i, v, audio.duration));
+        if (Number.isNaN(v)) return (input.value = T.format(timeline.entries[i].start, true));
+        select(i);
+        commitTimes(A.setStart(timeline, i, v, audio.duration));
+        input.value = T.format(timeline.entries[i].start, true);
       };
       input.onkeydown = (ev) => ev.key === "Enter" && input.blur();
       row.querySelector(".ts-set").onclick = () => {
-        applyTimeline(T.withStart(timeline, i, audio.currentTime, audio.duration));
-        toast("Línea " + (i + 1) + " → " + T.format(audio.currentTime, true));
+        select(i);
+        commitTimes(A.setStart(timeline, i, audio.currentTime, audio.duration));
+        toast("Línea " + (i + 1) + " → " + T.format(timeline.entries[i].start, true));
       };
       list.appendChild(row);
     });
@@ -133,9 +178,14 @@
   let lastActive = -2;
   function frame() {
     const t = scrubbing ? Number($("scrub").value) : audio.currentTime;
+    if (listenUntil != null && (t >= listenUntil || !audio.playing)) {
+      if (audio.playing) audio.pause();
+      listenUntil = null;
+    }
     const state = sync.stateAt(t);
     preview.render(state, { playing: audio.playing, snap: needsSnap });
     needsSnap = false;
+    renderAdjust(t, state);
 
     const d = audio.duration || 0;
     if (!scrubbing) $("scrub").value = t;
@@ -164,6 +214,121 @@
     }
     requestAnimationFrame(frame);
   }
+
+  // ---------- ajuste manual ----------
+  function currentLine(state) {
+    if (!timeline || !timeline.entries.length) return -1;
+    if (selected >= 0) return Math.min(selected, timeline.entries.length - 1);
+    return state && state.activeIndex >= 0 ? state.activeIndex : Math.max(0, (state ? state.visibleCount : 1) - 1);
+  }
+
+  function select(i, center) {
+    selected = i;
+    if (center && timeline) strip.follow(timeline.entries[i].start, true);
+  }
+
+  let lastSelKey = "";
+  function renderAdjust(t, state) {
+    const i = currentLine(state);
+    if (audio.playing) strip.follow(t);
+    strip.draw({ timeline, time: t, selected: i, duration: audio.duration });
+
+    const e = timeline && timeline.entries[i];
+    const base = e && baseline && baseline.entries[i];
+    const key = e ? [i, e.start, base && base.start, selected].join() : "";
+    if (key === lastSelKey) return;
+    lastSelKey = key;
+    $("sel-num").textContent = e ? i + 1 : "–";
+    $("sel-text").textContent = e ? e.text : "";
+    $("sel-start").textContent = e ? T.format(e.start, true) : "--:--.--";
+    const d = e && base ? Math.round((e.start - base.start) * 1000) : 0;
+    $("sel-delta").textContent = d ? (d > 0 ? "+" : "−") + Math.abs(d) + " ms" : "original";
+    $("sel-delta").classList.toggle("moved", !!d);
+    document.querySelectorAll(".ts-row").forEach((r) => r.classList.toggle("selected", Number(r.dataset.index) === i && selected >= 0));
+  }
+
+  function nudge(delta) {
+    if (!timeline) return;
+    const i = currentLine(sync.stateAt(audio.currentTime));
+    if (i < 0) return;
+    if (selected < 0) select(i);
+    const next = scope === "all" ? A.shiftAll(timeline, delta, audio.duration) : A.shiftLine(timeline, i, delta, audio.duration);
+    commitTimes(next);
+    if (!audio.playing) strip.follow(timeline.entries[i].start);
+  }
+
+  function listen() {
+    if (!timeline) return;
+    const i = currentLine(sync.stateAt(audio.currentTime));
+    if (i < 0) return;
+    const e = timeline.entries[i];
+    audio.seek(Math.max(0, e.start - 1.5));
+    listenUntil = Math.min(e.end, e.start + 4) + 0.4;
+    audio.play();
+  }
+
+  function undo() {
+    const prev = history.undo();
+    if (!prev) return;
+    commitTimes(prev, false);
+    toast("Ajuste deshecho");
+  }
+
+  const strip = new WM.AdjustStrip($("strip"), {
+    onSeek: (t) => {
+      audio.seek(t);
+      const s = sync.stateAt(t);
+      selected = s.visibleCount - 1 >= 0 ? s.visibleCount - 1 : 0;
+    },
+    onDragStart: (i) => {
+      dragging = true;
+      select(i);
+      history.push(timeline);
+      refreshAdjustButtons();
+    },
+    onDrag: (i, t) => {
+      commitTimes(A.setStart(timeline, i, t, audio.duration), false);
+      if (!audio.playing) audio.seek(timeline.entries[i].start + 0.001);
+    },
+    onDragEnd: () => {
+      dragging = false;
+      refreshAdjustButtons();
+    },
+  });
+
+  async function analyzeAudio() {
+    const status = $("strip-status");
+    strip.setPeaks(null);
+    status.textContent = "Analizando audio…";
+    try {
+      const peaks = await WM.Waveform.computePeaks(await audio.getArrayBuffer());
+      strip.setPeaks(peaks);
+      status.textContent = "";
+    } catch (e) {
+      status.textContent = "Sin forma de onda";
+    }
+  }
+
+  document.querySelectorAll("[data-nudge]").forEach((b) => (b.onclick = () => nudge(Number(b.dataset.nudge))));
+  document.querySelectorAll("[data-zoom]").forEach((b) => {
+    b.onclick = () => {
+      document.querySelectorAll("[data-zoom]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      strip.setZoom(Number(b.dataset.zoom));
+    };
+  });
+  document.querySelectorAll("[data-scope]").forEach((b) => {
+    b.onclick = () => {
+      document.querySelectorAll("[data-scope]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      scope = b.dataset.scope;
+    };
+  });
+  $("btn-listen").onclick = listen;
+  $("btn-undo").onclick = undo;
+  $("btn-reset").onclick = () => {
+    if (!baseline) return;
+    commitTimes(baseline);
+    toast("Tiempos restablecidos");
+  };
 
   // ---------- events ----------
   audio.on("play", () => document.body.classList.add("is-playing"));
@@ -202,6 +367,7 @@
     try {
       await audio.loadFile(f);
       toast("Audio cargado");
+      analyzeAudio();
       if (timeline) applyTimeline(T.buildTimeline(parsed.lines, timeline.entries.map((e) => e.start), audio.duration, timeline.source));
     } catch (e) {
       toast(e.message);
@@ -248,6 +414,7 @@
     parsed = WM.Lyrics.parseLyrics(D.lyrics);
     try {
       await audio.load(D.audioSrc, D.audioName);
+      analyzeAudio();
     } catch (e) {
       toast(e.message);
     }
@@ -261,6 +428,15 @@
 
   document.addEventListener("keydown", (ev) => {
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z") {
+      ev.preventDefault();
+      return undo();
+    }
+    if (ev.code === "BracketLeft" || ev.code === "BracketRight") {
+      ev.preventDefault();
+      const step = ev.shiftKey ? 0.1 : 0.01;
+      return nudge(ev.code === "BracketLeft" ? -step : step);
+    }
     if (ev.code === "Space") {
       ev.preventDefault();
       audio.toggle();

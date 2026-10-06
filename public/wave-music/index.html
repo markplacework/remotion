@@ -75,8 +75,59 @@
 
         <div class="card" data-step="4">
           <div class="card-head">
-            <span class="num">4</span><h2>Timestamps</h2><span id="sync-source" class="hint">—</span>
+            <span class="num">4</span><h2>Ajuste manual</h2><span id="sync-source" class="hint">—</span>
           </div>
+
+          <div id="adjust" class="adjust disabled">
+            <div class="strip-wrap">
+              <canvas id="strip" class="strip" aria-label="Barra de tiempo: arrastrá un marcador para mover su línea"></canvas>
+              <div id="strip-status" class="strip-status"></div>
+            </div>
+            <div class="strip-bar">
+              <div class="segmented small" id="zoom" role="group" aria-label="Zoom">
+                <button data-zoom="4" aria-pressed="false">4 s</button>
+                <button data-zoom="8" aria-pressed="true">8 s</button>
+                <button data-zoom="16" aria-pressed="false">16 s</button>
+              </div>
+              <span class="hint">Arrastrá un marcador para moverlo</span>
+            </div>
+
+            <div class="sel">
+              <div class="sel-info">
+                <span id="sel-num" class="sel-num">1</span>
+                <span id="sel-text" class="sel-text"></span>
+              </div>
+              <div class="sel-time">
+                <span id="sel-start">00:00.00</span>
+                <span id="sel-delta" class="delta"></span>
+              </div>
+            </div>
+
+            <div class="segmented scope" id="scope" role="group" aria-label="Qué mover">
+              <button data-scope="line" aria-pressed="true">Esta línea</button>
+              <button data-scope="all" aria-pressed="false">Todas las líneas</button>
+            </div>
+
+            <div class="nudge" role="group" aria-label="Mover">
+              <button data-nudge="-0.5">−500<small>ms</small></button>
+              <button data-nudge="-0.1">−100<small>ms</small></button>
+              <button data-nudge="-0.01">−10<small>ms</small></button>
+              <button data-nudge="0.01">+10<small>ms</small></button>
+              <button data-nudge="0.1">+100<small>ms</small></button>
+              <button data-nudge="0.5">+500<small>ms</small></button>
+            </div>
+
+            <div class="adjust-actions">
+              <button id="btn-listen" class="btn btn-ghost">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                Escuchar
+              </button>
+              <button id="btn-undo" class="btn btn-ghost" disabled>Deshacer</button>
+              <button id="btn-reset" class="btn-link" disabled>Restablecer</button>
+            </div>
+            <p class="shortcuts">Atajos: <kbd>[</kbd> <kbd>]</kbd> 10 ms · <kbd>Shift</kbd> 100 ms · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer</p>
+          </div>
+
           <div id="ts-list" class="ts-list"></div>
         </div>
       </section>
@@ -137,6 +188,9 @@
     <script src="js/lyrics.js"></script>
     <script src="js/timestamps.js"></script>
     <script src="js/sync.js"></script>
+    <script src="js/waveform.js"></script>
+    <script src="js/adjust.js"></script>
+    <script src="js/adjust-strip.js"></script>
     <script src="js/bubbles.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/app.js"></script>

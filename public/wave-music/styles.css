@@ -353,6 +353,181 @@ select option:disabled {
   background: var(--surface-2);
 }
 
+/* ---------- ajuste manual ---------- */
+.adjust {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  transition: opacity 0.2s;
+}
+.adjust.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.strip-wrap {
+  position: relative;
+}
+.strip {
+  display: block;
+  width: 100%;
+  height: 112px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  touch-action: none;
+  cursor: pointer;
+}
+.strip-status {
+  position: absolute;
+  right: 8px;
+  bottom: 18px;
+  font-size: 11px;
+  color: var(--faint);
+  pointer-events: none;
+}
+.strip-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.strip-bar .hint {
+  margin: 0;
+  font-size: 11px;
+}
+.segmented.small button {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+.sel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.sel-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.sel-num {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-2);
+}
+.sel-text {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sel-time {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+#sel-start {
+  font-size: 15px;
+  font-weight: 600;
+}
+.delta {
+  font-size: 11px;
+  color: var(--muted);
+}
+.delta.moved {
+  color: var(--accent-2);
+}
+.scope {
+  align-self: flex-start;
+}
+.nudge {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.nudge button {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.nudge button small {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.nudge button:nth-child(3) {
+  margin-right: 6px;
+}
+.nudge button:hover {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+.nudge button:active {
+  transform: scale(0.96);
+}
+.adjust-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.adjust-actions .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.btn-link {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn-link:hover:not(:disabled) {
+  color: var(--text);
+}
+.shortcuts {
+  margin: 0;
+  font-size: 11px;
+  color: var(--faint);
+}
+kbd {
+  font: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line-2);
+  color: var(--muted);
+}
+.ts-row.selected {
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45);
+}
+
 /* ---------- 9:16 stage ---------- */
 .stage-host {
   position: relative;
@@ -691,7 +866,8 @@ select option:disabled {
     padding: 0 16px;
   }
   .badge,
-  .brand-mark {
+  .brand-mark,
+  .shortcuts {
     display: none;
   }
   .layout {

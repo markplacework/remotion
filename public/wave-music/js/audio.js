@@ -31,6 +31,8 @@
         this.objectUrl = null;
       }
       this.name = name || "Audio";
+      this.sourceUrl = src;
+      this.sourceFile = null;
       return new Promise((resolve, reject) => {
         const ok = () => {
           cleanup();
@@ -56,7 +58,23 @@
       const url = URL.createObjectURL(file);
       const p = this.load(url, file.name.replace(/\.[^.]+$/, ""));
       this.objectUrl = url;
+      this.sourceFile = file;
       return p;
+    }
+
+    /** Raw bytes of the current audio, for analysis (waveform, and
+     * later AI alignment). Works for files, data: URIs and URLs. */
+    async getArrayBuffer() {
+      if (this.sourceFile) return this.sourceFile.arrayBuffer();
+      const u = this.sourceUrl || "";
+      if (u.startsWith("data:")) {
+        const bin = atob(u.slice(u.indexOf(",") + 1));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes.buffer;
+      }
+      const res = await fetch(u);
+      return res.arrayBuffer();
     }
 
     get loaded() {
