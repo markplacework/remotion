@@ -78,6 +78,25 @@
       g.fillRect(0, 0, W, H);
 
       if (!L) return;
+      // the line's key word scrolls huge and outlined behind everything
+      const big = L.words.length ? upper(L.words[longestIndex(L.words)].text) : "";
+      if (big) {
+        g.save();
+        g.font = `400 ${u * 380}px Anton, Impact, sans-serif`;
+        g.textBaseline = "middle";
+        g.textAlign = "left";
+        g.lineWidth = Math.max(1, u * 2.5);
+        g.strokeStyle = hexA(accent, 0.18);
+        const tw = g.measureText(big + "  ").width;
+        if (tw > u * 20) {
+          for (let r = 0; r < 3; r++) {
+            const dir = r % 2 ? 1 : -1;
+            const off = (((t - L.start) * u * 140 + r * tw * 0.37) % tw + tw) % tw;
+            for (let x = dir > 0 ? off - tw : -off; x < W; x += tw) g.strokeText(big, x, H * (0.18 + 0.32 * r));
+          }
+        }
+        g.restore();
+      }
       // camera shake on hits
       const shake = u * 9 * pulse;
       g.save();
@@ -143,8 +162,27 @@
         g.font = `400 ${size}px Anton, Impact, sans-serif`;
         g.shadowColor = "rgba(0,0,0,0.45)";
         g.shadowBlur = u * 24;
-        g.fillStyle = r.isHero ? o.accent : "#ffffff";
-        g.fillText(r.label, 0, 0);
+        if (r.isHero) {
+          // echo outlines trailing behind the key row
+          g.shadowBlur = 0;
+          g.lineWidth = Math.max(1, u * 2.5);
+          for (let e = 2; e >= 1; e--) {
+            g.strokeStyle = hexA(o.accent, 0.4 / e);
+            g.strokeText(r.label, e * u * 9, e * u * 9);
+          }
+          g.shadowBlur = u * 24;
+          g.fillStyle = o.accent;
+          g.fillText(r.label, 0, 0);
+        } else if (i % 2 === 1 && spec.length > 2) {
+          // alternate rows go hollow: contrast without another colour
+          g.shadowBlur = 0;
+          g.lineWidth = Math.max(1, u * 3.5);
+          g.strokeStyle = "#ffffff";
+          g.strokeText(r.label, 0, 0);
+        } else {
+          g.fillStyle = "#ffffff";
+          g.fillText(r.label, 0, 0);
+        }
         g.restore();
       });
     },
@@ -168,64 +206,127 @@
     c.putImageData(img, 0, 0);
     return grain;
   }
+  const CINE_SERIF = "'Cormorant Garamond', Georgia, serif";
+  /** Text drawn only as its blurred shadow: a lens out of focus. */
+  function blurText(g, txt, x, y, blur, color) {
+    // shadow offset and blur live in device pixels, the text in user space
+    const k = g.getTransform().a || 1;
+    const off = 20000;
+    g.save();
+    g.shadowColor = color;
+    g.shadowBlur = blur * k;
+    g.shadowOffsetX = off;
+    g.fillStyle = "#000";
+    g.fillText(txt, x - off / k, y);
+    g.restore();
+  }
   const cinematic = {
     id: "cinematic",
     label: "Cinematic",
-    tag: "Videoclip",
-    fonts: ["500 100px 'Cormorant Garamond'", "italic 500 100px 'Cormorant Garamond'", "600 100px 'Cormorant Garamond'"],
+    tag: "Película",
+    fonts: ["500 100px 'Cormorant Garamond'", "italic 500 100px 'Cormorant Garamond'", "600 100px 'Cormorant Garamond'", "500 100px Inter"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
-      // night scene: deep blue to warm street light at the bottom
-      const sky = g.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, "#04060c");
-      sky.addColorStop(0.55, "#0b1822");
-      sky.addColorStop(1, "#24130c");
-      g.fillStyle = sky;
-      g.fillRect(0, 0, W, H);
-
-      // out-of-focus city lights, slow parallax drift + gentle zoom
-      const zoom = 1 + 0.06 * Math.sin(t * 0.05);
+      const pulse = f.pulse();
       g.save();
-      g.translate(W / 2, H / 2);
-      g.scale(zoom, zoom);
-      g.translate(-W / 2, -H / 2);
+      // gate weave: the whole picture breathes a hair, like film in a projector
+      g.translate(Math.sin(t * 1.7) * u * 1.2, Math.cos(t * 1.3) * u * 1.6);
+      // teal & orange grade: cool night above, warm haze below
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "#03090d");
+      sky.addColorStop(0.45, "#0a1d24");
+      sky.addColorStop(0.78, "#2a1a10");
+      sky.addColorStop(1, "#120804");
+      g.fillStyle = sky;
+      g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+      // low sun haze, drifting slowly
+      const sx = W * (0.62 + 0.08 * Math.sin(t * 0.04));
+      const sy = H * 0.7;
+      const sun = g.createRadialGradient(sx, sy, 0, sx, sy, H * 0.55);
+      sun.addColorStop(0, "rgba(255,170,90,0.42)");
+      sun.addColorStop(0.35, "rgba(255,120,60,0.14)");
+      sun.addColorStop(1, "rgba(255,120,60,0)");
+      g.fillStyle = sun;
+      g.fillRect(0, 0, W, H);
       g.globalCompositeOperation = "lighter";
-      for (let i = 0; i < 22; i++) {
-        const warm = rand(i * 3.1) > 0.45;
-        const depth = 0.4 + rand(i * 5.7) * 0.6;
-        const r = (u * 60 + rand(i * 2.3) * u * 150) * depth;
-        const x = ((rand(i * 7.7) * 1.4 - 0.2) * W + Math.sin(t * 0.07 * depth + i) * u * 70) % (W * 1.2);
-        const y = H * (0.2 + rand(i * 9.1) * 0.75) + Math.cos(t * 0.05 + i) * u * 30;
-        const a = (0.1 + 0.16 * depth) * (0.75 + 0.25 * Math.sin(t * 0.6 + i * 1.3));
-        const col = warm ? [255, 168, 92] : [96, 196, 255];
+      // volumetric light shafts from the top corner
+      for (let i = 0; i < 4; i++) {
+        const a = -0.45 + i * 0.17 + Math.sin(t * 0.08 + i) * 0.03;
+        const len = H * 1.3;
+        const w = W * (0.09 + rand(i * 4.1) * 0.1);
+        g.save();
+        g.translate(W * 0.92, -H * 0.04);
+        g.rotate(a + 0.5);
+        const gr = g.createLinearGradient(0, 0, 0, len);
+        const al = (0.05 + 0.05 * rand(i * 2.7)) * (0.8 + 0.2 * Math.sin(t * 0.5 + i * 2));
+        gr.addColorStop(0, `rgba(255,214,170,${al})`);
+        gr.addColorStop(1, "rgba(255,214,170,0)");
+        g.fillStyle = gr;
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.lineTo(-w, len);
+        g.lineTo(w, len);
+        g.closePath();
+        g.fill();
+        g.restore();
+      }
+      // a few big soft bokeh far behind
+      for (let i = 0; i < 9; i++) {
+        const warm = rand(i * 3.1) > 0.4;
+        const r = u * (70 + rand(i * 2.3) * 120);
+        const x = rand(i * 7.7) * W + Math.sin(t * 0.05 + i) * u * 50;
+        const y = H * (0.15 + rand(i * 9.1) * 0.8) + Math.cos(t * 0.04 + i) * u * 30;
+        const col = warm ? "255,170,100" : "90,200,230";
         const grd = g.createRadialGradient(x, y, 0, x, y, r);
-        grd.addColorStop(0, `rgba(${col},${a})`);
-        grd.addColorStop(0.7, `rgba(${col},${a * 0.55})`);
+        grd.addColorStop(0, `rgba(${col},0.09)`);
+        grd.addColorStop(0.6, `rgba(${col},0.06)`);
         grd.addColorStop(1, `rgba(${col},0)`);
         g.fillStyle = grd;
         g.beginPath();
         g.arc(x, y, r, 0, Math.PI * 2);
         g.fill();
       }
-      // light leak from the corner
-      const leak = g.createRadialGradient(W * 0.95, H * 0.08, 0, W * 0.95, H * 0.08, H * 0.5);
-      leak.addColorStop(0, `rgba(255,120,60,${0.16 + 0.06 * Math.sin(t * 0.3)})`);
-      leak.addColorStop(1, "rgba(255,120,60,0)");
-      g.fillStyle = leak;
-      g.fillRect(0, 0, W, H);
+      // dust floating in the light
+      for (let i = 0; i < 70; i++) {
+        const depth = 0.3 + rand(i * 5.3) * 0.7;
+        const x = (rand(i * 1.9) * W + t * u * 14 * depth + Math.sin(t * 0.3 + i) * u * 20) % W;
+        const y = (rand(i * 8.3) * H - t * u * 9 * depth + H * 10) % H;
+        const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * (0.5 + depth) + i));
+        const r = u * (1.2 + 2.6 * depth);
+        g.fillStyle = `rgba(255,226,190,${0.5 * tw * depth})`;
+        g.beginPath();
+        g.arc(x, y, r, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.globalCompositeOperation = "source-over";
+
+      this.drawTitle(g, f, u);
+      const ly = this.drawLyric(g, f, u);
+      // anamorphic flare through the lyric, flaring on the beat
+      if (ly != null) {
+        g.globalCompositeOperation = "lighter";
+        const fl = 0.25 + 0.55 * pulse;
+        const streak = g.createLinearGradient(0, 0, W, 0);
+        streak.addColorStop(0, "rgba(80,190,255,0)");
+        streak.addColorStop(0.5, `rgba(120,210,255,${0.22 * fl})`);
+        streak.addColorStop(1, "rgba(80,190,255,0)");
+        g.fillStyle = streak;
+        g.fillRect(0, ly - u * 2, W, u * 4);
+        g.fillStyle = `rgba(80,190,255,${0.05 * fl})`;
+        g.fillRect(0, ly - u * 14, W, u * 28);
+        g.globalCompositeOperation = "source-over";
+      }
       g.restore();
 
-      this.drawLyric(g, f, u);
-
-      // vignette, grain and letterbox
-      const vig = g.createRadialGradient(W / 2, H * 0.5, H * 0.25, W / 2, H * 0.5, H * 0.75);
+      // grade, vignette, grain and the scope bars
+      const vig = g.createRadialGradient(W / 2, H * 0.5, H * 0.22, W / 2, H * 0.5, H * 0.78);
       vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(1, "rgba(0,0,0,0.7)");
+      vig.addColorStop(1, "rgba(0,0,0,0.78)");
       g.fillStyle = vig;
       g.fillRect(0, 0, W, H);
       g.save();
-      g.globalAlpha = 0.07;
+      g.globalAlpha = 0.085;
       const tile = grainTile();
       const ox = Math.floor(rand(Math.floor(t * 24)) * 192);
       const oy = Math.floor(rand(Math.floor(t * 24) + 3) * 192);
@@ -233,56 +334,109 @@
       g.fillStyle = g.createPattern(tile, "repeat");
       g.fillRect(0, 0, W + 192, H + 192);
       g.restore();
-      const bar = H * 0.055;
+      const bar = H * 0.075;
       g.fillStyle = "#000";
       g.fillRect(0, 0, W, bar);
       g.fillRect(0, H - bar, W, bar);
     },
+    /** Opening title card, before the first line is sung. */
+    drawTitle(g, f, u) {
+      const { t, safe, lines } = f;
+      const first = lines[0];
+      const end = first ? first.start : 4;
+      const a = clamp(t / 1.2) * clamp((end - 0.25 - t) / 0.7);
+      if (a <= 0) return;
+      const meta = f.meta || {};
+      const title = meta.title || "Wave Music";
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h * 0.5;
+      const push = 1 + 0.04 * clamp(t / Math.max(1, end));
+      g.save();
+      g.translate(cx, cy);
+      g.scale(push, push);
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.globalAlpha = a;
+      if (meta.artist) {
+        g.font = `500 ${u * 22}px Inter, sans-serif`;
+        if ("letterSpacing" in g) g.letterSpacing = `${u * 9}px`;
+        g.fillStyle = "rgba(246,239,228,0.75)";
+        g.fillText(upper(meta.artist), u * 4.5, -u * 92);
+      }
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      let size = u * 96;
+      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      const tw = g.measureText(title).width;
+      if (tw > safe.w * 0.9) size *= (safe.w * 0.9) / tw;
+      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      g.shadowColor = "rgba(255,226,190,0.45)";
+      g.shadowBlur = u * 26;
+      g.fillStyle = "#f6efe4";
+      g.fillText(title, 0, 0);
+      g.shadowBlur = 0;
+      g.fillStyle = "rgba(246,239,228,0.6)";
+      const lw = u * 120 * ease.out(clamp(t / 1.6));
+      g.fillRect(-lw / 2, u * 76, lw, Math.max(1, u * 1.5));
+      g.restore();
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+    },
+    /** Trailer-style lyric: tracked capitals, the key word in italic. Returns its centre y. */
     drawLyric(g, f, u) {
       const { t, safe } = f;
-      const show = (line, alphaMul, lift = 0) => {
-        if (!line || alphaMul <= 0) return;
-        // the loud parts of the song get the big, spaced capitals
-        let e = 0;
-        for (let k = 0; k < 6; k++) e += f.energy(line.start + ((line.end - line.start) * k) / 6);
-        // louder than the song's own average (and only with a real track)
-        const strong = f.energyAvg !== 0.5 && e / 6 > f.energyAvg * 1.18;
-        const size = strong ? u * 76 : u * 88;
-        const font = strong ? `600 ${size}px 'Cormorant Garamond', Georgia, serif` : `italic 500 ${size}px 'Cormorant Garamond', Georgia, serif`;
-        const words = line.words.map((w) => ({ ...w, label: strong ? upper(w.text) : w.text }));
-        if ("letterSpacing" in g) g.letterSpacing = strong ? `${size * 0.16}px` : "0px";
-        const rows = wrapWords(g, words, () => font, safe.w * 0.86, size * (strong ? 0.5 : 0.28));
-        const lh = size * 1.25;
-        const cy = safe.y + safe.h * 0.5;
-        let y = cy - ((rows.length - 1) * lh) / 2;
+      const size = u * 70;
+      const track = size * 0.2;
+      const cy = safe.y + safe.h * 0.5;
+      const has = "letterSpacing" in g;
+      const fontOf = (w) => {
+        if (has) g.letterSpacing = w.hero ? "0px" : `${track}px`;
+        return w.hero ? `italic 500 ${size * 1.42}px ${CINE_SERIF}` : `600 ${size}px ${CINE_SERIF}`;
+      };
+      const show = (line, alphaMul, lift, out) => {
+        if (!line || !line.words.length || alphaMul <= 0) return;
+        const hero = longestIndex(line.words);
+        const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.index === hero ? w.text.toLocaleLowerCase("es") : upper(w.text) }));
+        const rows = wrapCached(g, `c2|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, fontOf, safe.w * 0.88, size * 0.55);
+        const lh = size * 1.7;
+        // a slow push-in across the whole line, like a dolly move
+        const dur = Math.max(1, line.end - line.start);
+        const push = 1 + 0.045 * clamp((t - line.start) / dur);
+        g.save();
+        g.translate(safe.x + safe.w / 2, cy + lift);
+        g.scale(push, push);
         g.textBaseline = "middle";
         g.textAlign = "left";
-        g.font = font;
-        rows.forEach((row) => {
-          const x0 = safe.x + (safe.w - row.width) / 2;
+        rows.forEach((row, ri) => {
+          const y = (ri - (rows.length - 1) / 2) * lh;
           row.items.forEach((it) => {
-            const a = clamp((t - it.w.t0) / 0.7);
+            const w = it.w;
+            // focus pull: each word starts soft and racks into focus
+            const a = out ? 1 : clamp((t - w.t0 + 0.12) / 0.75);
             if (a <= 0) return;
-            g.save();
-            g.globalAlpha = ease.out(a) * alphaMul;
-            g.shadowColor = "rgba(255,236,210,0.55)";
-            g.shadowBlur = u * 22;
-            g.fillStyle = "#f6efe4";
-            g.fillText(it.w.label, x0 + it.x, y + lift + u * 16 * (1 - ease.out(a)));
-            g.restore();
+            g.font = fontOf(w);
+            const x = -row.width / 2 + it.x;
+            const sharp = ease.inOut(a);
+            const blur = out ? u * 30 * (1 - alphaMul) : u * 34 * (1 - sharp);
+            if (blur > u) blurText(g, w.label, x, y, blur, `rgba(255,232,205,${(out ? alphaMul : Math.min(1, a * 2)) * 0.9})`);
+            g.globalAlpha = (out ? alphaMul * alphaMul : sharp * sharp) * 1;
+            g.shadowColor = "rgba(255,220,180,0.35)";
+            g.shadowBlur = u * 18;
+            g.fillStyle = w.hero ? "#ffd9a8" : "#f6efe4";
+            g.fillText(w.label, x, y);
+            g.shadowBlur = 0;
+            g.globalAlpha = 1;
           });
-          y += lh;
         });
-        if ("letterSpacing" in g) g.letterSpacing = "0px";
+        g.restore();
+        if (has) g.letterSpacing = "0px";
       };
       const L = f.lines[f.current];
       const prev = f.lines[f.current - 1];
-      // crossfade: the old line drifts up and dissolves, then the new one rises
       if (L && prev) {
-        const e = clamp((t - L.start) / 0.4);
-        show(prev, 1 - e, -u * 24 * ease.out(e));
+        const e = clamp((t - L.start) / 0.5);
+        if (e < 1) show(prev, 1 - e, -u * 18 * ease.out(e), true);
       }
-      if (L) show(L, prev ? clamp((t - L.start - 0.25) / 0.35) : 1);
+      if (L) show(L, 1, 0, false);
+      return L ? cy : null;
     },
   };
 
@@ -368,6 +522,22 @@
       }
       g.restore();
 
+      // wet floor: the sun mirrored on the grid (drawn before the lyric)
+      const m = g.getTransform();
+      const rh = Math.min(sunR * 1.05, H - hz);
+      if (rh > 0 && m.b === 0 && m.c === 0) {
+        g.save();
+        g.translate(0, hz * 2);
+        g.scale(1, -1);
+        g.globalAlpha = 0.2;
+        g.drawImage(g.canvas, m.e, m.f + (hz - rh) * m.d, W * m.a, rh * m.d, 0, hz - rh, W, rh);
+        g.restore();
+        const fade = g.createLinearGradient(0, hz, 0, hz + rh);
+        fade.addColorStop(0, "rgba(6,0,15,0)");
+        fade.addColorStop(1, "rgba(6,0,15,0.55)");
+        g.fillStyle = fade;
+        g.fillRect(0, hz, W, rh);
+      }
       const L = f.lines[f.current];
       if (L) {
         const prev = f.lines[f.current - 1];
@@ -460,86 +630,145 @@
   // ======================================================================
   // 4. MINIMAL — typography, space and rhythm
   // ======================================================================
-  const MIN = { bg: "#ece8e1", ink: "#16140f", mute: "#8b8173" };
-  const SPOTS = [
-    { align: "left", x: 0, y: 0.2 },
-    { align: "center", x: 0.5, y: 0.47 },
-    { align: "right", x: 1, y: 0.72 },
-    { align: "left", x: 0, y: 0.56 },
-    { align: "center", x: 0.5, y: 0.3 },
-  ];
+  const MIN = { bg: "#f2efe8", ink: "#141311", mute: "#8e877b", accent: "#ff4a1c", rule: "rgba(20,19,17,0.14)" };
+  const MIN_SANS = (w, size) => `${w} ${size}px Inter, 'Helvetica Neue', Arial, sans-serif`;
+  const MIN_SERIF = (size) => `italic 400 ${size}px 'Instrument Serif', Georgia, serif`;
   const minimal = {
     id: "minimal",
     label: "Minimal",
     tag: "Editorial",
-    fonts: ["400 100px 'Instrument Serif'", "italic 400 100px 'Instrument Serif'"],
+    fonts: ["400 100px 'Instrument Serif'", "italic 400 100px 'Instrument Serif'", "500 100px Inter", "700 100px Inter", "800 100px Inter"],
     draw(g, f) {
-      const { W, H, t, safe } = f;
+      const { W, H, t, safe, lines } = f;
       const u = safe.w / 825;
+      const has = "letterSpacing" in g;
       g.fillStyle = MIN.bg;
       g.fillRect(0, 0, W, H);
-      // editorial furniture: title on top, running time at the bottom
-      g.fillStyle = MIN.mute;
-      g.font = `italic 400 ${u * 30}px 'Instrument Serif', Georgia, serif`;
-      g.textBaseline = "alphabetic";
-      g.textAlign = "left";
-      const meta = f.meta || {};
-      if (meta.title) g.fillText(meta.title.toLocaleLowerCase("es"), safe.x, safe.y + u * 10);
-      g.textAlign = "right";
-      g.fillText(fmt(t), safe.x + safe.w, safe.y + u * 10);
-      g.fillRect(safe.x, safe.y + u * 26, safe.w, Math.max(1, u * 1.2));
+      // paper: a whisper of grain
+      g.save();
+      g.globalAlpha = 0.045;
+      g.fillStyle = g.createPattern(grainTile(), "repeat");
+      g.fillRect(0, 0, W, H);
+      g.restore();
+      const x0 = safe.x + u * 6;
+      const x1 = safe.x + safe.w - u * 6;
+      const cur = Math.max(0, f.current);
+      const L = lines[f.current];
 
-      const L = f.lines[f.current];
-      if (!L) return;
-      const prev = f.lines[f.current - 1];
-      if (prev) {
-        const e = clamp((t - L.start) / 0.7);
-        if (e < 1) this.drawLine(g, f, prev, u, 1 - e, -u * 20 * ease.out(e));
-      }
-      this.drawLine(g, f, L, u, 1, 0);
-    },
-    drawLine(g, f, line, u, alphaMul, lift) {
-      const { t } = f;
-      // a little extra margin: editorial layouts breathe
-      const safe = { x: f.safe.x + u * 30, y: f.safe.y, w: f.safe.w - u * 60, h: f.safe.h };
-      const spot = SPOTS[line.index % SPOTS.length];
-      const size = u * 122;
-      const hero = longestIndex(line.words);
-      const fontOf = (w) => `${w.index === hero ? "italic " : ""}400 ${size}px 'Instrument Serif', Georgia, serif`;
-      const words = line.words.map((w) => ({ ...w, label: w.text.toLocaleLowerCase("es") }));
-      const rows = wrapWords(g, words, fontOf, safe.w * 0.86, size * 0.26);
-      const lh = size * 1.08;
-      const blockH = rows.length * lh;
-      const top = safe.y + u * 80 + (safe.h - u * 160 - blockH) * spot.y;
-      // index number + growing hairline: the line's progress
-      g.globalAlpha = alphaMul;
-      g.fillStyle = MIN.mute;
-      g.font = `italic 400 ${u * 34}px 'Instrument Serif', Georgia, serif`;
+      // Swiss grid: hairline columns
+      g.fillStyle = MIN.rule;
+      [x0, safe.x + safe.w / 2, x1].forEach((x) => g.fillRect(x, safe.y + u * 70, Math.max(1, u), safe.h - u * 140));
+
+      // header: title / artist, then the running index with a progress rule
+      const meta = f.meta || {};
       g.textBaseline = "alphabetic";
-      const anchorX = spot.align === "left" ? safe.x : spot.align === "right" ? safe.x + safe.w : safe.x + safe.w / 2;
-      g.textAlign = spot.align;
-      g.fillText(String(line.index + 1).padStart(2, "0"), anchorX, top - u * 26 + lift);
-      const prog = clamp((t - line.start) / Math.max(0.5, line.end - line.start));
-      const ruleW = u * 150 * ease.out(prog);
-      const rx = spot.align === "left" ? safe.x : spot.align === "right" ? safe.x + safe.w - ruleW : safe.x + safe.w / 2 - ruleW / 2;
-      g.fillRect(rx, top + blockH + u * 18 + lift, ruleW, Math.max(1, u * 1.4));
       g.textAlign = "left";
-      g.textBaseline = "middle";
+      g.fillStyle = MIN.ink;
+      g.font = MIN_SANS(700, u * 24);
+      g.fillText(meta.title || "Wave Music", x0, safe.y + u * 14, safe.w * 0.6);
+      g.textAlign = "right";
+      g.fillStyle = MIN.mute;
+      g.font = MIN_SANS(500, u * 24);
+      g.fillText(meta.artist || "Lyric edition", x1, safe.y + u * 14, safe.w * 0.38);
+      const total = Math.max(1, lines.length);
+      const idx = String(cur + 1).padStart(2, "0") + " / " + String(total).padStart(2, "0");
+      g.textAlign = "left";
+      g.fillStyle = MIN.ink;
+      g.font = MIN_SANS(500, u * 22);
+      if (has) g.letterSpacing = `${u * 2}px`;
+      g.fillText(idx, x0, safe.y + u * 56);
+      g.textAlign = "right";
+      g.fillText(fmt(t), x1, safe.y + u * 56);
+      if (has) g.letterSpacing = "0px";
+      const ry = safe.y + u * 74;
+      g.fillStyle = MIN.ink;
+      g.fillRect(x0, ry, x1 - x0, Math.max(1, u * 1.4));
+      const prog = (cur + (L ? clamp((t - L.start) / Math.max(0.5, L.end - L.start)) : 0)) / total;
+      g.fillStyle = MIN.accent;
+      g.fillRect(x0, ry - u * 2, (x1 - x0) * prog, u * 5);
+
+      // a huge outlined numeral sitting in the lower grid
+      g.save();
+      g.font = MIN_SANS(800, u * 420);
+      g.textAlign = "left";
+      g.textBaseline = "alphabetic";
+      if (has) g.letterSpacing = `${-u * 24}px`;
+      g.strokeStyle = "rgba(20,19,17,0.13)";
+      g.lineWidth = Math.max(1, u * 1.6);
+      const n = String(cur + 1).padStart(2, "0");
+      const k = L ? ease.out(clamp((t - L.start) / 0.8)) : 1;
+      g.globalAlpha = k;
+      g.strokeText(n, x0 - u * 16, safe.y + safe.h - u * 40 + u * 40 * (1 - k));
+      if (has) g.letterSpacing = "0px";
+      g.restore();
+
+      // footer
+      g.fillStyle = MIN.mute;
+      g.font = MIN_SERIF(u * 30);
+      g.textAlign = "right";
+      g.textBaseline = "alphabetic";
+      g.fillText("wave music", x1, safe.y + safe.h - u * 4);
+      g.fillStyle = MIN.accent;
+      g.beginPath();
+      g.arc(x1 - g.measureText("wave music").width - u * 18, safe.y + safe.h - u * 14, u * 6, 0, Math.PI * 2);
+      g.fill();
+
+      const prev = lines[f.current - 1];
+      if (L && prev) {
+        const e = clamp((t - L.start) / 0.32);
+        if (e < 1) this.drawLine(g, f, prev, u, x0, x1, e);
+      }
+      if (L) this.drawLine(g, f, L, u, x0, x1, null);
+    },
+    /** The lyric: tight bold sans, the key word in an accent italic serif. */
+    drawLine(g, f, line, u, x0, x1, exit) {
+      const { t, safe } = f;
+      if (!line.words.length) return;
+      const has = "letterSpacing" in g;
+      const size = u * 100;
+      const hero = longestIndex(line.words);
+      const fontOf = (w) => {
+        if (has) g.letterSpacing = w.hero ? "0px" : `${-size * 0.045}px`;
+        return w.hero ? MIN_SERIF(size * 1.18) : MIN_SANS(700, size);
+      };
+      const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
+      const maxW = x1 - x0;
+      const rows = wrapCached(g, `m2|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(maxW)}`, words, fontOf, maxW, size * 0.24);
+      const lh = size * 1.02;
+      const top = safe.y + safe.h * 0.42 - (rows.length * lh) / 2;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "left";
       rows.forEach((row, ri) => {
-        const x0 = spot.align === "left" ? safe.x : spot.align === "right" ? safe.x + safe.w - row.width : safe.x + (safe.w - row.width) / 2;
-        const y = top + ri * lh + lh / 2 + lift;
+        const base = top + ri * lh + size * 0.86;
+        // each row is a mask: words slide up into it, and out of it
+        g.save();
+        g.beginPath();
+        g.rect(x0 - u * 20, top + ri * lh - size * 0.12, maxW + u * 40, lh + size * 0.38);
+        g.clip();
         row.items.forEach((it) => {
-          const a = clamp((t - it.w.t0) / 0.75);
-          if (a <= 0) return;
-          g.globalAlpha = ease.out(a) * alphaMul;
-          g.fillStyle = MIN.ink;
-          g.font = fontOf(it.w);
-          g.fillText(it.w.label, x0 + it.x, y + u * 10 * (1 - ease.out(a)));
+          const w = it.w;
+          let dy;
+          if (exit != null) dy = -lh * ease.inOut(exit);
+          else {
+            const a = clamp((t - w.t0 + 0.06) / 0.5);
+            if (a <= 0) return;
+            dy = lh * 1.4 * (1 - ease.out(a));
+          }
+          g.font = fontOf(w);
+          g.fillStyle = w.hero ? MIN.accent : MIN.ink;
+          g.fillText(w.label, x0 + it.x, base + dy);
         });
+        g.restore();
       });
-      g.globalAlpha = 1;
+      if (has) g.letterSpacing = "0px";
+      if (exit != null) return;
+      // the line's own timing, as a short rule under the text
+      const prog = clamp((t - line.start) / Math.max(0.5, line.end - line.start));
+      g.fillStyle = MIN.ink;
+      g.fillRect(x0, top + rows.length * lh + u * 34, u * 120 * ease.out(prog), Math.max(1, u * 3));
     },
   };
+
   // ---------- helpers shared by the styles below ----------
   /** wrapWords, cached: line layouts only change with text, font or width. */
   const wrapCache = new Map();
@@ -863,8 +1092,11 @@
       if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
     },
     drawChunk(g, f, L, u, accent, pulse) {
-      const { t, safe } = f;
+      const { safe } = f;
+      let t = f.t;
       const ws = L.words;
+      // a hair early: on screen, text that lands with the voice reads as late
+      t += 0.06;
       const j = Math.max(0, activeWord(L, t));
       const last = ws[ws.length - 1];
       const out = clamp(1 - (t - last.t1 - 0.9) / 0.2);
@@ -921,9 +1153,10 @@
       }
       chunk.forEach((w) => {
         const R = rects[w.index];
-        if (!R || w.t0 > t) return;
-        const p = clamp((t - w.t0) / 0.22);
-        const sc = lerp(1.4, 1, ease.back(p));
+        if (!R) return;
+        // the whole chunk is on screen; each word kicks as it is sung
+        const p = w.t0 <= t ? clamp((t - w.t0) / 0.22) : 1;
+        const sc = lerp(1.16, 1, ease.back(p));
         const isAct = w === act;
         g.save();
         g.translate(R.x + R.w / 2, R.y + size * 0.04);
@@ -966,7 +1199,7 @@
       g.fillRect(0, 0, W, H);
       const x0 = safe.x;
       const x1 = safe.x + safe.w;
-      const navY = safe.y + u * 24;
+      const navY = safe.y + u * (f.mockup ? 78 : 24);
       const barY = safe.y + safe.h - u * 30;
       const top = navY + u * 70;
       const bottom = barY - u * 70;
