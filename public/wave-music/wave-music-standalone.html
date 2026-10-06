@@ -1300,7 +1300,7 @@ kbd {
           <div class="framing">
             <div class="segmented" role="group" aria-label="Encuadre">
               <button data-framing="mockup" aria-pressed="true" title="Solo para la vista previa: el video descargado no incluye el teléfono">Mockup</button>
-              <button data-framing="video" aria-pressed="false" title="Así queda el video descargado (9:16)">Video final</button>
+              <button data-framing="video" aria-pressed="false" title="El video sin el teléfono. La descarga es 9:16 (1080 × 1920) completa">Video final</button>
             </div>
           </div>
         <div id="transport" class="transport disabled">
@@ -2180,8 +2180,13 @@ kbd {
       this.layout = L;
       if (this.stage) this.stage.remove();
       this.host.dataset.layout = L.id;
-      this.host.style.setProperty("--stage-aspect", `${L.stageW} / ${L.stageH}`);
-      this.host.style.setProperty("--stage-ratio", L.stageW / L.stageH);
+      // The preview box keeps the phone's proportions in both framings, so
+      // switching never changes its size. "Video final" fills it like
+      // object-fit: cover — the exported file is still the full 1080x1920;
+      // only the wallpaper at the sides falls outside the box (the chat
+      // stays inside the TikTok-safe area, so every bubble is visible).
+      this.host.style.setProperty("--stage-aspect", `${CROP.w} / ${CROP.h}`);
+      this.host.style.setProperty("--stage-ratio", CROP.w / CROP.h);
 
       const stage = (this.stage = document.createElement("div"));
       stage.className = "wm-stage";
@@ -2243,7 +2248,9 @@ kbd {
     fit() {
       if (!this.stage) return;
       const r = this.host.getBoundingClientRect();
-      const k = Math.min(r.width / this.layout.stageW, r.height / this.layout.stageH);
+      const fx = r.width / this.layout.stageW;
+      const fy = r.height / this.layout.stageH;
+      const k = this.layout.frame ? Math.min(fx, fy) : Math.max(fx, fy);
       this.stage.style.transform = `translate(-50%, -50%) scale(${k})`;
     }
 
