@@ -22,8 +22,11 @@
   // Mockup screen hole, measured from the PNG's own transparent pixels
   // (853x1843): x 63-788, from under the header (y 288) to the bottom
   // of the screen behind the input bar (y ~1620).
-  const SCREEN = { x: 62, y: 286, w: 728, h: 1336 };
-  const INPUT_BAR_TOP = 1604;
+  // The phone itself spans x 26-826, y 46-1797 of the PNG; the stage is
+  // cropped to that so no transparent margin eats preview space.
+  const CROP = { x: 26, y: 46, w: 800, h: 1751 };
+  const SCREEN = { x: 62 - CROP.x, y: 286 - CROP.y, w: 728, h: 1336 };
+  const INPUT_BAR_TOP = 1604 - CROP.y;
   const MOCKUP_SCALE = 1.45; // bubble size relative to a real phone screen
 
   const LAYOUTS = {
@@ -42,8 +45,8 @@
     },
     mockup: {
       id: "mockup",
-      stageW: 853,
-      stageH: 1843,
+      stageW: CROP.w,
+      stageH: CROP.h,
       bg: SCREEN,
       chat: {
         x: SCREEN.x + 4,
@@ -52,7 +55,7 @@
         width: Math.round((SCREEN.w - 8) / MOCKUP_SCALE),
         height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
       },
-      frame: true,
+      frame: { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 },
     },
   };
 
@@ -119,7 +122,7 @@
         const frame = document.createElement("img");
         frame.src = this.mockupSrc;
         frame.alt = "";
-        box(frame, { x: 0, y: 0, w: L.stageW, h: L.stageH });
+        box(frame, L.frame);
         frame.style.pointerEvents = "none";
         stage.appendChild(frame);
       }

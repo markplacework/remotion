@@ -153,8 +153,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 16px 16px;
-  gap: 16px;
+  padding: 12px 16px;
+  gap: 12px;
   background:
     radial-gradient(ellipse at 30% 25%, rgba(var(--accent-rgb), 0.07), transparent 55%),
     radial-gradient(ellipse at 75% 80%, rgba(139, 61, 245, 0.06), transparent 55%);
@@ -600,19 +600,48 @@ kbd {
     0 0 0 1px var(--line-2),
     0 30px 80px -20px rgba(0, 0, 0, 0.8);
 }
-/* Wide screens: controls beside the phone instead of under it, so the
-   phone gets the full column height. */
-@media (min-width: 1200px) {
+.preview-side {
+  flex: none;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.preview-side .transport {
+  max-width: none;
+}
+/* Wide screens: framing, download and playback controls in a column
+   beside the phone, so the phone gets the full column height. */
+@media (min-width: 900px) {
   .preview-body {
     flex-direction: row;
     justify-content: center;
-    gap: 40px;
+    gap: clamp(20px, 3vw, 40px);
   }
   .preview-body .stage-host {
     flex: none;
   }
-  .preview-body .transport {
-    width: 380px;
+  .preview-side {
+    width: clamp(250px, 27vw, 380px);
+    align-items: stretch;
+  }
+}
+/* Medium widths: the side column is narrow, keep the transport compact. */
+@media (min-width: 900px) and (max-width: 1299px) {
+  .preview-side .transport {
+    padding: 12px 12px 14px;
+  }
+  .preview-side .controls {
+    grid-template-columns: 42px 1fr 42px;
+  }
+  .preview-side .buttons {
+    gap: 4px;
+  }
+  .preview-side #btn-restart,
+  .preview-side .icon-btn.ghost {
+    display: none;
   }
 }
 .wm-stage {
@@ -634,7 +663,7 @@ kbd {
   filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.6));
 }
 .stage-host[data-layout="mockup"] .empty-cta {
-  inset: 15.6% 7.6% 13% 7.4%;
+  inset: 13.8% 4.8% 11% 4.6%;
 }
 
 .framing {
@@ -1071,7 +1100,8 @@ kbd {
   }
   .badge,
   .brand-mark,
-  .shortcuts {
+  .shortcuts,
+  .framing-note {
     display: none;
   }
   .layout {
@@ -1088,7 +1118,7 @@ kbd {
     flex: none;
     height: auto;
     /* phone + controls fit on one phone screen */
-    width: min(100%, 430px, calc((100svh - 300px) * var(--stage-ratio, 0.5625)));
+    width: min(100%, 430px, calc((100svh - 330px) * var(--stage-ratio, 0.5625)));
   }
   .editor {
     border-right: 0;
@@ -1209,17 +1239,6 @@ kbd {
 
       <!-- ========== Preview ========== -->
       <section class="preview">
-        <div class="framing">
-          <div class="segmented" role="group" aria-label="Encuadre">
-            <button data-framing="mockup" aria-pressed="true">Mockup</button>
-            <button data-framing="video" aria-pressed="false">Video final</button>
-          </div>
-          <span id="framing-note" class="framing-note">El mockup es solo para la vista previa</span>
-          <button id="btn-export" class="btn btn-primary btn-export" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-            Descargar video
-          </button>
-        </div>
         <div class="preview-body">
         <div id="stage-host" class="stage-host is-empty">
           <div class="empty-cta">
@@ -1229,7 +1248,20 @@ kbd {
           </div>
         </div>
 
+        <div class="preview-side">
+          <div class="framing">
+            <div class="segmented" role="group" aria-label="Encuadre">
+              <button data-framing="mockup" aria-pressed="true">Mockup</button>
+              <button data-framing="video" aria-pressed="false">Video final</button>
+            </div>
+            <span id="framing-note" class="framing-note">El mockup es solo para la vista previa</span>
+            <button id="btn-export" class="btn btn-primary btn-export" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+              Descargar video
+            </button>
+          </div>
         <div id="transport" class="transport disabled">
+
           <div class="now"><span class="now-dot"></span><span id="now-line"></span></div>
           <div class="scrub-wrap">
             <div class="track"><div id="progress" class="progress"></div></div>
@@ -1256,6 +1288,7 @@ kbd {
             </div>
             <span id="time-dur" class="time right">00:00</span>
           </div>
+        </div>
         </div>
         </div>
       </section>
@@ -2042,8 +2075,11 @@ kbd {
   // Mockup screen hole, measured from the PNG's own transparent pixels
   // (853x1843): x 63-788, from under the header (y 288) to the bottom
   // of the screen behind the input bar (y ~1620).
-  const SCREEN = { x: 62, y: 286, w: 728, h: 1336 };
-  const INPUT_BAR_TOP = 1604;
+  // The phone itself spans x 26-826, y 46-1797 of the PNG; the stage is
+  // cropped to that so no transparent margin eats preview space.
+  const CROP = { x: 26, y: 46, w: 800, h: 1751 };
+  const SCREEN = { x: 62 - CROP.x, y: 286 - CROP.y, w: 728, h: 1336 };
+  const INPUT_BAR_TOP = 1604 - CROP.y;
   const MOCKUP_SCALE = 1.45; // bubble size relative to a real phone screen
 
   const LAYOUTS = {
@@ -2062,8 +2098,8 @@ kbd {
     },
     mockup: {
       id: "mockup",
-      stageW: 853,
-      stageH: 1843,
+      stageW: CROP.w,
+      stageH: CROP.h,
       bg: SCREEN,
       chat: {
         x: SCREEN.x + 4,
@@ -2072,7 +2108,7 @@ kbd {
         width: Math.round((SCREEN.w - 8) / MOCKUP_SCALE),
         height: Math.round((INPUT_BAR_TOP - SCREEN.y - 6) / MOCKUP_SCALE),
       },
-      frame: true,
+      frame: { x: -CROP.x, y: -CROP.y, w: 853, h: 1843 },
     },
   };
 
@@ -2139,7 +2175,7 @@ kbd {
         const frame = document.createElement("img");
         frame.src = this.mockupSrc;
         frame.alt = "";
-        box(frame, { x: 0, y: 0, w: L.stageW, h: L.stageH });
+        box(frame, L.frame);
         frame.style.pointerEvents = "none";
         stage.appendChild(frame);
       }
