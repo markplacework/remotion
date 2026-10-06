@@ -11,6 +11,7 @@
   --accent-2: #53bdeb;
   --radius: 14px;
   --topbar: 60px;
+  color-scheme: dark;
 }
 
 * {
