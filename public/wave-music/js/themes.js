@@ -134,7 +134,7 @@
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", pro: true, background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f", meta: true },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" }, video: true },
-    polaroid: { id: "polaroid", label: "Polaroid", kind: "motion", preset: "polaroid", pro: true, background: { type: "motion" } },
+    chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", pro: true, background: { type: "motion" }, video: true },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true, drag: false },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true, video: true },
     couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" }, video: true },

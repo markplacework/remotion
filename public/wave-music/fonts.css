@@ -105,10 +105,3 @@
   font-display: block;
   src: url(fonts/Shrikhand-normal-400.woff2) format('woff2');
 }
-@font-face {
-  font-family: 'Caveat';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: block;
-  src: url(fonts/Caveat-variable.woff2) format('woff2');
-}

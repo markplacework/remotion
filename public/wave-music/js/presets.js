@@ -1062,218 +1062,199 @@
   };
 
   // ======================================================================
-  // 6. POLAROID — each line is an instant photo dropped on the table
+  // 6. CHROME — liquid-metal Y2K type with moving reflections
   // ======================================================================
-  const POLA_HAND = (size) => `600 ${size}px Caveat, 'Segoe Print', cursive`;
-  const POLA_INK = "#1f2a44";
-  /** Little hand-made "photos", one per line, cycling through four scenes. */
-  function polaScene(g, kind, x, y, s, t, seed) {
-    const sky = (stops) => {
-      const gr = g.createLinearGradient(0, y, 0, y + s);
-      stops.forEach(([o, c]) => gr.addColorStop(o, c));
-      g.fillStyle = gr;
-      g.fillRect(x, y, s, s);
-    };
-    const hz = y + s * (0.58 + 0.06 * rand(seed));
-    if (kind === 0) {
-      // sunset over the sea
-      sky([[0, "#f58a63"], [0.45, "#ffc98a"], [1, "#ffe3b0"]]);
-      const sx = x + s * (0.35 + 0.3 * rand(seed + 1));
-      g.fillStyle = "#fff1c9";
-      g.beginPath();
-      g.arc(sx, hz - s * 0.04, s * 0.11, 0, Math.PI * 2);
-      g.fill();
-      const sea = g.createLinearGradient(0, hz, 0, y + s);
-      sea.addColorStop(0, "#5a8fa8");
-      sea.addColorStop(1, "#1f4b63");
-      g.fillStyle = sea;
-      g.fillRect(x, hz, s, y + s - hz);
-      g.fillStyle = "rgba(255,226,170,0.7)";
-      for (let i = 0; i < 9; i++) {
-        const w = s * (0.18 - i * 0.015) * (0.8 + 0.2 * Math.sin(t * 2 + i));
-        g.fillRect(sx - w / 2, hz + s * 0.02 + i * s * 0.035, w, s * 0.008);
-      }
-    } else if (kind === 1) {
-      // city at dusk
-      sky([[0, "#1b2340"], [0.6, "#6b4c7a"], [1, "#f29a6b"]]);
-      for (let i = 0; i < 16; i++) {
-        const bw = s * (0.05 + rand(seed * 3 + i) * 0.07);
-        const bx = x + (i / 16) * s * 1.05 - s * 0.02;
-        const bh = s * (0.18 + rand(seed + i * 7) * 0.35);
-        g.fillStyle = i % 2 ? "#141826" : "#1d2133";
-        g.fillRect(bx, y + s - bh, bw, bh);
-        g.fillStyle = "rgba(255,214,140,0.85)";
-        for (let k = 0; k < 10; k++) {
-          if (rand(seed + i * 31 + k) < 0.55) continue;
-          g.fillRect(bx + bw * (0.2 + 0.5 * rand(i + k * 3)), y + s - bh + bh * (0.1 + 0.8 * rand(i * 5 + k)), s * 0.008, s * 0.012);
-        }
-      }
-    } else if (kind === 2) {
-      // mountains in the morning
-      sky([[0, "#9fcfe3"], [1, "#f6e6c6"]]);
-      ["#8aa3ad", "#5f7c88", "#36505c"].forEach((c, l) => {
-        g.fillStyle = c;
-        g.beginPath();
-        g.moveTo(x, y + s);
-        for (let i = 0; i <= 8; i++) {
-          const px = x + (i / 8) * s;
-          const py = y + s * (0.42 + l * 0.12) + (rand(seed * 5 + l * 11 + i) - 0.5) * s * (0.22 - l * 0.04);
-          g.lineTo(px, py);
-        }
-        g.lineTo(x + s, y + s);
-        g.closePath();
-        g.fill();
-      });
-    } else {
-      // palms on the beach
-      sky([[0, "#7ccbd1"], [0.7, "#ffd9b0"], [1, "#ffcf9f"]]);
-      g.fillStyle = "#e8c9a0";
-      g.fillRect(x, hz + s * 0.08, s, y + s - hz);
-      g.fillStyle = "#3f8f9c";
-      g.fillRect(x, hz, s, s * 0.08);
-      g.strokeStyle = g.fillStyle = "#2b2a28";
-      for (let p = 0; p < 2; p++) {
-        const bx = x + s * (0.22 + p * 0.55);
-        const top = y + s * (0.2 + p * 0.1);
-        const sway = Math.sin(t * 0.8 + p) * s * 0.01;
-        g.lineWidth = s * 0.022;
-        g.beginPath();
-        g.moveTo(bx, y + s);
-        g.quadraticCurveTo(bx + s * 0.06, (top + y + s) / 2, bx + s * 0.03 + sway, top);
-        g.stroke();
-        for (let k = 0; k < 6; k++) {
-          const a = -Math.PI / 2 + (k - 2.5) * 0.55;
-          g.lineWidth = s * 0.014;
-          g.beginPath();
-          g.moveTo(bx + s * 0.03 + sway, top);
-          g.quadraticCurveTo(bx + s * 0.03 + Math.cos(a) * s * 0.12, top + Math.sin(a) * s * 0.06 - s * 0.02, bx + s * 0.03 + Math.cos(a) * s * 0.18 + sway, top + s * 0.07);
-          g.stroke();
-        }
-      }
-    }
+  const CHROME_FONT = (size) => `900 ${size}px Montserrat, 'Arial Black', sans-serif`;
+  /** Polished metal: sky above the horizon line, dark ground, bright floor. */
+  function chromeGrad(g, y0, h, shift) {
+    const gr = g.createLinearGradient(0, y0, 0, y0 + h);
+    const s = (k) => clamp(k + shift, 0, 1);
+    // a touch of holographic blue and pink in the reflections
+    gr.addColorStop(0, "#ffffff");
+    gr.addColorStop(s(0.3), "#c9d4ff");
+    gr.addColorStop(s(0.47), "#2c3148");
+    gr.addColorStop(s(0.53), "#fff0f8");
+    gr.addColorStop(s(0.74), "#8f9bd0");
+    gr.addColorStop(1, "#f2f5ff");
+    return gr;
   }
-  const polaroid = {
-    id: "polaroid",
-    label: "Polaroid",
-    tag: "Recuerdos",
-    fonts: ["600 100px Caveat"],
+  /** Four-point star glint. */
+  function glint(g, x, y, r, a) {
+    if (a <= 0.01) return;
+    g.save();
+    g.globalAlpha = a;
+    g.globalCompositeOperation = "lighter";
+    const halo = g.createRadialGradient(x, y, 0, x, y, r);
+    halo.addColorStop(0, "rgba(255,255,255,0.9)");
+    halo.addColorStop(1, "rgba(200,220,255,0)");
+    g.fillStyle = halo;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#ffffff";
+    g.beginPath();
+    g.moveTo(x, y - r * 1.8);
+    g.quadraticCurveTo(x, y, x + r * 1.8, y);
+    g.quadraticCurveTo(x, y, x, y + r * 1.8);
+    g.quadraticCurveTo(x, y, x - r * 1.8, y);
+    g.quadraticCurveTo(x, y, x, y - r * 1.8);
+    g.fill();
+    g.restore();
+  }
+  const chrome = {
+    id: "chrome",
+    label: "Chrome",
+    tag: "Y2K",
+    fonts: ["900 100px Montserrat"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
-      // a kraft-paper table
-      const bg = g.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, H * 0.75);
-      bg.addColorStop(0, "#e2d3b8");
-      bg.addColorStop(1, "#a8916d");
-      g.fillStyle = bg;
+      const pulse = f.pulse();
+      if (videoBg(g, f, "grayscale(0.6) contrast(1.15)")) {
+        g.fillStyle = "rgba(4,5,10,0.6)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#04050a");
+        bg.addColorStop(0.5, "#0d0f17");
+        bg.addColorStop(1, "#04050a");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        this.drawRibbons(g, f, u);
+      }
+      // cool studio light behind the type, breathing with the beat
+      const gl = g.createRadialGradient(W / 2, safe.y + safe.h / 2, 0, W / 2, safe.y + safe.h / 2, H * 0.5);
+      gl.addColorStop(0, `rgba(150,180,255,${0.12 + 0.12 * pulse})`);
+      gl.addColorStop(1, "rgba(150,180,255,0)");
+      g.fillStyle = gl;
       g.fillRect(0, 0, W, H);
-      g.save();
-      g.globalAlpha = 0.05;
-      g.strokeStyle = "#4a3a24";
-      g.lineWidth = Math.max(1, u);
-      for (let i = 0; i < 60; i++) {
-        const y = rand(i * 3.7) * H;
-        g.beginPath();
-        g.moveTo(0, y);
-        g.bezierCurveTo(W * 0.3, y + (rand(i) - 0.5) * u * 40, W * 0.7, y + (rand(i * 2) - 0.5) * u * 40, W, y + (rand(i * 5) - 0.5) * u * 30);
-        g.stroke();
+      const L = f.lines[f.current];
+      if (L) {
+        g.save();
+        g.translate(f.shift.x, f.shift.y);
+        const prev = f.lines[f.current - 1];
+        const out = t - L.start;
+        if (prev && out < 0.32) this.drawLine(g, f, prev, u, out / 0.32);
+        this.drawLine(g, f, L, u, null);
+        g.restore();
       }
-      g.restore();
-      grainOver(g, W, H, t, 0.08);
-      const cur = f.current;
-      g.save();
-      g.translate(f.shift.x, f.shift.y);
-      // the last two photos stay on the pile under the new one
-      for (let i = Math.max(0, cur - 2); i <= cur; i++) this.drawCard(g, f, u, f.lines[i], i === cur);
-      g.restore();
+      grainOver(g, W, H, t, 0.05);
     },
-    drawCard(g, f, u, line, isCur) {
-      if (!line) return;
-      const { t, safe } = f;
-      const cw = safe.w * 0.8;
-      const m = cw * 0.06;
-      const ps = cw - m * 2;
-      const size = u * 70;
-      const lh = size * 1.02;
-      const words = line.words.map((w) => ({ ...w, label: w.text }));
-      const rows = wrapCached(g, `pl|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => POLA_HAND(size), ps, size * 0.28);
-      const capH = Math.max(cw * 0.24, rows.length * lh + m * 1.3);
-      const ch = m + ps + capH;
-      const seed = line.index * 7.31;
-      const rot = (rand(seed) - 0.5) * 0.14;
-      const ox = (rand(seed + 1) - 0.5) * u * 70;
-      const oy = (rand(seed + 2) - 0.5) * u * 50;
-      // drop onto the table
-      const p = isCur ? clamp((t - line.start + 0.05) / 0.6) : 1;
-      const e = ease.back(p);
-      const lift = 1 - e;
-      const cx = safe.x + safe.w / 2 + ox;
-      const cy = safe.y + safe.h / 2 + oy - lift * safe.h * 0.5;
-      g.save();
-      g.globalAlpha = clamp(p * 4);
-      g.translate(cx, cy);
-      g.rotate(rot + lift * 0.4);
-      g.scale(1 + 0.18 * lift, 1 + 0.18 * lift);
-      g.shadowColor = "rgba(40,25,10,0.45)";
-      g.shadowBlur = u * (18 + 50 * lift);
-      g.shadowOffsetY = u * (8 + 40 * lift);
-      g.fillStyle = "#fbfaf5";
-      g.fillRect(-cw / 2, -ch / 2, cw, ch);
-      g.shadowColor = "transparent";
-      // the photo, developing from murky green-grey into colour
-      const px = -ps / 2;
-      const py = -ch / 2 + m;
-      g.save();
-      g.beginPath();
-      g.rect(px, py, ps, ps);
-      g.clip();
-      polaScene(g, line.index % 4, px, py, ps, t, line.index + 3);
-      const dev = isCur ? ease.inOut(clamp((t - line.start - 0.15) / 1.1)) : 1;
-      g.fillStyle = "rgba(255,190,140,0.12)";
-      g.fillRect(px, py, ps, ps);
-      const vg = g.createRadialGradient(0, py + ps / 2, ps * 0.3, 0, py + ps / 2, ps * 0.78);
-      vg.addColorStop(0, "rgba(0,0,0,0)");
-      vg.addColorStop(1, "rgba(30,15,0,0.38)");
-      g.fillStyle = vg;
-      g.fillRect(px, py, ps, ps);
-      if (dev < 1) {
-        g.fillStyle = `rgba(52,56,48,${1 - dev})`;
-        g.fillRect(px, py, ps, ps);
+    /** A chrome ring turning in 3D behind the type, in a holographic haze. */
+    drawRibbons(g, f, u) {
+      const { W, H, t, safe } = f;
+      const cy = safe.y + safe.h / 2;
+      [["255,150,220", 0.3], ["130,180,255", 0.7]].forEach(([c, k], i) => {
+        const x = W * (k + 0.12 * Math.sin(t * 0.2 + i * 2));
+        const y = cy + H * 0.22 * Math.cos(t * 0.15 + i * 3);
+        const gr = g.createRadialGradient(x, y, 0, x, y, H * 0.42);
+        gr.addColorStop(0, `rgba(${c},0.16)`);
+        gr.addColorStop(1, `rgba(${c},0)`);
+        g.fillStyle = gr;
+        g.fillRect(0, 0, W, H);
+      });
+      if (g.createConicGradient) {
+        const R = Math.min(W, H) * 0.4;
+        const tilt = Math.abs(Math.cos(t * 0.35));
+        g.save();
+        g.translate(W / 2, cy);
+        g.rotate(0.35 * Math.sin(t * 0.2) - 0.3);
+        g.scale(1, 0.22 + 0.78 * tilt);
+        const cg = g.createConicGradient(t * 0.3, 0, 0);
+        [["#f5f7ff", 0], ["#5d6680", 0.12], ["#ffffff", 0.25], ["#9aa6d6", 0.37], ["#262a3c", 0.5], ["#ffe3f3", 0.62], ["#7883a8", 0.75], ["#ffffff", 0.88], ["#f5f7ff", 1]].forEach(([c, o]) => cg.addColorStop(o, c));
+        g.globalAlpha = 0.5;
+        g.strokeStyle = cg;
+        g.lineWidth = u * 86;
+        g.beginPath();
+        g.arc(0, 0, R, 0, Math.PI * 2);
+        g.stroke();
+        g.globalAlpha = 0.6;
+        g.strokeStyle = "rgba(255,255,255,0.7)";
+        g.lineWidth = Math.max(1, u * 2);
+        g.beginPath();
+        g.arc(0, 0, R - u * 30, 0, Math.PI * 2);
+        g.stroke();
+        g.restore();
       }
-      g.restore();
-      g.strokeStyle = "rgba(0,0,0,0.08)";
-      g.lineWidth = Math.max(1, u);
-      g.strokeRect(px, py, ps, ps);
-      // a strip of tape
-      g.save();
-      g.translate((rand(seed + 4) - 0.5) * cw * 0.3, -ch / 2);
-      g.rotate((rand(seed + 5) - 0.5) * 0.3);
-      g.fillStyle = "rgba(250,246,226,0.62)";
-      g.fillRect(-cw * 0.13, -u * 18, cw * 0.26, u * 40);
-      g.restore();
-      // the lyric, handwritten word by word in the bottom margin
-      g.font = POLA_HAND(size);
+      for (let i = 0; i < 22; i++) {
+        const tw = Math.max(0, Math.sin(t * (0.7 + rand(i) * 1.6) + i * 5));
+        glint(g, rand(i * 4.7) * W, rand(i * 9.3) * H, u * (3 + 5 * rand(i * 2)), 0.7 * tw * tw);
+      }
+    },
+    drawLine(g, f, line, u, exit) {
+      const { t, safe } = f;
+      if (!line.words.length) return;
+      const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
+      g.font = CHROME_FONT(100);
+      const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
+      const size = Math.min(u * 118, (100 * safe.w * 0.9) / widest);
+      const rows = wrapCached(g, `ch|${line.index}|${line.text}|${Math.round(size * 10)}`, words, () => CHROME_FONT(size), safe.w * 0.92, size * 0.26);
+      const lh = size * 1.06;
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h / 2;
+      const shimmer = Math.sin(t * 1.3) * 0.06;
       g.textBaseline = "middle";
       g.textAlign = "left";
-      g.fillStyle = POLA_INK;
-      const top = py + ps + (capH - rows.length * lh) / 2;
+      g.font = CHROME_FONT(size);
+      g.lineJoin = "round";
       rows.forEach((row, ri) => {
-        const y = top + ri * lh + lh / 2;
-        const x0 = -row.width / 2;
+        const y = cy + (ri - (rows.length - 1) / 2) * lh;
         row.items.forEach((it) => {
           const w = it.w;
-          const wp = isCur ? clamp((t - w.t0 + 0.05) / Math.max(0.25, (w.t1 - w.t0) * 0.9)) : 1;
-          if (wp <= 0) return;
-          g.save();
-          if (wp < 1) {
-            g.beginPath();
-            g.rect(x0 + it.x - size * 0.2, y - lh, it.width * wp + size * 0.2, lh * 2);
-            g.clip();
+          let sx = 1;
+          let sy = 1;
+          let a = 1;
+          let dy = 0;
+          if (exit != null) {
+            // melts away: stretches down and fades
+            const e = ease.inOut(exit);
+            sy = 1 + 0.9 * e;
+            sx = 1 - 0.15 * e;
+            a = 1 - exit;
+            dy = u * 60 * e;
+          } else {
+            const p = clamp((t - w.t0 + 0.04) / 0.38);
+            if (p <= 0) return;
+            // liquid drop: tall and thin, then settles with a wobble
+            const b = ease.back(p);
+            sy = lerp(2.3, 1, b);
+            sx = lerp(0.55, 1, b);
+            a = clamp(p * 3);
+            dy = -u * 40 * (1 - ease.out(p));
           }
-          g.fillText(w.label, x0 + it.x, y);
+          const x = cx - row.width / 2 + it.x;
+          g.save();
+          g.globalAlpha = a;
+          g.translate(x + it.width / 2, y + dy);
+          g.scale(sx, sy);
+          g.translate(-it.width / 2, 0);
+          // extruded depth
+          g.fillStyle = "#1a1f2b";
+          for (let d = 7; d > 0; d--) g.fillText(w.label, 0, d * size * 0.012);
+          g.shadowColor = "rgba(0,0,0,0.55)";
+          g.shadowBlur = size * 0.22;
+          g.shadowOffsetY = size * 0.1;
+          g.fillStyle = chromeGrad(g, -size * 0.42, size * 0.8, shimmer + (w.index % 2 ? 0.03 : -0.03));
+          g.fillText(w.label, 0, 0);
+          g.shadowColor = "transparent";
+          // crisp rim light
+          g.lineWidth = Math.max(1, size * 0.018);
+          g.strokeStyle = "rgba(255,255,255,0.55)";
+          g.strokeText(w.label, 0, -size * 0.01);
           g.restore();
+          if (exit == null) {
+            // a glint flashes on each word as it lands, another drifts across
+            const k = clamp((t - w.t0) / 0.6);
+            const ga = k < 1 ? Math.sin(Math.PI * k) : 0;
+            glint(g, x + it.width * (0.2 + 0.6 * rand(w.index + line.index * 5)), y + dy - size * 0.28, size * 0.12, ga);
+          }
         });
       });
-      g.restore();
+      if (exit == null) {
+        const last = rows[rows.length - 1];
+        const sweep = ((t - line.start) * 0.45) % 1;
+        if (last && t - line.start > 0.6) glint(g, cx - last.width / 2 + last.width * sweep, cy + ((rows.length - 1) / 2) * lh - size * 0.3, size * 0.08, 0.6 * Math.sin(Math.PI * sweep));
+      }
     },
   };
 
@@ -2424,7 +2405,7 @@
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, polaroid, notes, aurora, couture, blackout, vhs, vinilo };
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, chrome, notes, aurora, couture, blackout, vhs, vinilo };
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
