@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wave Music · Lyric Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M3 16c3 0 3-7 6-7s3 14 6 14 3-18 6-18 3 11 6 11 2-3 2-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Wave Music</span>
+        <span class="badge">Prueba v0.1</span>
+      </div>
+      <button id="btn-demo" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        Iniciar demo
+      </button>
+    </header>
+
+    <main class="layout">
+      <!-- ========== Editor ========== -->
+      <section class="editor">
+        <div class="card" data-step="1">
+          <div class="card-head"><span class="num">1</span><h2>Audio</h2></div>
+          <label class="audio-pick">
+            <input id="file-audio" type="file" accept="audio/*" hidden />
+            <span class="audio-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+            </span>
+            <span class="audio-text">
+              <strong id="audio-name">Sin audio</strong>
+              <small id="audio-meta">mp3 · wav · m4a</small>
+            </span>
+            <span class="link">Cargar</span>
+          </label>
+        </div>
+
+        <div class="card" data-step="2">
+          <div class="card-head">
+            <span class="num">2</span><h2>Letra</h2><span id="line-count" class="hint"></span>
+          </div>
+          <textarea
+            id="lyrics"
+            rows="7"
+            spellcheck="false"
+            placeholder="Pegá la letra acá, una línea por burbuja.&#10;&#10;También acepta formato LRC: [00:12.30] línea"
+          ></textarea>
+        </div>
+
+        <div class="card" data-step="3">
+          <div class="card-head"><span class="num">3</span><h2>Sincronización</h2></div>
+          <div class="fields">
+            <label class="field grow">
+              <span>Método</span>
+              <select id="sync-mode"></select>
+            </label>
+            <label class="field" id="field-interval">
+              <span>Cada (s)</span>
+              <input id="sync-interval" type="number" min="0.5" step="0.5" value="3" />
+            </label>
+            <label class="field" id="field-offset">
+              <span>Inicio (s)</span>
+              <input id="sync-offset" type="number" min="0" step="0.5" value="0" />
+            </label>
+          </div>
+          <button id="btn-generate" class="btn btn-ghost wide" disabled>Generar sincronización de prueba</button>
+        </div>
+
+        <div class="card" data-step="4">
+          <div class="card-head">
+            <span class="num">4</span><h2>Timestamps</h2><span id="sync-source" class="hint">—</span>
+          </div>
+          <div id="ts-list" class="ts-list"></div>
+        </div>
+      </section>
+
+      <!-- ========== Preview ========== -->
+      <section class="preview">
+        <div id="stage-host" class="stage-host is-empty">
+          <div class="empty-cta">
+            <div class="eq-logo"><i></i><i></i><i></i><i></i><i></i></div>
+            <p>Audio + letra + sincronización</p>
+            <button id="btn-demo-empty" class="btn btn-primary">Iniciar demo</button>
+          </div>
+        </div>
+
+        <div id="transport" class="transport disabled">
+          <div class="now"><span class="now-dot"></span><span id="now-line"></span></div>
+          <div class="scrub-wrap">
+            <div class="track"><div id="progress" class="progress"></div></div>
+            <div id="markers" class="markers"></div>
+            <input id="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
+          </div>
+          <div class="controls">
+            <span id="time-cur" class="time">00:00</span>
+            <div class="buttons">
+              <button id="btn-restart" class="icon-btn" title="Inicio">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
+              </button>
+              <button id="btn-back" class="icon-btn" title="−5s (←)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+              </button>
+              <button id="btn-play" class="play-btn" title="Reproducir (espacio)">
+                <svg class="i-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                <svg class="i-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+              </button>
+              <button id="btn-fwd" class="icon-btn" title="+5s (→)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
+              </button>
+              <span class="icon-btn ghost"></span>
+            </div>
+            <span id="time-dur" class="time right">00:00</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Each concept lives in its own module -->
+    <script src="js/demo.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/timestamps.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/bubbles.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
