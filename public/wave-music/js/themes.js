@@ -133,6 +133,10 @@
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" } },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", pro: true, background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f" },
+    karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" } },
+    wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", pro: true, background: { type: "motion" } },
+    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true },
+    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true },
   };
 
   WM.Themes = {

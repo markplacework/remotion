@@ -615,7 +615,7 @@
       const W = 180;
       const H = (180 * h) / w;
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: SAMPLE, t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "demo" } }));
+      preset.draw(g, WM.Motion.frame({ lines: SAMPLE, t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
     });
   }
   let lastThumb = 0;
@@ -630,7 +630,7 @@
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
-    $("meta-opts").hidden = !(id === "spotify" || id === "minimal");
+    $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     preview.setTheme(id);
     needsSnap = true;
   }
