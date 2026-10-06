@@ -717,12 +717,13 @@
     spotify: `<div class="th th-sp"><i class="t"></i>${bars([78, 62, 84, 56], "l")}</div>`,
   };
   // Lyrics Pro thumbnails are the real presets, animated on a short sample.
-  const SAMPLE = WM.Motion.prepare({
+  const SAMPLE_TL = {
     entries: [
       { lineId: "a", text: "Nunca voy a olvidarte", start: 0.2, end: 2.4 },
       { lineId: "b", text: "Siempre vuelvo a vos", start: 2.4, end: 4.8 },
     ],
-  });
+  };
+  const SAMPLES = { line: WM.Motion.prepare(SAMPLE_TL, "line"), word: WM.Motion.prepare(SAMPLE_TL, "word") };
   const proThumbs = [];
   function drawThumbs(now) {
     const t = ((now / 1000) % 5.2) + 0.1;
@@ -740,7 +741,7 @@
       const W = 180;
       const H = (180 * h) / w;
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: SAMPLE, t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
+      preset.draw(g, WM.Motion.frame({ lines: SAMPLES[WM.Motion.modeFor(preset)], t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
     });
   }
   let lastThumb = 0;
@@ -815,6 +816,9 @@
     $("video-opts").hidden = !WM.Themes.get(id).video;
     // text size stays; the typeface goes back to the new style's own
     $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    // word-paced styles (Word Pop, Blackout) don't offer the phrase mode
+    const th = WM.Themes.get(id);
+    $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);

@@ -2010,7 +2010,7 @@ canvas.th-pro {
               </label>
             </div>
             <div class="fields">
-              <label class="field grow">
+              <label id="text-mode-field" class="field grow">
                 <span>Animación del texto</span>
                 <select id="text-mode">
                   <option value="line">Por frase (línea completa)</option>
@@ -3508,9 +3508,9 @@ canvas.th-pro {
   const WORDS_PER_SEC = 2.6; // typical sung pace when a line has room
 
   /** Split one line into words with start/end times inside the line. */
-  function wordsFor(entry) {
-    // "Línea completa": every word of the line shows at the line's start
-    if (WM.Motion && WM.Motion.wordMode === "line") {
+  function wordsFor(entry, mode = WM.Motion ? WM.Motion.wordMode : "word") {
+    // "Por frase": every word of the line shows at the line's start
+    if (mode === "line") {
       return entry.text.split(/\s+/).filter(Boolean).map((text, i) => ({ text, t0: entry.start, t1: entry.start + 0.3, index: i }));
     }
     if (entry.words && entry.words.length) return entry.words;
@@ -3534,10 +3534,12 @@ canvas.th-pro {
     });
   }
 
-  function prepare(timeline) {
+  function prepare(timeline, mode) {
     if (!timeline) return [];
-    return timeline.entries.map((e, i) => ({ ...e, index: i, words: wordsFor(e) }));
+    return timeline.entries.map((e, i) => ({ ...e, index: i, words: wordsFor(e, mode) }));
   }
+  /** The word mode a preset runs with: word-paced styles always go word by word. */
+  const modeFor = (preset) => (preset && preset.wordBased ? "word" : WM.Motion.wordMode);
 
   // ---------- energy ----------
   const RATE = 50; // envelope samples per second
@@ -3677,7 +3679,7 @@ canvas.th-pro {
     };
   }
 
-  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
+  WM.Motion = { wordsFor, prepare, modeFor, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
   WM.Energy = { current: null };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
@@ -4802,6 +4804,8 @@ canvas.th-pro {
   }
   const wordPop = {
     id: "wordpop",
+    // the whole look is the word being sung: always word by word
+    wordBased: true,
     label: "Word Pop",
     tag: "Redes",
     fonts: ["900 100px Poppins"],
@@ -4864,7 +4868,7 @@ canvas.th-pro {
       g.font = POP_FONT(100);
       const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
       size = Math.min(size, (100 * safe.w * 0.86) / widest);
-      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.28);
+      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.42);
       const lh = size * 1.3;
       const cx = safe.x + safe.w / 2;
       const cy = safe.y + safe.h * 0.5;
@@ -5740,6 +5744,8 @@ canvas.th-pro {
   const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
+    // cuts on every word: always word by word
+    wordBased: true,
     label: "Blackout",
     tag: "Contraste",
     fonts: ["400 100px 'League Gothic'", "700 100px 'Barlow Condensed'"],
@@ -6857,14 +6863,17 @@ canvas.th-pro {
         c.width = w;
         c.height = h;
       }
-      // timeline may be re-timed in place by the manual adjust
-      if (this.linesFor !== this.timeline) {
+      const preset = WM.Presets.get(this.theme.preset);
+      // timeline may be re-timed in place by the manual adjust; the word
+      // mode depends on the style (and the user's choice)
+      const mode = WM.Motion.modeFor(preset);
+      if (this.linesFor !== this.timeline || this.linesMode !== mode) {
         this.linesFor = this.timeline;
-        this.lines = WM.Motion.prepare(this.timeline);
+        this.linesMode = mode;
+        this.lines = WM.Motion.prepare(this.timeline, mode);
       }
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
-      const preset = WM.Presets.get(this.theme.preset);
       preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }
@@ -7476,7 +7485,7 @@ canvas.th-pro {
   class MotionRenderer {
     constructor(timeline, theme, style) {
       this.preset = WM.Presets.get(theme.preset);
-      this.lines = WM.Motion.prepare(timeline);
+      this.lines = WM.Motion.prepare(timeline, WM.Motion.modeFor(this.preset));
       this.meta = style.meta || {};
       this.offset = style.offset || null;
       this.textScale = style.textScale || 1;
@@ -8379,12 +8388,13 @@ canvas.th-pro {
     spotify: `<div class="th th-sp"><i class="t"></i>${bars([78, 62, 84, 56], "l")}</div>`,
   };
   // Lyrics Pro thumbnails are the real presets, animated on a short sample.
-  const SAMPLE = WM.Motion.prepare({
+  const SAMPLE_TL = {
     entries: [
       { lineId: "a", text: "Nunca voy a olvidarte", start: 0.2, end: 2.4 },
       { lineId: "b", text: "Siempre vuelvo a vos", start: 2.4, end: 4.8 },
     ],
-  });
+  };
+  const SAMPLES = { line: WM.Motion.prepare(SAMPLE_TL, "line"), word: WM.Motion.prepare(SAMPLE_TL, "word") };
   const proThumbs = [];
   function drawThumbs(now) {
     const t = ((now / 1000) % 5.2) + 0.1;
@@ -8402,7 +8412,7 @@ canvas.th-pro {
       const W = 180;
       const H = (180 * h) / w;
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: SAMPLE, t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
+      preset.draw(g, WM.Motion.frame({ lines: SAMPLES[WM.Motion.modeFor(preset)], t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
     });
   }
   let lastThumb = 0;
@@ -8477,6 +8487,9 @@ canvas.th-pro {
     $("video-opts").hidden = !WM.Themes.get(id).video;
     // text size stays; the typeface goes back to the new style's own
     $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    // word-paced styles (Word Pop, Blackout) don't offer the phrase mode
+    const th = WM.Themes.get(id);
+    $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);

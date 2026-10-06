@@ -14,9 +14,9 @@
   const WORDS_PER_SEC = 2.6; // typical sung pace when a line has room
 
   /** Split one line into words with start/end times inside the line. */
-  function wordsFor(entry) {
-    // "Línea completa": every word of the line shows at the line's start
-    if (WM.Motion && WM.Motion.wordMode === "line") {
+  function wordsFor(entry, mode = WM.Motion ? WM.Motion.wordMode : "word") {
+    // "Por frase": every word of the line shows at the line's start
+    if (mode === "line") {
       return entry.text.split(/\s+/).filter(Boolean).map((text, i) => ({ text, t0: entry.start, t1: entry.start + 0.3, index: i }));
     }
     if (entry.words && entry.words.length) return entry.words;
@@ -40,10 +40,12 @@
     });
   }
 
-  function prepare(timeline) {
+  function prepare(timeline, mode) {
     if (!timeline) return [];
-    return timeline.entries.map((e, i) => ({ ...e, index: i, words: wordsFor(e) }));
+    return timeline.entries.map((e, i) => ({ ...e, index: i, words: wordsFor(e, mode) }));
   }
+  /** The word mode a preset runs with: word-paced styles always go word by word. */
+  const modeFor = (preset) => (preset && preset.wordBased ? "word" : WM.Motion.wordMode);
 
   // ---------- energy ----------
   const RATE = 50; // envelope samples per second
@@ -183,6 +185,6 @@
     };
   }
 
-  WM.Motion = { wordsFor, prepare, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
+  WM.Motion = { wordsFor, prepare, modeFor, analyze, frame, clamp, lerp, ease, rand, wordMode: "line" };
   WM.Energy = { current: null };
 })((window.WaveMusic = window.WaveMusic || {}));

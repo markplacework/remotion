@@ -1118,6 +1118,8 @@
   }
   const wordPop = {
     id: "wordpop",
+    // the whole look is the word being sung: always word by word
+    wordBased: true,
     label: "Word Pop",
     tag: "Redes",
     fonts: ["900 100px Poppins"],
@@ -1180,7 +1182,7 @@
       g.font = POP_FONT(100);
       const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
       size = Math.min(size, (100 * safe.w * 0.86) / widest);
-      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.28);
+      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.42);
       const lh = size * 1.3;
       const cx = safe.x + safe.w / 2;
       const cy = safe.y + safe.h * 0.5;
@@ -2056,6 +2058,8 @@
   const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
+    // cuts on every word: always word by word
+    wordBased: true,
     label: "Blackout",
     tag: "Contraste",
     fonts: ["400 100px 'League Gothic'", "700 100px 'Barlow Condensed'"],

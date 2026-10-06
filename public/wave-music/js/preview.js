@@ -330,14 +330,17 @@
         c.width = w;
         c.height = h;
       }
-      // timeline may be re-timed in place by the manual adjust
-      if (this.linesFor !== this.timeline) {
+      const preset = WM.Presets.get(this.theme.preset);
+      // timeline may be re-timed in place by the manual adjust; the word
+      // mode depends on the style (and the user's choice)
+      const mode = WM.Motion.modeFor(preset);
+      if (this.linesFor !== this.timeline || this.linesMode !== mode) {
         this.linesFor = this.timeline;
-        this.lines = WM.Motion.prepare(this.timeline);
+        this.linesMode = mode;
+        this.lines = WM.Motion.prepare(this.timeline, mode);
       }
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
-      const preset = WM.Presets.get(this.theme.preset);
       preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }

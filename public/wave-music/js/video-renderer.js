@@ -421,7 +421,7 @@
   class MotionRenderer {
     constructor(timeline, theme, style) {
       this.preset = WM.Presets.get(theme.preset);
-      this.lines = WM.Motion.prepare(timeline);
+      this.lines = WM.Motion.prepare(timeline, WM.Motion.modeFor(this.preset));
       this.meta = style.meta || {};
       this.offset = style.offset || null;
       this.textScale = style.textScale || 1;
