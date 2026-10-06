@@ -71,6 +71,10 @@
               <input id="sync-offset" type="number" min="0" step="0.5" value="0" />
             </label>
           </div>
+          <div id="ai-row" class="ai-row" hidden>
+            <span id="ai-key-state"></span>
+            <button id="ai-key-change" class="btn-link" hidden>Cambiar clave</button>
+          </div>
           <button id="btn-generate" class="btn btn-ghost wide" disabled>Generar sincronización de prueba</button>
         </div>
 
@@ -133,14 +137,29 @@
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
           </div>
           <div id="video-opts" class="style-opts" hidden>
-            <span class="opt-label">Video de fondo</span>
+            <span class="opt-label">Fondo propio</span>
             <div class="bgv-row">
-              <button id="btn-bgv" class="btn btn-ghost">Subir video vertical</button>
-              <span id="bgv-name" class="bgv-name"></span>
+              <button id="btn-bgv" class="btn btn-ghost">Subir video</button>
+              <button id="btn-bgi" class="btn btn-ghost">Subir imagen</button>
               <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
             </div>
-            <p class="opt-hint">Se repite en loop, sigue a la canción y sale en el video descargado. Mejor en vertical (9:16).</p>
+            <span id="bgv-name" class="bgv-name"></span>
+            <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
             <input id="file-bgv" type="file" accept="video/*" hidden />
+            <input id="file-bgi" type="file" accept="image/*" hidden />
+          </div>
+          <div id="text-opts" class="style-opts" hidden>
+            <div class="fields">
+              <label class="field grow">
+                <span>Tipografía</span>
+                <select id="text-font"></select>
+              </label>
+            </div>
+            <div class="text-size">
+              <span class="opt-label">Tamaño del texto</span>
+              <input id="text-size" type="range" min="60" max="130" step="5" value="100" aria-label="Tamaño del texto" />
+              <span id="text-size-val" class="text-size-val">100%</span>
+            </div>
           </div>
           <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">
@@ -263,6 +282,32 @@
     </div>
 
     <!-- Export dialog: setup -> recording -> ready -->
+    <div id="aikey" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="aikey-title">
+        <div class="export-head">
+          <h3 id="aikey-title">Sincronizar con IA</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">La IA escucha la canción y ubica cada línea y cada palabra de tu letra en el tiempo exacto. Pegá tu API key de OpenAI para usarla.</p>
+          <label class="field aikey-field">
+            <span>API key de OpenAI</span>
+            <input id="aikey-input" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="check">
+            <input id="aikey-remember" type="checkbox" />
+            <span>Recordar en este navegador</span>
+          </label>
+          <p id="aikey-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">La clave se usa solo desde tu navegador para hablar con OpenAI y no se guarda en ningún servidor. Cuesta unos centavos por canción. En la versión final esto va a ir en el servidor (Supabase).</p>
+          <div class="export-actions">
+            <button id="aikey-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="aikey-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="export" class="export" hidden>
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <div class="export-head">
@@ -314,6 +359,7 @@
     <script src="js/demo.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/lyrics.js"></script>
+    <script src="js/ai-sync.js"></script>
     <script src="js/timestamps.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/adjust.js"></script>

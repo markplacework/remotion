@@ -135,6 +135,8 @@
       // Lyrics Pro: where the lyric was dragged, as fractions of the safe area
       this.offset = { x: 0, y: 0 };
       this.guides = null; // { x: bool, y: bool } while dragging
+      this.textScale = 1;
+      this.font = null; // CSS font-family, or null for the style's own
       this.timeline = null;
       this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
@@ -336,7 +338,7 @@
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }
 

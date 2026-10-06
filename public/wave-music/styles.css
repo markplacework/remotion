@@ -462,6 +462,8 @@ select option:disabled {
   height: 28px;
   cursor: pointer;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .adj-track::before {
   content: "";
@@ -1656,4 +1658,74 @@ canvas.th-pro {
   font-size: 12px;
   line-height: 1.45;
   color: var(--muted);
+}
+
+/* Sincronización con IA (prueba) */
+.ai-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 0 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.aikey-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0 12px;
+}
+.aikey-field.field {
+  width: auto;
+}
+.aikey-field input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: 0.04em;
+  outline: none;
+}
+.aikey-error {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 90, 90, 0.12);
+  color: #ff9c9c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.aikey-small {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Texto: tamaño */
+.text-size {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.text-size input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.text-size-val {
+  min-width: 40px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+#video-opts .bgv-name {
+  display: block;
+  margin-top: 8px;
 }

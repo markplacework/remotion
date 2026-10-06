@@ -16,6 +16,10 @@
   /** Split one line into words with start/end times inside the line. */
   function wordsFor(entry) {
     if (entry.words && entry.words.length) return entry.words;
+    // real word times from the AI sync, kept relative to the line start
+    // so a manual nudge of the line moves its words with it
+    const ai = WM.AiWords && WM.AiWords[entry.lineId];
+    if (ai && ai.text === entry.text) return ai.words.map((w, i) => ({ text: w.text, t0: entry.start + w.d0, t1: entry.start + w.d1, index: i }));
     const parts = entry.text.split(/\s+/).filter(Boolean);
     if (!parts.length) return [];
     const room = Math.max(0.4, entry.end - entry.start);
@@ -157,6 +161,9 @@
       mockup: !!o.mockup,
       // the user's background video (an HTMLVideoElement), when the style takes one
       video: o.video || null,
+      // the user's text size (1 = the style's own) and typeface (null = the style's)
+      textScale: o.textScale || 1,
+      font: o.font || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest

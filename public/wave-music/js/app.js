@@ -111,21 +111,81 @@
 
   async function generate() {
     const providerId = $("sync-mode").value;
+    const btn = $("btn-generate");
+    const label = btn.textContent;
+    btn.disabled = true;
     try {
       const tl = await T.generate(providerId, {
         lines: parsed.lines,
         embeddedStarts: parsed.embeddedStarts,
         duration: audio.duration,
         audio,
+        askKey,
+        onStatus: (s) => (btn.textContent = s),
         options: { interval: $("sync-interval").value, offset: $("sync-offset").value },
       });
+      // word timings only stay valid for the AI sync that produced them
+      if (providerId !== "ai") WM.AiWords = {};
       applyTimeline(tl);
       audio.seek(0);
-      toast("Sincronización generada · " + tl.entries.length + " líneas");
+      const extra = providerId === "ai" && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
+      toast("Sincronización generada · " + tl.entries.length + " líneas" + extra);
     } catch (e) {
-      toast(e.message);
+      if (e.code !== "cancelled") toast(e.message);
+    } finally {
+      btn.textContent = label;
+      refreshReadiness();
+      updateAiRow();
     }
   }
+
+  // ---------- API key (versión de prueba) ----------
+  function askKey(error) {
+    return new Promise((resolve, reject) => {
+      const m = $("aikey");
+      const input = $("aikey-input");
+      const err = $("aikey-error");
+      const showErr = (msg) => {
+        err.textContent = msg || "";
+        err.hidden = !msg;
+      };
+      input.value = "";
+      $("aikey-remember").checked = false;
+      showErr(error);
+      m.hidden = false;
+      setTimeout(() => input.focus(), 30);
+      const close = () => {
+        m.hidden = true;
+        $("aikey-ok").onclick = $("aikey-cancel").onclick = input.onkeydown = null;
+      };
+      $("aikey-ok").onclick = () => {
+        const key = input.value.trim();
+        const bad = WM.AiSync.checkKey(key);
+        if (bad) return showErr(bad);
+        WM.AiSync.setKey(key, $("aikey-remember").checked);
+        close();
+        resolve(key);
+      };
+      $("aikey-cancel").onclick = () => {
+        close();
+        reject(Object.assign(new Error("Sincronización cancelada"), { code: "cancelled" }));
+      };
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") $("aikey-ok").click();
+        if (e.key === "Escape") $("aikey-cancel").click();
+      };
+    });
+  }
+  function updateAiRow() {
+    const ai = $("sync-mode").value === "ai";
+    $("ai-row").hidden = !ai;
+    $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
+    $("ai-key-change").hidden = !WM.AiSync.getKey();
+  }
+  $("ai-key-change").onclick = () => {
+    WM.AiSync.clearKey();
+    updateAiRow();
+  };
 
   function renderTimestampList() {
     const list = $("ts-list");
@@ -515,7 +575,14 @@
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
-        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta, offset: preview.draggable ? preview.offset : null },
+        style: {
+          theme: preview.theme.id,
+          spotifyColor: preview.spotifyColor,
+          meta: preview.meta,
+          offset: preview.draggable ? preview.offset : null,
+          textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
+          font: preview.theme.kind === "motion" ? preview.font : null,
+        },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
         onProgress: (t, d) => {
@@ -618,6 +685,8 @@
     const mode = $("sync-mode").value;
     $("field-interval").style.display = mode === "interval" ? "" : "none";
     $("field-offset").style.display = mode === "interval" || mode === "spread" ? "" : "none";
+    $("btn-generate").textContent = mode === "ai" ? "Sincronizar con IA" : "Generar sincronización de prueba";
+    updateAiRow();
   }
   $("sync-mode").onchange = onModeChange;
   $("btn-generate").onclick = generate;
@@ -686,12 +755,12 @@
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
-    $("bgv-name").textContent = on ? WM.BgVideo.name : "";
+    $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
-    $("btn-bgv").textContent = on ? "Cambiar video" : "Subir video vertical";
   }
   $("btn-bgv").onclick = () => $("file-bgv").click();
-  $("file-bgv").onchange = async (ev) => {
+  $("btn-bgi").onclick = () => $("file-bgi").click();
+  $("file-bgv").onchange = $("file-bgi").onchange = async (ev) => {
     const file = ev.target.files[0];
     ev.target.value = "";
     if (!file) return;
@@ -712,11 +781,37 @@
     needsSnap = true;
   };
 
+  // ---------- texto: tipografía y tamaño (estilos animados) ----------
+  {
+    const sel = $("text-font");
+    sel.innerHTML = '<option value="">Original del estilo</option>' + WM.Presets.FONTS.map((f) => `<option value="${f.id}">${f.label}</option>`).join("");
+    sel.onchange = async () => {
+      const f = WM.Presets.FONTS.find((x) => x.id === sel.value);
+      if (f) await WM.Presets.loadFonts(f.family);
+      preview.font = f ? f.family : null;
+      needsSnap = true;
+    };
+    const size = $("text-size");
+    size.oninput = () => {
+      preview.textScale = Number(size.value) / 100;
+      $("text-size-val").textContent = size.value + "%";
+      needsSnap = true;
+    };
+    size.ondblclick = () => {
+      size.value = 100;
+      size.oninput();
+    };
+  }
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;
+    // text size stays; the typeface goes back to the new style's own
+    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    $("text-font").value = "";
+    preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
@@ -785,7 +880,7 @@
     } catch (e) {
       toast(e.message);
     }
-    $("sync-mode").value = "spread";
+    $("sync-mode").value = "ai";
     onModeChange();
     applyTimeline(T.buildTimeline(parsed.lines, D.starts, audio.duration, "demo"));
     audio.seek(0);
@@ -826,7 +921,7 @@
     o.disabled = !!p.disabled;
     $("sync-mode").appendChild(o);
   });
-  $("sync-mode").value = "interval";
+  $("sync-mode").value = "ai";
   onModeChange();
   applyTimeline(null);
   requestAnimationFrame(frame);

@@ -30,20 +30,31 @@
       };
       let dragging = false;
       this.track.addEventListener("pointerdown", (e) => {
-        if (e.detail > 1) return; // let dblclick reset
+        if (e.button > 0 || e.detail > 1) return; // let dblclick reset
+        // no text selection or native drag stealing the mouse on desktop
+        e.preventDefault();
+        this.knob.focus({ preventScroll: true });
         dragging = true;
-        this.track.setPointerCapture(e.pointerId);
+        try {
+          this.track.setPointerCapture(e.pointerId);
+        } catch {
+          /* window listeners below still follow the mouse */
+        }
         o.onStart();
         this.emit(fromX(e.clientX));
       });
-      this.track.addEventListener("pointermove", (e) => dragging && this.emit(fromX(e.clientX)));
+      const move = (e) => dragging && this.emit(fromX(e.clientX));
       const end = () => {
         if (!dragging) return;
         dragging = false;
         o.onEnd();
       };
+      this.track.addEventListener("pointermove", move);
+      window.addEventListener("pointermove", (e) => !this.track.hasPointerCapture(e.pointerId) && move(e));
       this.track.addEventListener("pointerup", end);
+      window.addEventListener("pointerup", end);
       this.track.addEventListener("pointercancel", end);
+      this.track.addEventListener("lostpointercapture", end);
       this.track.addEventListener("dblclick", () => {
         o.onStart();
         this.emit(0);

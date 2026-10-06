@@ -597,6 +597,8 @@ select option:disabled {
   height: 28px;
   cursor: pointer;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .adj-track::before {
   content: "";
@@ -1792,6 +1794,76 @@ canvas.th-pro {
   line-height: 1.45;
   color: var(--muted);
 }
+
+/* Sincronización con IA (prueba) */
+.ai-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 0 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.aikey-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0 12px;
+}
+.aikey-field.field {
+  width: auto;
+}
+.aikey-field input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: 0.04em;
+  outline: none;
+}
+.aikey-error {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 90, 90, 0.12);
+  color: #ff9c9c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.aikey-small {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Texto: tamaño */
+.text-size {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.text-size input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.text-size-val {
+  min-width: 40px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+#video-opts .bgv-name {
+  display: block;
+  margin-top: 8px;
+}
 </style>
   </head>
   <body>
@@ -1852,6 +1924,10 @@ canvas.th-pro {
               <span>Inicio (s)</span>
               <input id="sync-offset" type="number" min="0" step="0.5" value="0" />
             </label>
+          </div>
+          <div id="ai-row" class="ai-row" hidden>
+            <span id="ai-key-state"></span>
+            <button id="ai-key-change" class="btn-link" hidden>Cambiar clave</button>
           </div>
           <button id="btn-generate" class="btn btn-ghost wide" disabled>Generar sincronización de prueba</button>
         </div>
@@ -1915,14 +1991,29 @@ canvas.th-pro {
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
           </div>
           <div id="video-opts" class="style-opts" hidden>
-            <span class="opt-label">Video de fondo</span>
+            <span class="opt-label">Fondo propio</span>
             <div class="bgv-row">
-              <button id="btn-bgv" class="btn btn-ghost">Subir video vertical</button>
-              <span id="bgv-name" class="bgv-name"></span>
+              <button id="btn-bgv" class="btn btn-ghost">Subir video</button>
+              <button id="btn-bgi" class="btn btn-ghost">Subir imagen</button>
               <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
             </div>
-            <p class="opt-hint">Se repite en loop, sigue a la canción y sale en el video descargado. Mejor en vertical (9:16).</p>
+            <span id="bgv-name" class="bgv-name"></span>
+            <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
             <input id="file-bgv" type="file" accept="video/*" hidden />
+            <input id="file-bgi" type="file" accept="image/*" hidden />
+          </div>
+          <div id="text-opts" class="style-opts" hidden>
+            <div class="fields">
+              <label class="field grow">
+                <span>Tipografía</span>
+                <select id="text-font"></select>
+              </label>
+            </div>
+            <div class="text-size">
+              <span class="opt-label">Tamaño del texto</span>
+              <input id="text-size" type="range" min="60" max="130" step="5" value="100" aria-label="Tamaño del texto" />
+              <span id="text-size-val" class="text-size-val">100%</span>
+            </div>
           </div>
           <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">
@@ -2045,6 +2136,32 @@ canvas.th-pro {
     </div>
 
     <!-- Export dialog: setup -> recording -> ready -->
+    <div id="aikey" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="aikey-title">
+        <div class="export-head">
+          <h3 id="aikey-title">Sincronizar con IA</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">La IA escucha la canción y ubica cada línea y cada palabra de tu letra en el tiempo exacto. Pegá tu API key de OpenAI para usarla.</p>
+          <label class="field aikey-field">
+            <span>API key de OpenAI</span>
+            <input id="aikey-input" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="check">
+            <input id="aikey-remember" type="checkbox" />
+            <span>Recordar en este navegador</span>
+          </label>
+          <p id="aikey-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">La clave se usa solo desde tu navegador para hablar con OpenAI y no se guarda en ningún servidor. Cuesta unos centavos por canción. En la versión final esto va a ir en el servidor (Supabase).</p>
+          <div class="export-actions">
+            <button id="aikey-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="aikey-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="export" class="export" hidden>
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <div class="export-head">
@@ -2286,6 +2403,226 @@ canvas.th-pro {
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
+// Wave Music · SINCRONIZACIÓN CON IA (versión de prueba)
+// OpenAI Whisper listens to the song and returns every sung word with its
+// time; we then align those words to the user's lyrics, so each line gets
+// its real start and each word its real timing (Lyrics Pro styles use
+// them through WM.AiWords).
+//
+// Test only: the API key is typed by the user and used straight from the
+// browser. The real product calls this from a backend (Supabase Edge
+// Function) so the key never reaches the client.
+(function (WM) {
+  const STORE = "wm-openai-key";
+  const MAX_BYTES = 25 * 1024 * 1024; // Whisper upload limit
+
+  // ---------- key (session by default, or remembered on request) ----------
+  function getKey() {
+    try {
+      return sessionStorage.getItem(STORE) || localStorage.getItem(STORE) || "";
+    } catch {
+      return memKey;
+    }
+  }
+  let memKey = "";
+  function setKey(key, remember) {
+    memKey = key;
+    try {
+      sessionStorage.setItem(STORE, key);
+      if (remember) localStorage.setItem(STORE, key);
+      else localStorage.removeItem(STORE);
+    } catch {
+      /* storage blocked: keep it in memory */
+    }
+  }
+  function clearKey() {
+    memKey = "";
+    try {
+      sessionStorage.removeItem(STORE);
+      localStorage.removeItem(STORE);
+    } catch {
+      /* ignore */
+    }
+  }
+  /** Quick shape check before spending a request. */
+  function checkKey(key) {
+    if (!key) return "Pegá tu API key.";
+    if (/^sk-ant-/.test(key)) return "Esa es una clave de Claude. Claude no puede escuchar audio, así que para sincronizar hace falta una clave de OpenAI (empieza con sk-).";
+    if (!/^sk-[\w-]{20,}$/.test(key)) return "No parece una API key de OpenAI (empieza con sk-).";
+    return "";
+  }
+
+  // ---------- transcription ----------
+  async function transcribe({ blob, filename, key, prompt, signal }) {
+    if (blob.size > MAX_BYTES) throw Object.assign(new Error("El audio pesa más de 25 MB, el límite de OpenAI. Probá con un mp3 más liviano."), { code: "size" });
+    const fd = new FormData();
+    fd.append("file", blob, filename);
+    fd.append("model", "whisper-1");
+    fd.append("response_format", "verbose_json");
+    fd.append("timestamp_granularities[]", "word");
+    // the lyrics as a hint: spelling and vocabulary of this song
+    if (prompt) fd.append("prompt", prompt.slice(0, 600));
+    let res;
+    try {
+      res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + key },
+        body: fd,
+        signal,
+      });
+    } catch (e) {
+      throw Object.assign(new Error("No se pudo conectar con OpenAI. Si estás en la vista previa de Claude, abrí el archivo descargado en Chrome."), { code: "network" });
+    }
+    if (res.status === 401) throw Object.assign(new Error("La API key no es válida."), { code: "auth" });
+    if (res.status === 429) throw Object.assign(new Error("OpenAI rechazó el pedido por límite o falta de saldo en la cuenta."), { code: "quota" });
+    if (!res.ok) {
+      let msg = "";
+      try {
+        msg = (await res.json()).error.message;
+      } catch {
+        /* ignore */
+      }
+      throw new Error("OpenAI respondió con un error" + (msg ? ": " + msg : " (" + res.status + ")"));
+    }
+    const data = await res.json();
+    return (data.words || []).map((w) => ({ text: w.word, start: w.start, end: w.end }));
+  }
+
+  // ---------- alignment ----------
+  const norm = (s) =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9ñ]/g, "");
+  function lev(a, b) {
+    const m = a.length;
+    const n = b.length;
+    if (!m || !n) return Math.max(m, n);
+    let prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  const sim = (a, b) => (a === b ? 1 : 1 - lev(a, b) / Math.max(a.length, b.length, 1));
+
+  /**
+   * Align lyric words to transcript words (monotonic, fuzzy): skipping a
+   * sung word (repeats, ad-libs) is cheap, missing a lyric word costs more.
+   * Returns, per line, its start and per-word times.
+   */
+  function align(lines, sung, duration) {
+    const L = [];
+    lines.forEach((l, li) =>
+      l.text
+        .split(/\s+/)
+        .filter(Boolean)
+        .forEach((w, wi) => L.push({ li, wi, text: w, n: norm(w) })),
+    );
+    const T = sung.map((w) => ({ ...w, n: norm(w.text) })).filter((w) => w.n);
+    const n = L.length;
+    const m = T.length;
+    const GAP_L = 1.0;
+    const GAP_T = 0.55;
+    const W = m + 1;
+    const cost = new Float32Array((n + 1) * W);
+    const move = new Uint8Array((n + 1) * W); // 1 diag, 2 up (skip lyric), 3 left (skip sung)
+    for (let i = 1; i <= n; i++) {
+      cost[i * W] = i * GAP_L;
+      move[i * W] = 2;
+    }
+    for (let j = 1; j <= m; j++) {
+      cost[j] = j * GAP_T;
+      move[j] = 3;
+    }
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        const s = sim(L[i - 1].n, T[j - 1].n);
+        const d = cost[(i - 1) * W + j - 1] + (s >= 0.5 ? 1 - s : 1.6);
+        const u = cost[(i - 1) * W + j] + GAP_L;
+        const l = cost[i * W + j - 1] + GAP_T;
+        let best = d;
+        let mv = 1;
+        if (u < best) {
+          best = u;
+          mv = 2;
+        }
+        if (l < best) {
+          best = l;
+          mv = 3;
+        }
+        cost[i * W + j] = best;
+        move[i * W + j] = mv;
+      }
+    }
+    // walk back: matched lyric words get the sung word's time
+    for (let i = n, j = m; i > 0 || j > 0; ) {
+      const mv = move[i * W + j];
+      if (mv === 1) {
+        if (sim(L[i - 1].n, T[j - 1].n) >= 0.5) {
+          L[i - 1].t0 = T[j - 1].start;
+          L[i - 1].t1 = T[j - 1].end;
+        }
+        i--;
+        j--;
+      } else if (mv === 2) i--;
+      else j--;
+    }
+
+    // line starts: first matched word; lines with nothing matched are
+    // spread between their neighbours
+    const byLine = lines.map((_, li) => L.filter((w) => w.li === li));
+    const starts = byLine.map((ws) => {
+      const hit = ws.find((w) => w.t0 != null);
+      return hit ? hit.t0 : null;
+    });
+    const dur = duration || (T.length ? T[T.length - 1].end + 2 : lines.length * 3);
+    for (let i = 0; i < starts.length; i++) {
+      if (starts[i] != null) continue;
+      let a = i - 1;
+      while (a >= 0 && starts[a] == null) a--;
+      let b = i + 1;
+      while (b < starts.length && starts[b] == null) b++;
+      const ta = a >= 0 ? starts[a] : 0;
+      const tb = b < starts.length ? starts[b] : dur;
+      for (let k = a + 1; k < b; k++) starts[k] = ta + ((tb - ta) * (k - a)) / (b - a);
+    }
+    for (let i = 1; i < starts.length; i++) starts[i] = Math.max(starts[i], starts[i - 1]);
+
+    // per-word times inside each line, relative to the line start
+    const words = byLine.map((ws, li) => {
+      const s = starts[li];
+      const e = li + 1 < starts.length ? starts[li + 1] : dur;
+      const known = ws.map((w) => (w.t0 != null ? [w.t0, w.t1] : null));
+      for (let k = 0; k < ws.length; k++) {
+        if (known[k]) continue;
+        let a = k - 1;
+        while (a >= 0 && !known[a]) a--;
+        let b = k + 1;
+        while (b < ws.length && !known[b]) b++;
+        const ta = a >= 0 ? known[a][1] : s;
+        const tb = b < ws.length ? known[b][0] : Math.min(e, ta + 0.4 * (b - a));
+        const step = (tb - ta) / (b - a);
+        for (let q = a + 1; q < b; q++) known[q] = [ta + step * (q - a - 1), ta + step * (q - a)];
+      }
+      return {
+        text: lines[li].text,
+        words: ws.map((w, k) => ({ text: w.text, d0: Math.max(0, known[k][0] - s), d1: Math.max(0.05, known[k][1] - s) })),
+      };
+    });
+    const matched = L.filter((w) => w.t0 != null).length;
+    return { starts, words, matched, total: n };
+  }
+
+  WM.AiSync = { getKey, setKey, clearKey, checkKey, transcribe, align };
+  // lineId -> { text, words: [{ text, d0, d1 }] } (times relative to the line start)
+  WM.AiWords = {};
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
 // Wave Music · TIMESTAMPS
 // The timeline is the contract between "where do times come from" and
 // "how are they shown":
@@ -2359,14 +2696,39 @@ canvas.th-pro {
       },
     },
 
-    /** Placeholder for the real AI alignment (e.g. Whisper word
-     * timestamps + lyric alignment on a backend). Same contract. */
+    /** AI: OpenAI Whisper word timestamps aligned to the lyrics
+     * (ai-sync.js). Test version: the key comes from the user. */
     ai: {
       id: "ai",
-      label: "IA (próximamente)",
-      disabled: true,
-      async sync(/* { audio, lines, duration } */) {
-        throw new Error("Sincronización con IA todavía no disponible");
+      label: "IA · OpenAI (automática)",
+      async sync({ lines, duration, audio, askKey, onStatus }) {
+        const AI = WM.AiSync;
+        if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
+        let key = AI.getKey() || (await askKey());
+        const buf = await audio.getArrayBuffer();
+        const file = audio.sourceFile;
+        const blob = file || new Blob([buf], { type: "audio/mpeg" });
+        const filename = file ? file.name : "cancion.mp3";
+        const prompt = lines.map((l) => l.text).join(" ");
+        let sung;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            if (onStatus) onStatus("Escuchando la canción…");
+            sung = await AI.transcribe({ blob, filename, key, prompt });
+            break;
+          } catch (e) {
+            if (e.code !== "auth" || attempt) throw e;
+            AI.clearKey();
+            key = await askKey(e.message + " Revisala y probá de nuevo.");
+          }
+        }
+        if (!sung.length) throw new Error("La IA no encontró voz en el audio");
+        if (onStatus) onStatus("Ubicando la letra…");
+        const r = AI.align(lines, sung, duration);
+        WM.AiWords = {};
+        lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
+        WM.AiSync.last = { matched: r.matched, total: r.total };
+        return r.starts;
       },
     },
   };
@@ -2586,20 +2948,31 @@ canvas.th-pro {
       };
       let dragging = false;
       this.track.addEventListener("pointerdown", (e) => {
-        if (e.detail > 1) return; // let dblclick reset
+        if (e.button > 0 || e.detail > 1) return; // let dblclick reset
+        // no text selection or native drag stealing the mouse on desktop
+        e.preventDefault();
+        this.knob.focus({ preventScroll: true });
         dragging = true;
-        this.track.setPointerCapture(e.pointerId);
+        try {
+          this.track.setPointerCapture(e.pointerId);
+        } catch {
+          /* window listeners below still follow the mouse */
+        }
         o.onStart();
         this.emit(fromX(e.clientX));
       });
-      this.track.addEventListener("pointermove", (e) => dragging && this.emit(fromX(e.clientX)));
+      const move = (e) => dragging && this.emit(fromX(e.clientX));
       const end = () => {
         if (!dragging) return;
         dragging = false;
         o.onEnd();
       };
+      this.track.addEventListener("pointermove", move);
+      window.addEventListener("pointermove", (e) => !this.track.hasPointerCapture(e.pointerId) && move(e));
       this.track.addEventListener("pointerup", end);
+      window.addEventListener("pointerup", end);
       this.track.addEventListener("pointercancel", end);
+      this.track.addEventListener("lostpointercapture", end);
       this.track.addEventListener("dblclick", () => {
         o.onStart();
         this.emit(0);
@@ -3080,7 +3453,7 @@ canvas.th-pro {
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", background: { type: "motion" }, video: true },
     wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
-    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true, drag: false },
+    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },
     couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true },
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } },
@@ -3118,6 +3491,10 @@ canvas.th-pro {
   /** Split one line into words with start/end times inside the line. */
   function wordsFor(entry) {
     if (entry.words && entry.words.length) return entry.words;
+    // real word times from the AI sync, kept relative to the line start
+    // so a manual nudge of the line moves its words with it
+    const ai = WM.AiWords && WM.AiWords[entry.lineId];
+    if (ai && ai.text === entry.text) return ai.words.map((w, i) => ({ text: w.text, t0: entry.start + w.d0, t1: entry.start + w.d1, index: i }));
     const parts = entry.text.split(/\s+/).filter(Boolean);
     if (!parts.length) return [];
     const room = Math.max(0.4, entry.end - entry.start);
@@ -3259,6 +3636,9 @@ canvas.th-pro {
       mockup: !!o.mockup,
       // the user's background video (an HTMLVideoElement), when the style takes one
       video: o.video || null,
+      // the user's text size (1 = the style's own) and typeface (null = the style's)
+      textScale: o.textScale || 1,
+      font: o.font || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
@@ -3323,6 +3703,24 @@ canvas.th-pro {
     return rows;
   }
   const upper = (s) => s.toLocaleUpperCase("es");
+
+  // ---------- user's text options ----------
+  // A typeface picked by the user replaces the style's lyric font; the
+  // draw wrapper at the bottom sets it for the frame being drawn.
+  let lyricFamily = null;
+  const fam = (d) => lyricFamily || d;
+  /** Move and scale the lyric layer: where it was dragged, at the chosen size. */
+  function place(g, f) {
+    g.translate(f.shift.x, f.shift.y);
+    const k = f.textScale || 1;
+    if (k !== 1) {
+      const cx = f.safe.x + f.safe.w / 2;
+      const cy = f.safe.y + f.safe.h / 2;
+      g.translate(cx, cy);
+      g.scale(k, k);
+      g.translate(-cx, -cy);
+    }
+  }
   const longestIndex = (words) => {
     let best = 0;
     words.forEach((w, i) => {
@@ -3389,7 +3787,7 @@ canvas.th-pro {
       g.translate((rand(Math.floor(t * 30)) - 0.5) * shake, (rand(Math.floor(t * 30) + 7) - 0.5) * shake);
 
       // the lyric sits wherever it was dragged to
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       // outgoing line flies past the camera
       const prev = f.lines[f.current - 1];
       const out = t - L.start;
@@ -3403,7 +3801,7 @@ canvas.th-pro {
       const hero = longestIndex(line.words);
       const spec = rows.map((ws) => {
         const label = upper(ws.map((w) => w.text).join(" "));
-        g.font = "400 100px Anton, Impact, sans-serif";
+        g.font = `400 100px ${fam("Anton, Impact, sans-serif")}`;
         const w100 = g.measureText(label).width || 1;
         const isHero = ws.some((w) => w.index === hero);
         const size = Math.min(u * (isHero ? 250 : 190), (100 * safe.w * 0.88) / w100);
@@ -3447,7 +3845,7 @@ canvas.th-pro {
         g.translate(cx + dx, rowY + dy);
         g.rotate(rot);
         g.scale(scale, scale);
-        g.font = `400 ${size}px Anton, Impact, sans-serif`;
+        g.font = `400 ${size}px ${fam("Anton, Impact, sans-serif")}`;
         g.shadowColor = "rgba(0,0,0,0.45)";
         g.shadowBlur = u * 24;
         if (r.isHero) {
@@ -3494,7 +3892,7 @@ canvas.th-pro {
     c.putImageData(img, 0, 0);
     return grain;
   }
-  const CINE_SERIF = "'Cormorant Garamond', Georgia, serif";
+  const CINE_DEFAULT = "'Cormorant Garamond', Georgia, serif";
   /** Text drawn only as its blurred shadow: a lens out of focus. */
   function blurText(g, txt, x, y, blur, color) {
     // shadow offset and blur live in device pixels, the text in user space
@@ -3598,7 +3996,7 @@ canvas.th-pro {
       g.globalCompositeOperation = "source-over";
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawTitle(g, f, u);
       const ly = this.drawLyric(g, f, u);
       // anamorphic flare through the lyric, flaring on the beat
@@ -3664,10 +4062,10 @@ canvas.th-pro {
       }
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       let size = u * 96;
-      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
       const tw = g.measureText(title).width;
       if (tw > safe.w * 0.9) size *= (safe.w * 0.9) / tw;
-      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
       g.shadowColor = "rgba(255,226,190,0.45)";
       g.shadowBlur = u * 26;
       g.fillStyle = "#f6efe4";
@@ -3688,7 +4086,7 @@ canvas.th-pro {
       const has = "letterSpacing" in g;
       const fontOf = (w) => {
         if (has) g.letterSpacing = w.hero ? "0px" : `${track}px`;
-        return w.hero ? `italic 500 ${size * 1.42}px ${CINE_SERIF}` : `600 ${size}px ${CINE_SERIF}`;
+        return w.hero ? `italic 500 ${size * 1.42}px ${fam(CINE_DEFAULT)}` : `600 ${size}px ${fam(CINE_DEFAULT)}`;
       };
       const show = (line, alphaMul, lift, out) => {
         if (!line || !line.words.length || alphaMul <= 0) return;
@@ -3842,7 +4240,7 @@ canvas.th-pro {
         const prev = f.lines[f.current - 1];
         const out = t - L.start;
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         if (prev && out < 0.25) this.drawLine(g, f, prev, u, hz, { exit: out / 0.25 });
         this.drawLine(g, f, L, u, hz, { pulse });
         g.restore();
@@ -3856,7 +4254,7 @@ canvas.th-pro {
       const rows = stackRows(line.words);
       const spec = rows.map((ws) => {
         const label = upper(ws.map((w) => w.text).join(" "));
-        g.font = "900 100px Orbitron, sans-serif";
+        g.font = `900 100px ${fam("Orbitron, sans-serif")}`;
         const w100 = g.measureText(label).width || 1;
         return { ws, label, size: Math.min(u * 120, (100 * safe.w * 0.9) / w100), t0: ws[0].t0 };
       });
@@ -3892,7 +4290,7 @@ canvas.th-pro {
         g.save();
         g.translate(cx, rowY);
         g.scale(scale, scale);
-        g.font = `900 ${size}px Orbitron, sans-serif`;
+        g.font = `900 ${size}px ${fam("Orbitron, sans-serif")}`;
         g.globalAlpha = alpha;
         const glow = 0.6 + 0.4 * (o.pulse || 0);
         if (glitch > 0.05) {
@@ -4017,7 +4415,7 @@ canvas.th-pro {
 
       const prev = lines[f.current - 1];
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       if (L && prev) {
         const e = clamp((t - L.start) / 0.32);
         if (e < 1) this.drawLine(g, f, prev, u, x0, x1, e);
@@ -4034,6 +4432,7 @@ canvas.th-pro {
       const hero = longestIndex(line.words);
       const fontOf = (w) => {
         if (has) g.letterSpacing = w.hero ? "0px" : `${-size * 0.045}px`;
+        if (lyricFamily) return `${w.hero ? "italic 400" : "700"} ${w.hero ? size * 1.12 : size}px ${lyricFamily}`;
         return w.hero ? MIN_SERIF(size * 1.18) : MIN_SANS(700, size);
       };
       const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
@@ -4078,6 +4477,7 @@ canvas.th-pro {
   /** wrapWords, cached: line layouts only change with text, font or width. */
   const wrapCache = new Map();
   function wrapCached(g, key, words, fontOf, maxW, spaceW) {
+    key += "|" + (lyricFamily || "");
     let v = wrapCache.get(key);
     if (!v) {
       if (wrapCache.size > 600) wrapCache.clear();
@@ -4097,18 +4497,20 @@ canvas.th-pro {
     g.closePath();
   }
   /** Draw a video cover-fitted to W x H (optionally through a CSS filter). */
-  function coverTo(g, v, W, H, filter) {
-    const vw = v.videoWidth;
-    const vh = v.videoHeight;
+  function coverTo(g, v, W, H, filter, t) {
+    const vw = v.videoWidth || v.naturalWidth;
+    const vh = v.videoHeight || v.naturalHeight;
     if (!vw || !vh) return false;
-    const k = Math.max(W / vw, H / vh);
+    let k = Math.max(W / vw, H / vh);
+    // a still image gets a slow push-in, so the background never looks frozen
+    if (v.naturalWidth && t != null) k *= 1.05 + 0.04 * Math.sin(t * 0.07);
     const fl = filter && "filter" in g;
     if (fl) g.filter = filter;
     g.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
     if (fl) g.filter = "none";
     return true;
   }
-  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter);
+  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
   const sung = (w, t) => clamp((t - w.t0) / Math.max(0.06, w.t1 - w.t0));
   /** Index of the word being sung (or last sung) in a line, -1 before it. */
@@ -4123,7 +4525,7 @@ canvas.th-pro {
   // ======================================================================
   // 5. KARAOKE — the line fills with colour as it is sung
   // ======================================================================
-  const KARA_FONT = (size) => `800 ${size}px Montserrat, 'Arial Black', sans-serif`;
+  const KARA_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   const karaoke = {
     id: "karaoke",
     label: "Karaoke",
@@ -4179,7 +4581,7 @@ canvas.th-pro {
       }
       g.restore();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawLyrics(g, f, u);
       g.restore();
     },
@@ -4346,7 +4748,7 @@ canvas.th-pro {
   // 6. WORD POP — subtitles the way creators edit them (big, word by word)
   // ======================================================================
   const POP_ACCENTS = ["#ffe600", "#3dff8b", "#ff4fa3", "#4fd8ff"];
-  const POP_FONT = (size) => `900 ${size}px Poppins, 'Arial Black', sans-serif`;
+  const POP_FONT = (size) => `900 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
   /** Split a line into chunks of up to three words / ~14 letters. */
   const chunkCache = new Map();
   function chunksOf(line) {
@@ -4414,7 +4816,7 @@ canvas.th-pro {
       for (let x = -H; x < H; x += sp) g.fillRect(x + off, -H, u * 18, H * 2);
       g.restore();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
       g.restore();
     },
@@ -4511,7 +4913,7 @@ canvas.th-pro {
   // Saved for later: registered here but not offered in the style picker
   // (add it back to THEMES in themes.js to show it).
   // ======================================================================
-  const CHROME_FONT = (size) => `900 ${size}px Montserrat, 'Arial Black', sans-serif`;
+  const CHROME_FONT = (size) => `900 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   /** Polished metal: sky above the horizon line, dark ground, bright floor. */
   function chromeGrad(g, y0, h, shift) {
     const gr = g.createLinearGradient(0, y0, 0, y0 + h);
@@ -4578,7 +4980,7 @@ canvas.th-pro {
       const L = f.lines[f.current];
       if (L) {
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         const prev = f.lines[f.current - 1];
         const out = t - L.start;
         if (prev && out < 0.32) this.drawLine(g, f, prev, u, out / 0.32);
@@ -4710,6 +5112,7 @@ canvas.th-pro {
   // ======================================================================
   const NOTE = { bg: "#000000", ink: "#f2f2f7", mute: "#8d8d93", accent: "#ffd60a" };
   const NOTE_FONT = (w, size) => `${w} ${size}px Inter, -apple-system, 'Segoe UI', sans-serif`;
+  const NOTE_LYR = (size) => `400 ${size}px ${fam("Inter, -apple-system, 'Segoe UI', sans-serif")}`;
   const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const notes = {
     id: "notes",
@@ -4754,6 +5157,8 @@ canvas.th-pro {
       g.beginPath();
       g.rect(0, top - u * 10, W, bottom - top + u * 10);
       g.clip();
+      // the note's text moves where it was dragged; the app bars stay put
+      place(g, f);
       const oy = top - scroll;
       const d = new Date();
       const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -4767,7 +5172,7 @@ canvas.th-pro {
       g.font = NOTE_FONT(700, u * 60);
       const title = (f.meta && f.meta.title) || "Letra";
       g.fillText(title, x0, oy + head.date + u * 66, cw);
-      g.font = NOTE_FONT(400, body);
+      g.font = NOTE_LYR(body);
       let cursor = null;
       blocks.forEach((b, i) => {
         const line = lines[i];
@@ -4809,7 +5214,7 @@ canvas.th-pro {
     },
     rows(g, line, body, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_FONT(400, body), w, body * 0.28);
+      return wrapCached(g, `n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_LYR(body), w, body * 0.28);
     },
     caret(g, f, line, c, u, body) {
       const { t } = f;
@@ -4931,6 +5336,7 @@ canvas.th-pro {
   // ======================================================================
   const AURORA_COLS = ["#00e0c6", "#7b5cff", "#ff4fd8", "#2f8bff", "#00ff9d"];
   const AUR_FONT = (w, size) => `${w} ${size}px Inter, -apple-system, 'Segoe UI', sans-serif`;
+  const AUR_LYR = (size) => `800 ${size}px ${fam("Inter, -apple-system, 'Segoe UI', sans-serif")}`;
   let auroraSmall = null;
   const aurora = {
     id: "aurora",
@@ -4938,7 +5344,7 @@ canvas.th-pro {
     tag: "Glass",
     fonts: ["500 100px Inter", "700 100px Inter", "800 100px Inter"],
     drawBg(g, W, H, t, en, pulse, video) {
-      if (video && coverTo(g, video, W, H)) {
+      if (video && coverTo(g, video, W, H, null, t)) {
         g.fillStyle = "rgba(4,5,13,0.28)";
         g.fillRect(0, 0, W, H);
         return;
@@ -4983,14 +5389,15 @@ canvas.th-pro {
         auroraSmall.height = sh;
       }
       this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse, f.video);
+      this.base = g.getTransform();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawCard(g, f, u, pulse);
       g.restore();
     },
     layout(g, line, size, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_FONT(800, size), w, size * 0.28);
+      return wrapCached(g, `a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_LYR(size), w, size * 0.28);
     },
     drawCard(g, f, u, pulse) {
       const { W, H, t, safe } = f;
@@ -5025,7 +5432,10 @@ canvas.th-pro {
       g.imageSmoothingEnabled = true;
       g.imageSmoothingQuality = "high";
       // the blurred copy stays put while the card moves over it
-      g.drawImage(auroraSmall, -f.shift.x, -f.shift.y, W, H);
+      g.save();
+      g.setTransform(this.base);
+      g.drawImage(auroraSmall, 0, 0, W, H);
+      g.restore();
       g.fillStyle = "rgba(255,255,255,0.10)";
       g.fillRect(cx, cy, cw, ch);
       const sheen = g.createLinearGradient(cx, cy, cx + cw * 0.6, cy + ch);
@@ -5077,7 +5487,7 @@ canvas.th-pro {
       const show = (line, alphaMul, dy) => {
         if (!line || !line.words.length || alphaMul <= 0) return;
         const rows = this.layout(g, line, size, inner);
-        g.font = AUR_FONT(800, size);
+        g.font = AUR_LYR(size);
         g.textBaseline = "middle";
         rows.forEach((row, ri) => {
           row.items.forEach((it) => {
@@ -5162,7 +5572,7 @@ canvas.th-pro {
   // ======================================================================
   // 9. COUTURE — black & white fashion film: Didone capitals, cuts on every word
   // ======================================================================
-  const COUT_FONT = (size) => `500 ${size}px 'Bodoni Moda', Didot, 'Times New Roman', serif`;
+  const COUT_FONT = (size) => `500 ${size}px ${fam("'Bodoni Moda', Didot, 'Times New Roman', serif")}`;
   // 0: white studio, 1: black, 2: white band over black
   const COUT_LOOKS = [0, 1, 0, 2, 1, 0, 1, 2];
   const couture = {
@@ -5222,7 +5632,7 @@ canvas.th-pro {
       g.restore();
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       // the sung words, re-set on every word
       const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
       g.font = COUT_FONT(100);
@@ -5298,8 +5708,8 @@ canvas.th-pro {
   // ======================================================================
   // 10. BLACKOUT — pure black & white, the picture flips on every word
   // ======================================================================
-  const BO_GIANT = (size) => `400 ${size}px 'League Gothic', 'Arial Narrow', Impact, sans-serif`;
-  const BO_LOWER = (size) => `700 ${size}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+  const BO_GIANT = (size) => `400 ${size}px ${fam("'League Gothic', 'Arial Narrow', Impact, sans-serif")}`;
+  const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
     label: "Blackout",
@@ -5317,9 +5727,11 @@ canvas.th-pro {
       g.fillRect(0, 0, W, H);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
-      const cx = safe.x + safe.w / 2 + f.shift.x;
-      const cy = safe.y + safe.h / 2 + f.shift.y;
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h / 2;
       const w = L.words[j];
+      g.save();
+      place(g, f);
       g.fillStyle = ink;
       g.textBaseline = "middle";
       g.textAlign = "center";
@@ -5336,6 +5748,7 @@ canvas.th-pro {
         g.scale(k, k);
         g.font = BO_GIANT(size);
         g.fillText(label, 0, size * 0.04);
+        g.restore();
         g.restore();
         return;
       }
@@ -5359,6 +5772,7 @@ canvas.th-pro {
         row.items.forEach((it) => g.fillText(it.w.label, -row.width / 2 + it.x, y));
       });
       g.restore();
+      g.restore();
     },
   };
 
@@ -5366,6 +5780,7 @@ canvas.th-pro {
   // 11. VHS — a home tape: warm blur, OSD text, tracking noise
   // ======================================================================
   const VHS_FONT = (size) => `400 ${size}px VT323, 'Courier New', monospace`;
+  const VHS_LYR = (size) => `400 ${size}px ${fam("VT323, 'Courier New', monospace")}`;
   const VHS_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const vhs = {
     id: "vhs",
@@ -5409,16 +5824,16 @@ canvas.th-pro {
       const L = lines[f.current];
       if (L && L.words.length) {
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         const j = activeWord(L, t);
         const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
         const size = u * 108;
-        const rows = wrapCached(g, `v|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => VHS_FONT(size), safe.w * 0.92, size * 0.42);
+        const rows = wrapCached(g, `v|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => VHS_LYR(size), safe.w * 0.92, size * 0.42);
         const lh = size * 0.98;
         const cy = safe.y + safe.h * 0.5;
         g.textBaseline = "middle";
         g.textAlign = "left";
-        g.font = VHS_FONT(size);
+        g.font = VHS_LYR(size);
         const split = u * (3 + 6 * pulse);
         const draw = (dx, col) => {
           g.fillStyle = col;
@@ -5579,7 +5994,7 @@ canvas.th-pro {
       g.restore();
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawLyric(g, f, u, safe.y + u * 70, cy - sleeveS / 2 - u * 40);
       g.restore();
       grainOver(g, W, H, t, 0.1);
@@ -5801,7 +6216,7 @@ canvas.th-pro {
         const hero = longestIndex(line.words);
         let size = u * 104;
         const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
-        const fontOf = (sz) => (w) => VIN_SERIF(w.hero ? sz * 1.08 : sz, w.hero);
+        const fontOf = (sz) => (w) => (lyricFamily ? `${w.hero ? "italic " : ""}400 ${w.hero ? sz * 1.08 : sz}px ${lyricFamily}` : VIN_SERIF(w.hero ? sz * 1.08 : sz, w.hero));
         let rows = wrapCached(g, `vn|${line.index}|${line.text}|${Math.round(size * 10)}`, words, fontOf(size), safe.w * 0.9, size * 0.24);
         if (rows.length * size * 1.04 > bottom - top) {
           size *= (bottom - top) / (rows.length * size * 1.04);
@@ -5853,13 +6268,44 @@ canvas.th-pro {
   }
 
   const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo };
+  // every draw runs with the user's typeface (or the style's own)
+  Object.values(PRESETS).forEach((p) => {
+    const draw = p.draw;
+    p.draw = function (g, f) {
+      lyricFamily = f.font || null;
+      try {
+        return draw.call(this, g, f);
+      } finally {
+        lyricFamily = null;
+      }
+    };
+  });
+
+  /** Typefaces the user can give a style's lyric (all self-hosted). */
+  const FONTS = [
+    { id: "anton", label: "Anton", family: "Anton, Impact, sans-serif" },
+    { id: "montserrat", label: "Montserrat", family: "Montserrat, sans-serif" },
+    { id: "poppins", label: "Poppins", family: "Poppins, sans-serif" },
+    { id: "inter", label: "Inter", family: "Inter, sans-serif" },
+    { id: "league", label: "League Gothic", family: "'League Gothic', sans-serif" },
+    { id: "barlow", label: "Barlow Condensed", family: "'Barlow Condensed', sans-serif" },
+    { id: "bodoni", label: "Bodoni Moda", family: "'Bodoni Moda', serif" },
+    { id: "cormorant", label: "Cormorant", family: "'Cormorant Garamond', serif" },
+    { id: "instrument", label: "Instrument Serif", family: "'Instrument Serif', serif" },
+    { id: "orbitron", label: "Orbitron", family: "Orbitron, sans-serif" },
+    { id: "shrikhand", label: "Shrikhand", family: "Shrikhand, serif" },
+    { id: "vt323", label: "VT323", family: "VT323, monospace" },
+  ];
+
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
+    FONTS,
     /** Wait for every preset font (canvas text needs them loaded). */
-    loadFonts() {
+    loadFonts(extraFamily) {
       if (!document.fonts) return Promise.resolve();
       const all = Object.values(PRESETS).flatMap((p) => p.fonts);
+      if (extraFamily) all.push(`400 100px ${extraFamily}`, `700 100px ${extraFamily}`, `italic 400 100px ${extraFamily}`);
       return Promise.all(all.map((f) => document.fonts.load(f).catch(() => null)));
     },
   };
@@ -5973,7 +6419,7 @@ canvas.th-pro {
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
-// Wave Music · VIDEO DE FONDO
+// Wave Music · FONDO PROPIO (video o imagen)
 // A user's own (vertical) video behind the Lyrics Pro styles that take
 // one. It loops and follows the song's clock: the audio stays the master,
 // the video is nudged back whenever it drifts, so preview, seeking and the
@@ -5984,26 +6430,39 @@ canvas.th-pro {
   el.loop = true;
   el.playsInline = true;
   el.preload = "auto";
+  const img = new Image();
   let url = null;
 
   const api = {
     el,
     name: "",
+    kind: "video", // or "image"
     enabled: false,
     // while a download is being recorded the export owns the clock
     exporting: false,
     get ready() {
+      if (api.kind === "image") return api.enabled && img.complete && img.naturalWidth > 0;
       return api.enabled && el.readyState >= 2 && el.videoWidth > 0;
     },
     async load(file) {
       api.clear();
       url = URL.createObjectURL(file);
       api.name = file.name;
-      await new Promise((res, rej) => {
-        el.onloadeddata = res;
-        el.onerror = () => rej(new Error("No se pudo leer ese video"));
-        el.src = url;
-      });
+      api.kind = /^image\//.test(file.type) ? "image" : "video";
+      if (api.kind === "image") {
+        img.src = url;
+        try {
+          await img.decode();
+        } catch {
+          throw new Error("No se pudo leer esa imagen");
+        }
+      } else {
+        await new Promise((res, rej) => {
+          el.onloadeddata = res;
+          el.onerror = () => rej(new Error("No se pudo leer ese video"));
+          el.src = url;
+        });
+      }
       api.enabled = true;
     },
     clear() {
@@ -6017,6 +6476,7 @@ canvas.th-pro {
     },
     /** Keep the video on the song's clock; the element when it can be drawn. */
     at(t, playing, fromExport = false) {
+      if (api.kind === "image") return api.ready ? img : null;
       if (!api.enabled || !el.duration) return null;
       if (api.exporting && !fromExport) return api.ready ? el : null;
       const d = el.duration;
@@ -6174,6 +6634,8 @@ canvas.th-pro {
       // Lyrics Pro: where the lyric was dragged, as fractions of the safe area
       this.offset = { x: 0, y: 0 };
       this.guides = null; // { x: bool, y: bool } while dragging
+      this.textScale = 1;
+      this.font = null; // CSS font-family, or null for the style's own
       this.timeline = null;
       this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
@@ -6375,7 +6837,7 @@ canvas.th-pro {
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }
 
@@ -6687,7 +7149,7 @@ canvas.th-pro {
     static async create(timeline, backgroundSrc, style = {}) {
       const theme = WM.Themes.get(style.theme);
       if (theme.kind === "motion") {
-        await WM.Presets.loadFonts();
+        await WM.Presets.loadFonts(style.font);
         return new MotionRenderer(timeline, theme, style);
       }
       const bg = theme.background.type === "wallpaper" ? await loadImage(backgroundSrc) : null;
@@ -6989,6 +7451,8 @@ canvas.th-pro {
       this.lines = WM.Motion.prepare(timeline);
       this.meta = style.meta || {};
       this.offset = style.offset || null;
+      this.textScale = style.textScale || 1;
+      this.font = style.font || null;
       this.video = !!theme.video && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
@@ -6999,7 +7463,7 @@ canvas.th-pro {
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
       return this.canvas;
     }
     dispose() {
@@ -7281,21 +7745,81 @@ canvas.th-pro {
 
   async function generate() {
     const providerId = $("sync-mode").value;
+    const btn = $("btn-generate");
+    const label = btn.textContent;
+    btn.disabled = true;
     try {
       const tl = await T.generate(providerId, {
         lines: parsed.lines,
         embeddedStarts: parsed.embeddedStarts,
         duration: audio.duration,
         audio,
+        askKey,
+        onStatus: (s) => (btn.textContent = s),
         options: { interval: $("sync-interval").value, offset: $("sync-offset").value },
       });
+      // word timings only stay valid for the AI sync that produced them
+      if (providerId !== "ai") WM.AiWords = {};
       applyTimeline(tl);
       audio.seek(0);
-      toast("Sincronización generada · " + tl.entries.length + " líneas");
+      const extra = providerId === "ai" && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
+      toast("Sincronización generada · " + tl.entries.length + " líneas" + extra);
     } catch (e) {
-      toast(e.message);
+      if (e.code !== "cancelled") toast(e.message);
+    } finally {
+      btn.textContent = label;
+      refreshReadiness();
+      updateAiRow();
     }
   }
+
+  // ---------- API key (versión de prueba) ----------
+  function askKey(error) {
+    return new Promise((resolve, reject) => {
+      const m = $("aikey");
+      const input = $("aikey-input");
+      const err = $("aikey-error");
+      const showErr = (msg) => {
+        err.textContent = msg || "";
+        err.hidden = !msg;
+      };
+      input.value = "";
+      $("aikey-remember").checked = false;
+      showErr(error);
+      m.hidden = false;
+      setTimeout(() => input.focus(), 30);
+      const close = () => {
+        m.hidden = true;
+        $("aikey-ok").onclick = $("aikey-cancel").onclick = input.onkeydown = null;
+      };
+      $("aikey-ok").onclick = () => {
+        const key = input.value.trim();
+        const bad = WM.AiSync.checkKey(key);
+        if (bad) return showErr(bad);
+        WM.AiSync.setKey(key, $("aikey-remember").checked);
+        close();
+        resolve(key);
+      };
+      $("aikey-cancel").onclick = () => {
+        close();
+        reject(Object.assign(new Error("Sincronización cancelada"), { code: "cancelled" }));
+      };
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") $("aikey-ok").click();
+        if (e.key === "Escape") $("aikey-cancel").click();
+      };
+    });
+  }
+  function updateAiRow() {
+    const ai = $("sync-mode").value === "ai";
+    $("ai-row").hidden = !ai;
+    $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
+    $("ai-key-change").hidden = !WM.AiSync.getKey();
+  }
+  $("ai-key-change").onclick = () => {
+    WM.AiSync.clearKey();
+    updateAiRow();
+  };
 
   function renderTimestampList() {
     const list = $("ts-list");
@@ -7685,7 +8209,14 @@ canvas.th-pro {
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
-        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta, offset: preview.draggable ? preview.offset : null },
+        style: {
+          theme: preview.theme.id,
+          spotifyColor: preview.spotifyColor,
+          meta: preview.meta,
+          offset: preview.draggable ? preview.offset : null,
+          textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
+          font: preview.theme.kind === "motion" ? preview.font : null,
+        },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
         onProgress: (t, d) => {
@@ -7788,6 +8319,8 @@ canvas.th-pro {
     const mode = $("sync-mode").value;
     $("field-interval").style.display = mode === "interval" ? "" : "none";
     $("field-offset").style.display = mode === "interval" || mode === "spread" ? "" : "none";
+    $("btn-generate").textContent = mode === "ai" ? "Sincronizar con IA" : "Generar sincronización de prueba";
+    updateAiRow();
   }
   $("sync-mode").onchange = onModeChange;
   $("btn-generate").onclick = generate;
@@ -7856,12 +8389,12 @@ canvas.th-pro {
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
-    $("bgv-name").textContent = on ? WM.BgVideo.name : "";
+    $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
-    $("btn-bgv").textContent = on ? "Cambiar video" : "Subir video vertical";
   }
   $("btn-bgv").onclick = () => $("file-bgv").click();
-  $("file-bgv").onchange = async (ev) => {
+  $("btn-bgi").onclick = () => $("file-bgi").click();
+  $("file-bgv").onchange = $("file-bgi").onchange = async (ev) => {
     const file = ev.target.files[0];
     ev.target.value = "";
     if (!file) return;
@@ -7882,11 +8415,37 @@ canvas.th-pro {
     needsSnap = true;
   };
 
+  // ---------- texto: tipografía y tamaño (estilos animados) ----------
+  {
+    const sel = $("text-font");
+    sel.innerHTML = '<option value="">Original del estilo</option>' + WM.Presets.FONTS.map((f) => `<option value="${f.id}">${f.label}</option>`).join("");
+    sel.onchange = async () => {
+      const f = WM.Presets.FONTS.find((x) => x.id === sel.value);
+      if (f) await WM.Presets.loadFonts(f.family);
+      preview.font = f ? f.family : null;
+      needsSnap = true;
+    };
+    const size = $("text-size");
+    size.oninput = () => {
+      preview.textScale = Number(size.value) / 100;
+      $("text-size-val").textContent = size.value + "%";
+      needsSnap = true;
+    };
+    size.ondblclick = () => {
+      size.value = 100;
+      size.oninput();
+    };
+  }
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;
+    // text size stays; the typeface goes back to the new style's own
+    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    $("text-font").value = "";
+    preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
@@ -7955,7 +8514,7 @@ canvas.th-pro {
     } catch (e) {
       toast(e.message);
     }
-    $("sync-mode").value = "spread";
+    $("sync-mode").value = "ai";
     onModeChange();
     applyTimeline(T.buildTimeline(parsed.lines, D.starts, audio.duration, "demo"));
     audio.seek(0);
@@ -7996,7 +8555,7 @@ canvas.th-pro {
     o.disabled = !!p.disabled;
     $("sync-mode").appendChild(o);
   });
-  $("sync-mode").value = "interval";
+  $("sync-mode").value = "ai";
   onModeChange();
   applyTimeline(null);
   requestAnimationFrame(frame);

@@ -71,14 +71,39 @@
       },
     },
 
-    /** Placeholder for the real AI alignment (e.g. Whisper word
-     * timestamps + lyric alignment on a backend). Same contract. */
+    /** AI: OpenAI Whisper word timestamps aligned to the lyrics
+     * (ai-sync.js). Test version: the key comes from the user. */
     ai: {
       id: "ai",
-      label: "IA (próximamente)",
-      disabled: true,
-      async sync(/* { audio, lines, duration } */) {
-        throw new Error("Sincronización con IA todavía no disponible");
+      label: "IA · OpenAI (automática)",
+      async sync({ lines, duration, audio, askKey, onStatus }) {
+        const AI = WM.AiSync;
+        if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
+        let key = AI.getKey() || (await askKey());
+        const buf = await audio.getArrayBuffer();
+        const file = audio.sourceFile;
+        const blob = file || new Blob([buf], { type: "audio/mpeg" });
+        const filename = file ? file.name : "cancion.mp3";
+        const prompt = lines.map((l) => l.text).join(" ");
+        let sung;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            if (onStatus) onStatus("Escuchando la canción…");
+            sung = await AI.transcribe({ blob, filename, key, prompt });
+            break;
+          } catch (e) {
+            if (e.code !== "auth" || attempt) throw e;
+            AI.clearKey();
+            key = await askKey(e.message + " Revisala y probá de nuevo.");
+          }
+        }
+        if (!sung.length) throw new Error("La IA no encontró voz en el audio");
+        if (onStatus) onStatus("Ubicando la letra…");
+        const r = AI.align(lines, sung, duration);
+        WM.AiWords = {};
+        lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
+        WM.AiSync.last = { matched: r.matched, total: r.total };
+        return r.starts;
       },
     },
   };

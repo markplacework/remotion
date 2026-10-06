@@ -42,6 +42,24 @@
     return rows;
   }
   const upper = (s) => s.toLocaleUpperCase("es");
+
+  // ---------- user's text options ----------
+  // A typeface picked by the user replaces the style's lyric font; the
+  // draw wrapper at the bottom sets it for the frame being drawn.
+  let lyricFamily = null;
+  const fam = (d) => lyricFamily || d;
+  /** Move and scale the lyric layer: where it was dragged, at the chosen size. */
+  function place(g, f) {
+    g.translate(f.shift.x, f.shift.y);
+    const k = f.textScale || 1;
+    if (k !== 1) {
+      const cx = f.safe.x + f.safe.w / 2;
+      const cy = f.safe.y + f.safe.h / 2;
+      g.translate(cx, cy);
+      g.scale(k, k);
+      g.translate(-cx, -cy);
+    }
+  }
   const longestIndex = (words) => {
     let best = 0;
     words.forEach((w, i) => {
@@ -108,7 +126,7 @@
       g.translate((rand(Math.floor(t * 30)) - 0.5) * shake, (rand(Math.floor(t * 30) + 7) - 0.5) * shake);
 
       // the lyric sits wherever it was dragged to
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       // outgoing line flies past the camera
       const prev = f.lines[f.current - 1];
       const out = t - L.start;
@@ -122,7 +140,7 @@
       const hero = longestIndex(line.words);
       const spec = rows.map((ws) => {
         const label = upper(ws.map((w) => w.text).join(" "));
-        g.font = "400 100px Anton, Impact, sans-serif";
+        g.font = `400 100px ${fam("Anton, Impact, sans-serif")}`;
         const w100 = g.measureText(label).width || 1;
         const isHero = ws.some((w) => w.index === hero);
         const size = Math.min(u * (isHero ? 250 : 190), (100 * safe.w * 0.88) / w100);
@@ -166,7 +184,7 @@
         g.translate(cx + dx, rowY + dy);
         g.rotate(rot);
         g.scale(scale, scale);
-        g.font = `400 ${size}px Anton, Impact, sans-serif`;
+        g.font = `400 ${size}px ${fam("Anton, Impact, sans-serif")}`;
         g.shadowColor = "rgba(0,0,0,0.45)";
         g.shadowBlur = u * 24;
         if (r.isHero) {
@@ -213,7 +231,7 @@
     c.putImageData(img, 0, 0);
     return grain;
   }
-  const CINE_SERIF = "'Cormorant Garamond', Georgia, serif";
+  const CINE_DEFAULT = "'Cormorant Garamond', Georgia, serif";
   /** Text drawn only as its blurred shadow: a lens out of focus. */
   function blurText(g, txt, x, y, blur, color) {
     // shadow offset and blur live in device pixels, the text in user space
@@ -317,7 +335,7 @@
       g.globalCompositeOperation = "source-over";
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawTitle(g, f, u);
       const ly = this.drawLyric(g, f, u);
       // anamorphic flare through the lyric, flaring on the beat
@@ -383,10 +401,10 @@
       }
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       let size = u * 96;
-      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
       const tw = g.measureText(title).width;
       if (tw > safe.w * 0.9) size *= (safe.w * 0.9) / tw;
-      g.font = `italic 500 ${size}px ${CINE_SERIF}`;
+      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
       g.shadowColor = "rgba(255,226,190,0.45)";
       g.shadowBlur = u * 26;
       g.fillStyle = "#f6efe4";
@@ -407,7 +425,7 @@
       const has = "letterSpacing" in g;
       const fontOf = (w) => {
         if (has) g.letterSpacing = w.hero ? "0px" : `${track}px`;
-        return w.hero ? `italic 500 ${size * 1.42}px ${CINE_SERIF}` : `600 ${size}px ${CINE_SERIF}`;
+        return w.hero ? `italic 500 ${size * 1.42}px ${fam(CINE_DEFAULT)}` : `600 ${size}px ${fam(CINE_DEFAULT)}`;
       };
       const show = (line, alphaMul, lift, out) => {
         if (!line || !line.words.length || alphaMul <= 0) return;
@@ -561,7 +579,7 @@
         const prev = f.lines[f.current - 1];
         const out = t - L.start;
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         if (prev && out < 0.25) this.drawLine(g, f, prev, u, hz, { exit: out / 0.25 });
         this.drawLine(g, f, L, u, hz, { pulse });
         g.restore();
@@ -575,7 +593,7 @@
       const rows = stackRows(line.words);
       const spec = rows.map((ws) => {
         const label = upper(ws.map((w) => w.text).join(" "));
-        g.font = "900 100px Orbitron, sans-serif";
+        g.font = `900 100px ${fam("Orbitron, sans-serif")}`;
         const w100 = g.measureText(label).width || 1;
         return { ws, label, size: Math.min(u * 120, (100 * safe.w * 0.9) / w100), t0: ws[0].t0 };
       });
@@ -611,7 +629,7 @@
         g.save();
         g.translate(cx, rowY);
         g.scale(scale, scale);
-        g.font = `900 ${size}px Orbitron, sans-serif`;
+        g.font = `900 ${size}px ${fam("Orbitron, sans-serif")}`;
         g.globalAlpha = alpha;
         const glow = 0.6 + 0.4 * (o.pulse || 0);
         if (glitch > 0.05) {
@@ -736,7 +754,7 @@
 
       const prev = lines[f.current - 1];
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       if (L && prev) {
         const e = clamp((t - L.start) / 0.32);
         if (e < 1) this.drawLine(g, f, prev, u, x0, x1, e);
@@ -753,6 +771,7 @@
       const hero = longestIndex(line.words);
       const fontOf = (w) => {
         if (has) g.letterSpacing = w.hero ? "0px" : `${-size * 0.045}px`;
+        if (lyricFamily) return `${w.hero ? "italic 400" : "700"} ${w.hero ? size * 1.12 : size}px ${lyricFamily}`;
         return w.hero ? MIN_SERIF(size * 1.18) : MIN_SANS(700, size);
       };
       const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
@@ -797,6 +816,7 @@
   /** wrapWords, cached: line layouts only change with text, font or width. */
   const wrapCache = new Map();
   function wrapCached(g, key, words, fontOf, maxW, spaceW) {
+    key += "|" + (lyricFamily || "");
     let v = wrapCache.get(key);
     if (!v) {
       if (wrapCache.size > 600) wrapCache.clear();
@@ -816,18 +836,20 @@
     g.closePath();
   }
   /** Draw a video cover-fitted to W x H (optionally through a CSS filter). */
-  function coverTo(g, v, W, H, filter) {
-    const vw = v.videoWidth;
-    const vh = v.videoHeight;
+  function coverTo(g, v, W, H, filter, t) {
+    const vw = v.videoWidth || v.naturalWidth;
+    const vh = v.videoHeight || v.naturalHeight;
     if (!vw || !vh) return false;
-    const k = Math.max(W / vw, H / vh);
+    let k = Math.max(W / vw, H / vh);
+    // a still image gets a slow push-in, so the background never looks frozen
+    if (v.naturalWidth && t != null) k *= 1.05 + 0.04 * Math.sin(t * 0.07);
     const fl = filter && "filter" in g;
     if (fl) g.filter = filter;
     g.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
     if (fl) g.filter = "none";
     return true;
   }
-  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter);
+  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
   const sung = (w, t) => clamp((t - w.t0) / Math.max(0.06, w.t1 - w.t0));
   /** Index of the word being sung (or last sung) in a line, -1 before it. */
@@ -842,7 +864,7 @@
   // ======================================================================
   // 5. KARAOKE — the line fills with colour as it is sung
   // ======================================================================
-  const KARA_FONT = (size) => `800 ${size}px Montserrat, 'Arial Black', sans-serif`;
+  const KARA_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   const karaoke = {
     id: "karaoke",
     label: "Karaoke",
@@ -898,7 +920,7 @@
       }
       g.restore();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawLyrics(g, f, u);
       g.restore();
     },
@@ -1065,7 +1087,7 @@
   // 6. WORD POP — subtitles the way creators edit them (big, word by word)
   // ======================================================================
   const POP_ACCENTS = ["#ffe600", "#3dff8b", "#ff4fa3", "#4fd8ff"];
-  const POP_FONT = (size) => `900 ${size}px Poppins, 'Arial Black', sans-serif`;
+  const POP_FONT = (size) => `900 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
   /** Split a line into chunks of up to three words / ~14 letters. */
   const chunkCache = new Map();
   function chunksOf(line) {
@@ -1133,7 +1155,7 @@
       for (let x = -H; x < H; x += sp) g.fillRect(x + off, -H, u * 18, H * 2);
       g.restore();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
       g.restore();
     },
@@ -1230,7 +1252,7 @@
   // Saved for later: registered here but not offered in the style picker
   // (add it back to THEMES in themes.js to show it).
   // ======================================================================
-  const CHROME_FONT = (size) => `900 ${size}px Montserrat, 'Arial Black', sans-serif`;
+  const CHROME_FONT = (size) => `900 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   /** Polished metal: sky above the horizon line, dark ground, bright floor. */
   function chromeGrad(g, y0, h, shift) {
     const gr = g.createLinearGradient(0, y0, 0, y0 + h);
@@ -1297,7 +1319,7 @@
       const L = f.lines[f.current];
       if (L) {
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         const prev = f.lines[f.current - 1];
         const out = t - L.start;
         if (prev && out < 0.32) this.drawLine(g, f, prev, u, out / 0.32);
@@ -1429,6 +1451,7 @@
   // ======================================================================
   const NOTE = { bg: "#000000", ink: "#f2f2f7", mute: "#8d8d93", accent: "#ffd60a" };
   const NOTE_FONT = (w, size) => `${w} ${size}px Inter, -apple-system, 'Segoe UI', sans-serif`;
+  const NOTE_LYR = (size) => `400 ${size}px ${fam("Inter, -apple-system, 'Segoe UI', sans-serif")}`;
   const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const notes = {
     id: "notes",
@@ -1473,6 +1496,8 @@
       g.beginPath();
       g.rect(0, top - u * 10, W, bottom - top + u * 10);
       g.clip();
+      // the note's text moves where it was dragged; the app bars stay put
+      place(g, f);
       const oy = top - scroll;
       const d = new Date();
       const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -1486,7 +1511,7 @@
       g.font = NOTE_FONT(700, u * 60);
       const title = (f.meta && f.meta.title) || "Letra";
       g.fillText(title, x0, oy + head.date + u * 66, cw);
-      g.font = NOTE_FONT(400, body);
+      g.font = NOTE_LYR(body);
       let cursor = null;
       blocks.forEach((b, i) => {
         const line = lines[i];
@@ -1528,7 +1553,7 @@
     },
     rows(g, line, body, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_FONT(400, body), w, body * 0.28);
+      return wrapCached(g, `n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_LYR(body), w, body * 0.28);
     },
     caret(g, f, line, c, u, body) {
       const { t } = f;
@@ -1650,6 +1675,7 @@
   // ======================================================================
   const AURORA_COLS = ["#00e0c6", "#7b5cff", "#ff4fd8", "#2f8bff", "#00ff9d"];
   const AUR_FONT = (w, size) => `${w} ${size}px Inter, -apple-system, 'Segoe UI', sans-serif`;
+  const AUR_LYR = (size) => `800 ${size}px ${fam("Inter, -apple-system, 'Segoe UI', sans-serif")}`;
   let auroraSmall = null;
   const aurora = {
     id: "aurora",
@@ -1657,7 +1683,7 @@
     tag: "Glass",
     fonts: ["500 100px Inter", "700 100px Inter", "800 100px Inter"],
     drawBg(g, W, H, t, en, pulse, video) {
-      if (video && coverTo(g, video, W, H)) {
+      if (video && coverTo(g, video, W, H, null, t)) {
         g.fillStyle = "rgba(4,5,13,0.28)";
         g.fillRect(0, 0, W, H);
         return;
@@ -1702,14 +1728,15 @@
         auroraSmall.height = sh;
       }
       this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse, f.video);
+      this.base = g.getTransform();
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawCard(g, f, u, pulse);
       g.restore();
     },
     layout(g, line, size, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_FONT(800, size), w, size * 0.28);
+      return wrapCached(g, `a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_LYR(size), w, size * 0.28);
     },
     drawCard(g, f, u, pulse) {
       const { W, H, t, safe } = f;
@@ -1744,7 +1771,10 @@
       g.imageSmoothingEnabled = true;
       g.imageSmoothingQuality = "high";
       // the blurred copy stays put while the card moves over it
-      g.drawImage(auroraSmall, -f.shift.x, -f.shift.y, W, H);
+      g.save();
+      g.setTransform(this.base);
+      g.drawImage(auroraSmall, 0, 0, W, H);
+      g.restore();
       g.fillStyle = "rgba(255,255,255,0.10)";
       g.fillRect(cx, cy, cw, ch);
       const sheen = g.createLinearGradient(cx, cy, cx + cw * 0.6, cy + ch);
@@ -1796,7 +1826,7 @@
       const show = (line, alphaMul, dy) => {
         if (!line || !line.words.length || alphaMul <= 0) return;
         const rows = this.layout(g, line, size, inner);
-        g.font = AUR_FONT(800, size);
+        g.font = AUR_LYR(size);
         g.textBaseline = "middle";
         rows.forEach((row, ri) => {
           row.items.forEach((it) => {
@@ -1881,7 +1911,7 @@
   // ======================================================================
   // 9. COUTURE — black & white fashion film: Didone capitals, cuts on every word
   // ======================================================================
-  const COUT_FONT = (size) => `500 ${size}px 'Bodoni Moda', Didot, 'Times New Roman', serif`;
+  const COUT_FONT = (size) => `500 ${size}px ${fam("'Bodoni Moda', Didot, 'Times New Roman', serif")}`;
   // 0: white studio, 1: black, 2: white band over black
   const COUT_LOOKS = [0, 1, 0, 2, 1, 0, 1, 2];
   const couture = {
@@ -1941,7 +1971,7 @@
       g.restore();
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       // the sung words, re-set on every word
       const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
       g.font = COUT_FONT(100);
@@ -2017,8 +2047,8 @@
   // ======================================================================
   // 10. BLACKOUT — pure black & white, the picture flips on every word
   // ======================================================================
-  const BO_GIANT = (size) => `400 ${size}px 'League Gothic', 'Arial Narrow', Impact, sans-serif`;
-  const BO_LOWER = (size) => `700 ${size}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+  const BO_GIANT = (size) => `400 ${size}px ${fam("'League Gothic', 'Arial Narrow', Impact, sans-serif")}`;
+  const BO_LOWER = (size) => `700 ${size}px ${fam("'Barlow Condensed', 'Arial Narrow', sans-serif")}`;
   const blackout = {
     id: "blackout",
     label: "Blackout",
@@ -2036,9 +2066,11 @@
       g.fillRect(0, 0, W, H);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
-      const cx = safe.x + safe.w / 2 + f.shift.x;
-      const cy = safe.y + safe.h / 2 + f.shift.y;
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h / 2;
       const w = L.words[j];
+      g.save();
+      place(g, f);
       g.fillStyle = ink;
       g.textBaseline = "middle";
       g.textAlign = "center";
@@ -2055,6 +2087,7 @@
         g.scale(k, k);
         g.font = BO_GIANT(size);
         g.fillText(label, 0, size * 0.04);
+        g.restore();
         g.restore();
         return;
       }
@@ -2078,6 +2111,7 @@
         row.items.forEach((it) => g.fillText(it.w.label, -row.width / 2 + it.x, y));
       });
       g.restore();
+      g.restore();
     },
   };
 
@@ -2085,6 +2119,7 @@
   // 11. VHS — a home tape: warm blur, OSD text, tracking noise
   // ======================================================================
   const VHS_FONT = (size) => `400 ${size}px VT323, 'Courier New', monospace`;
+  const VHS_LYR = (size) => `400 ${size}px ${fam("VT323, 'Courier New', monospace")}`;
   const VHS_MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const vhs = {
     id: "vhs",
@@ -2128,16 +2163,16 @@
       const L = lines[f.current];
       if (L && L.words.length) {
         g.save();
-        g.translate(f.shift.x, f.shift.y);
+        place(g, f);
         const j = activeWord(L, t);
         const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
         const size = u * 108;
-        const rows = wrapCached(g, `v|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => VHS_FONT(size), safe.w * 0.92, size * 0.42);
+        const rows = wrapCached(g, `v|${L.index}|${j}|${L.text}|${Math.round(size * 10)}`, shown, () => VHS_LYR(size), safe.w * 0.92, size * 0.42);
         const lh = size * 0.98;
         const cy = safe.y + safe.h * 0.5;
         g.textBaseline = "middle";
         g.textAlign = "left";
-        g.font = VHS_FONT(size);
+        g.font = VHS_LYR(size);
         const split = u * (3 + 6 * pulse);
         const draw = (dx, col) => {
           g.fillStyle = col;
@@ -2298,7 +2333,7 @@
       g.restore();
 
       g.save();
-      g.translate(f.shift.x, f.shift.y);
+      place(g, f);
       this.drawLyric(g, f, u, safe.y + u * 70, cy - sleeveS / 2 - u * 40);
       g.restore();
       grainOver(g, W, H, t, 0.1);
@@ -2520,7 +2555,7 @@
         const hero = longestIndex(line.words);
         let size = u * 104;
         const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
-        const fontOf = (sz) => (w) => VIN_SERIF(w.hero ? sz * 1.08 : sz, w.hero);
+        const fontOf = (sz) => (w) => (lyricFamily ? `${w.hero ? "italic " : ""}400 ${w.hero ? sz * 1.08 : sz}px ${lyricFamily}` : VIN_SERIF(w.hero ? sz * 1.08 : sz, w.hero));
         let rows = wrapCached(g, `vn|${line.index}|${line.text}|${Math.round(size * 10)}`, words, fontOf(size), safe.w * 0.9, size * 0.24);
         if (rows.length * size * 1.04 > bottom - top) {
           size *= (bottom - top) / (rows.length * size * 1.04);
@@ -2572,13 +2607,44 @@
   }
 
   const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo };
+  // every draw runs with the user's typeface (or the style's own)
+  Object.values(PRESETS).forEach((p) => {
+    const draw = p.draw;
+    p.draw = function (g, f) {
+      lyricFamily = f.font || null;
+      try {
+        return draw.call(this, g, f);
+      } finally {
+        lyricFamily = null;
+      }
+    };
+  });
+
+  /** Typefaces the user can give a style's lyric (all self-hosted). */
+  const FONTS = [
+    { id: "anton", label: "Anton", family: "Anton, Impact, sans-serif" },
+    { id: "montserrat", label: "Montserrat", family: "Montserrat, sans-serif" },
+    { id: "poppins", label: "Poppins", family: "Poppins, sans-serif" },
+    { id: "inter", label: "Inter", family: "Inter, sans-serif" },
+    { id: "league", label: "League Gothic", family: "'League Gothic', sans-serif" },
+    { id: "barlow", label: "Barlow Condensed", family: "'Barlow Condensed', sans-serif" },
+    { id: "bodoni", label: "Bodoni Moda", family: "'Bodoni Moda', serif" },
+    { id: "cormorant", label: "Cormorant", family: "'Cormorant Garamond', serif" },
+    { id: "instrument", label: "Instrument Serif", family: "'Instrument Serif', serif" },
+    { id: "orbitron", label: "Orbitron", family: "Orbitron, sans-serif" },
+    { id: "shrikhand", label: "Shrikhand", family: "Shrikhand, serif" },
+    { id: "vt323", label: "VT323", family: "VT323, monospace" },
+  ];
+
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
+    FONTS,
     /** Wait for every preset font (canvas text needs them loaded). */
-    loadFonts() {
+    loadFonts(extraFamily) {
       if (!document.fonts) return Promise.resolve();
       const all = Object.values(PRESETS).flatMap((p) => p.fonts);
+      if (extraFamily) all.push(`400 100px ${extraFamily}`, `700 100px ${extraFamily}`, `italic 400 100px ${extraFamily}`);
       return Promise.all(all.map((f) => document.fonts.load(f).catch(() => null)));
     },
   };
