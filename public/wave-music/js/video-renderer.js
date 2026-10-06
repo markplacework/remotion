@@ -424,6 +424,8 @@
       this.lines = WM.Motion.prepare(timeline);
       this.meta = style.meta || {};
       this.offset = style.offset || null;
+      this.video = !!theme.video && WM.BgVideo.enabled;
+      if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
@@ -432,10 +434,12 @@
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null }));
       return this.canvas;
     }
-    dispose() {}
+    dispose() {
+      if (this.video) WM.BgVideo.exporting = false;
+    }
   }
 
   WM.VideoRenderer = VideoRenderer;

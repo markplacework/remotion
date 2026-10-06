@@ -683,10 +683,40 @@
     requestAnimationFrame(thumbLoop);
   })(0);
 
+  // ---------- video de fondo (Lyrics Pro) ----------
+  function updateBgv() {
+    const on = WM.BgVideo.enabled;
+    $("bgv-name").textContent = on ? WM.BgVideo.name : "";
+    $("bgv-clear").hidden = !on;
+    $("btn-bgv").textContent = on ? "Cambiar video" : "Subir video vertical";
+  }
+  $("btn-bgv").onclick = () => $("file-bgv").click();
+  $("file-bgv").onchange = async (ev) => {
+    const file = ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    $("bgv-name").textContent = "Cargando…";
+    try {
+      await WM.BgVideo.load(file);
+      updateBgv();
+    } catch (err) {
+      WM.BgVideo.clear();
+      updateBgv();
+      $("bgv-name").textContent = err.message;
+    }
+    needsSnap = true;
+  };
+  $("bgv-clear").onclick = () => {
+    WM.BgVideo.clear();
+    updateBgv();
+    needsSnap = true;
+  };
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
+    $("video-opts").hidden = !WM.Themes.get(id).video;
     preview.setTheme(id);
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });

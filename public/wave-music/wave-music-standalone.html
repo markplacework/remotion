@@ -1762,6 +1762,29 @@ canvas.th-pro {
   width: 16px;
   height: 16px;
 }
+
+/* Lyrics Pro: background video picker */
+.bgv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.bgv-name {
+  min-width: 0;
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.opt-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
 </style>
   </head>
   <body>
@@ -1883,6 +1906,16 @@ canvas.th-pro {
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
+          </div>
+          <div id="video-opts" class="style-opts" hidden>
+            <span class="opt-label">Video de fondo</span>
+            <div class="bgv-row">
+              <button id="btn-bgv" class="btn btn-ghost">Subir video vertical</button>
+              <span id="bgv-name" class="bgv-name"></span>
+              <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
+            </div>
+            <p class="opt-hint">Se repite en loop, sigue a la canción y sale en el video descargado. Mejor en vertical (9:16).</p>
+            <input id="file-bgv" type="file" accept="video/*" hidden />
           </div>
           <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">
@@ -3029,17 +3062,17 @@ canvas.th-pro {
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
     // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
-    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", pro: true, background: { type: "motion" } },
-    cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" }, meta: true },
+    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", pro: true, background: { type: "motion" }, video: true },
+    cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", pro: true, background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f", meta: true },
-    karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" } },
+    karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" }, video: true },
     polaroid: { id: "polaroid", label: "Polaroid", kind: "motion", preset: "polaroid", pro: true, background: { type: "motion" } },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true, drag: false },
-    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true },
-    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" } },
+    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true, video: true },
+    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" }, video: true },
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", pro: true, background: { type: "motion" } },
-    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", pro: true, background: { type: "motion" } },
+    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", pro: true, background: { type: "motion" }, video: true },
     vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", pro: true, background: { type: "motion" }, meta: true },
   };
 
@@ -3212,6 +3245,8 @@ canvas.th-pro {
       lines,
       current, // index of the newest line that has started (-1: none yet)
       mockup: !!o.mockup,
+      // the user's background video (an HTMLVideoElement), when the style takes one
+      video: o.video || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
@@ -3301,8 +3336,13 @@ canvas.th-pro {
       const pulse = f.pulse();
 
       // background: near-black with a slow colour bloom that breathes on the beat
-      g.fillStyle = "#08080c";
-      g.fillRect(0, 0, W, H);
+      if (videoBg(g, f, "saturate(0.9) contrast(1.1)")) {
+        g.fillStyle = "rgba(8,8,12,0.58)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "#08080c";
+        g.fillRect(0, 0, W, H);
+      }
       const bx = W * (0.5 + 0.25 * Math.sin(t * 0.21));
       const by = H * (0.42 + 0.12 * Math.cos(t * 0.17));
       const bloom = g.createRadialGradient(bx, by, 0, bx, by, H * 0.62);
@@ -3474,8 +3514,16 @@ canvas.th-pro {
       sky.addColorStop(0.45, "#0a1d24");
       sky.addColorStop(0.78, "#2a1a10");
       sky.addColorStop(1, "#120804");
-      g.fillStyle = sky;
-      g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+      if (videoBg(g, f, "saturate(0.8) contrast(1.08)")) {
+        // grade the footage teal & orange instead of painting the night
+        g.globalAlpha = 0.55;
+        g.fillStyle = sky;
+        g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+        g.globalAlpha = 1;
+      } else {
+        g.fillStyle = sky;
+        g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+      }
       // low sun haze, drifting slowly
       const sx = W * (0.62 + 0.08 * Math.sin(t * 0.04));
       const sy = H * 0.7;
@@ -4036,6 +4084,19 @@ canvas.th-pro {
     g.arcTo(x, y, x + w, y, r);
     g.closePath();
   }
+  /** Draw a video cover-fitted to W x H (optionally through a CSS filter). */
+  function coverTo(g, v, W, H, filter) {
+    const vw = v.videoWidth;
+    const vh = v.videoHeight;
+    if (!vw || !vh) return false;
+    const k = Math.max(W / vw, H / vh);
+    const fl = filter && "filter" in g;
+    if (fl) g.filter = filter;
+    g.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
+    if (fl) g.filter = "none";
+    return true;
+  }
+  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter);
   /** Progress of a word being sung, 0..1. */
   const sung = (w, t) => clamp((t - w.t0) / Math.max(0.06, w.t1 - w.t0));
   /** Index of the word being sung (or last sung) in a line, -1 before it. */
@@ -4065,8 +4126,11 @@ canvas.th-pro {
       bg.addColorStop(0, "#160828");
       bg.addColorStop(0.55, "#1c0b38");
       bg.addColorStop(1, "#06030d");
+      const vid = videoBg(g, f, "saturate(0.9)");
+      g.globalAlpha = vid ? 0.62 : 1;
       g.fillStyle = bg;
       g.fillRect(0, 0, W, H);
+      g.globalAlpha = 1;
       g.save();
       g.globalCompositeOperation = "lighter";
       // stage lights swinging from the top, brighter on the beat
@@ -4714,7 +4778,12 @@ canvas.th-pro {
     label: "Aurora",
     tag: "Glass",
     fonts: ["500 100px Inter", "700 100px Inter", "800 100px Inter"],
-    drawBg(g, W, H, t, en, pulse) {
+    drawBg(g, W, H, t, en, pulse, video) {
+      if (video && coverTo(g, video, W, H)) {
+        g.fillStyle = "rgba(4,5,13,0.28)";
+        g.fillRect(0, 0, W, H);
+        return;
+      }
       g.fillStyle = "#04050d";
       g.fillRect(0, 0, W, H);
       g.save();
@@ -4738,7 +4807,7 @@ canvas.th-pro {
       const u = safe.w / 825;
       const en = f.energy();
       const pulse = f.pulse();
-      this.drawBg(g, W, H, t, en, pulse);
+      this.drawBg(g, W, H, t, en, pulse, f.video);
       // fine stars over the light
       for (let i = 0; i < 40; i++) {
         const tw = 0.5 + 0.5 * Math.sin(t * (0.6 + rand(i) * 1.5) + i * 3);
@@ -4754,7 +4823,7 @@ canvas.th-pro {
         auroraSmall.width = sw;
         auroraSmall.height = sh;
       }
-      this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse);
+      this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse, f.video);
       g.save();
       g.translate(f.shift.x, f.shift.y);
       this.drawCard(g, f, u, pulse);
@@ -4974,6 +5043,11 @@ canvas.th-pro {
         ink = look === 2 ? "#0b0b0b" : "#f4f4f4";
         ghost = "rgba(255,255,255,0.085)";
       }
+      // footage goes black & white, washed light or dark to match the cut
+      if (videoBg(g, f, "grayscale(1) contrast(1.2)")) {
+        g.fillStyle = look === 0 ? "rgba(246,246,246,0.66)" : "rgba(0,0,0,0.58)";
+        g.fillRect(0, 0, W, H);
+      }
       if (!L || !L.words.length || j < 0) {
         grainOver(g, W, H, t, 0.06);
         return;
@@ -5143,7 +5217,11 @@ canvas.th-pro {
       const { W, H, t, safe, lines } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      // footage stand-in: warm out-of-focus lights, handheld drift
+      // the user's footage, or a stand-in: warm out-of-focus lights, handheld drift
+      if (videoBg(g, f, "saturate(1.3) contrast(0.92) blur(1px)")) {
+        g.fillStyle = "rgba(60,30,10,0.18)";
+        g.fillRect(0, 0, W, H);
+      } else {
       g.save();
       g.translate(Math.sin(t * 0.9) * u * 6, Math.cos(t * 0.7) * u * 5);
       const bg = g.createLinearGradient(0, 0, 0, H);
@@ -5164,6 +5242,7 @@ canvas.th-pro {
         g.fillRect(0, 0, W, H);
       });
       g.restore();
+      }
       // washed-out tape colour
       g.fillStyle = "rgba(255,236,214,0.06)";
       g.fillRect(0, 0, W, H);
@@ -5735,6 +5814,70 @@ canvas.th-pro {
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
+// Wave Music · VIDEO DE FONDO
+// A user's own (vertical) video behind the Lyrics Pro styles that take
+// one. It loops and follows the song's clock: the audio stays the master,
+// the video is nudged back whenever it drifts, so preview, seeking and the
+// export all show the same frame for the same moment.
+(function (WM) {
+  const el = document.createElement("video");
+  el.muted = true;
+  el.loop = true;
+  el.playsInline = true;
+  el.preload = "auto";
+  let url = null;
+
+  const api = {
+    el,
+    name: "",
+    enabled: false,
+    // while a download is being recorded the export owns the clock
+    exporting: false,
+    get ready() {
+      return api.enabled && el.readyState >= 2 && el.videoWidth > 0;
+    },
+    async load(file) {
+      api.clear();
+      url = URL.createObjectURL(file);
+      api.name = file.name;
+      await new Promise((res, rej) => {
+        el.onloadeddata = res;
+        el.onerror = () => rej(new Error("No se pudo leer ese video"));
+        el.src = url;
+      });
+      api.enabled = true;
+    },
+    clear() {
+      api.enabled = false;
+      api.name = "";
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+      if (url) URL.revokeObjectURL(url);
+      url = null;
+    },
+    /** Keep the video on the song's clock; the element when it can be drawn. */
+    at(t, playing, fromExport = false) {
+      if (!api.enabled || !el.duration) return null;
+      if (api.exporting && !fromExport) return api.ready ? el : null;
+      const d = el.duration;
+      const want = ((t % d) + d) % d;
+      const drift = Math.abs(el.currentTime - want);
+      const off = drift > 0.35 && drift < d - 0.35;
+      if (playing) {
+        if (el.paused) el.play().catch(() => {});
+        if (off && !el.seeking) el.currentTime = want;
+      } else {
+        if (!el.paused) el.pause();
+        if (drift > 0.04 && !el.seeking) el.currentTime = want;
+      }
+      return api.ready ? el : null;
+    },
+  };
+  WM.BgVideo = api;
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
 // Wave Music · PREVISUALIZADOR
 // Renders the sync state into a stage, in the chosen style (themes.js)
 // and framing:
@@ -6054,7 +6197,7 @@ canvas.th-pro {
     }
 
     /** Lyrics Pro: draw the preset into the screen canvas at display resolution. */
-    renderMotion(t) {
+    renderMotion(t, playing) {
       const L = this.layout;
       const c = this.motionCanvas;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -6073,7 +6216,7 @@ canvas.th-pro {
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null }));
       if (this.guides) this.drawGuides(g, L);
     }
 
@@ -6200,7 +6343,7 @@ canvas.th-pro {
     render(state, { playing = false, time = state.time, duration = 0 } = {}) {
       if (this.chrome) this.chrome.update({ time, duration, playing, ...this.meta });
       if (this.motionCanvas) {
-        this.renderMotion(time);
+        this.renderMotion(time, playing);
         return { scroll: 0, looks: [] };
       }
       if (this.clockEl) {
@@ -6687,6 +6830,8 @@ canvas.th-pro {
       this.lines = WM.Motion.prepare(timeline);
       this.meta = style.meta || {};
       this.offset = style.offset || null;
+      this.video = !!theme.video && WM.BgVideo.enabled;
+      if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
@@ -6695,10 +6840,12 @@ canvas.th-pro {
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null }));
       return this.canvas;
     }
-    dispose() {}
+    dispose() {
+      if (this.video) WM.BgVideo.exporting = false;
+    }
   }
 
   WM.VideoRenderer = VideoRenderer;
@@ -7547,10 +7694,40 @@ canvas.th-pro {
     requestAnimationFrame(thumbLoop);
   })(0);
 
+  // ---------- video de fondo (Lyrics Pro) ----------
+  function updateBgv() {
+    const on = WM.BgVideo.enabled;
+    $("bgv-name").textContent = on ? WM.BgVideo.name : "";
+    $("bgv-clear").hidden = !on;
+    $("btn-bgv").textContent = on ? "Cambiar video" : "Subir video vertical";
+  }
+  $("btn-bgv").onclick = () => $("file-bgv").click();
+  $("file-bgv").onchange = async (ev) => {
+    const file = ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    $("bgv-name").textContent = "Cargando…";
+    try {
+      await WM.BgVideo.load(file);
+      updateBgv();
+    } catch (err) {
+      WM.BgVideo.clear();
+      updateBgv();
+      $("bgv-name").textContent = err.message;
+    }
+    needsSnap = true;
+  };
+  $("bgv-clear").onclick = () => {
+    WM.BgVideo.clear();
+    updateBgv();
+    needsSnap = true;
+  };
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
+    $("video-opts").hidden = !WM.Themes.get(id).video;
     preview.setTheme(id);
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });

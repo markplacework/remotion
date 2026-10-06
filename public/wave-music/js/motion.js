@@ -155,6 +155,8 @@
       lines,
       current, // index of the newest line that has started (-1: none yet)
       mockup: !!o.mockup,
+      // the user's background video (an HTMLVideoElement), when the style takes one
+      video: o.video || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest

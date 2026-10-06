@@ -132,6 +132,16 @@
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
           </div>
+          <div id="video-opts" class="style-opts" hidden>
+            <span class="opt-label">Video de fondo</span>
+            <div class="bgv-row">
+              <button id="btn-bgv" class="btn btn-ghost">Subir video vertical</button>
+              <span id="bgv-name" class="bgv-name"></span>
+              <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
+            </div>
+            <p class="opt-hint">Se repite en loop, sigue a la canción y sale en el video descargado. Mejor en vertical (9:16).</p>
+            <input id="file-bgv" type="file" accept="video/*" hidden />
+          </div>
           <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">
               <label class="field grow"><span>Canción</span><input id="sp-title" type="text" placeholder="Título de la canción" /></label>
@@ -313,6 +323,7 @@
     <script src="js/motion.js"></script>
     <script src="js/presets.js"></script>
     <script src="js/chrome.js"></script>
+    <script src="js/bgvideo.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/video-renderer.js"></script>
     <script src="js/exporter.js"></script>

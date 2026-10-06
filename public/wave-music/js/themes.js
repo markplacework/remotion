@@ -129,17 +129,17 @@
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
     // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
-    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", pro: true, background: { type: "motion" } },
-    cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" }, meta: true },
+    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", pro: true, background: { type: "motion" }, video: true },
+    cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", pro: true, background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", pro: true, background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f", meta: true },
-    karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" } },
+    karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" }, video: true },
     polaroid: { id: "polaroid", label: "Polaroid", kind: "motion", preset: "polaroid", pro: true, background: { type: "motion" } },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true, drag: false },
-    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true },
-    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" } },
+    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true, video: true },
+    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" }, video: true },
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", pro: true, background: { type: "motion" } },
-    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", pro: true, background: { type: "motion" } },
+    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", pro: true, background: { type: "motion" }, video: true },
     vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", pro: true, background: { type: "motion" }, meta: true },
   };
 

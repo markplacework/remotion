@@ -67,8 +67,13 @@
       const pulse = f.pulse();
 
       // background: near-black with a slow colour bloom that breathes on the beat
-      g.fillStyle = "#08080c";
-      g.fillRect(0, 0, W, H);
+      if (videoBg(g, f, "saturate(0.9) contrast(1.1)")) {
+        g.fillStyle = "rgba(8,8,12,0.58)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "#08080c";
+        g.fillRect(0, 0, W, H);
+      }
       const bx = W * (0.5 + 0.25 * Math.sin(t * 0.21));
       const by = H * (0.42 + 0.12 * Math.cos(t * 0.17));
       const bloom = g.createRadialGradient(bx, by, 0, bx, by, H * 0.62);
@@ -240,8 +245,16 @@
       sky.addColorStop(0.45, "#0a1d24");
       sky.addColorStop(0.78, "#2a1a10");
       sky.addColorStop(1, "#120804");
-      g.fillStyle = sky;
-      g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+      if (videoBg(g, f, "saturate(0.8) contrast(1.08)")) {
+        // grade the footage teal & orange instead of painting the night
+        g.globalAlpha = 0.55;
+        g.fillStyle = sky;
+        g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+        g.globalAlpha = 1;
+      } else {
+        g.fillStyle = sky;
+        g.fillRect(-u * 10, -u * 10, W + u * 20, H + u * 20);
+      }
       // low sun haze, drifting slowly
       const sx = W * (0.62 + 0.08 * Math.sin(t * 0.04));
       const sy = H * 0.7;
@@ -802,6 +815,19 @@
     g.arcTo(x, y, x + w, y, r);
     g.closePath();
   }
+  /** Draw a video cover-fitted to W x H (optionally through a CSS filter). */
+  function coverTo(g, v, W, H, filter) {
+    const vw = v.videoWidth;
+    const vh = v.videoHeight;
+    if (!vw || !vh) return false;
+    const k = Math.max(W / vw, H / vh);
+    const fl = filter && "filter" in g;
+    if (fl) g.filter = filter;
+    g.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
+    if (fl) g.filter = "none";
+    return true;
+  }
+  const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter);
   /** Progress of a word being sung, 0..1. */
   const sung = (w, t) => clamp((t - w.t0) / Math.max(0.06, w.t1 - w.t0));
   /** Index of the word being sung (or last sung) in a line, -1 before it. */
@@ -831,8 +857,11 @@
       bg.addColorStop(0, "#160828");
       bg.addColorStop(0.55, "#1c0b38");
       bg.addColorStop(1, "#06030d");
+      const vid = videoBg(g, f, "saturate(0.9)");
+      g.globalAlpha = vid ? 0.62 : 1;
       g.fillStyle = bg;
       g.fillRect(0, 0, W, H);
+      g.globalAlpha = 1;
       g.save();
       g.globalCompositeOperation = "lighter";
       // stage lights swinging from the top, brighter on the beat
@@ -1480,7 +1509,12 @@
     label: "Aurora",
     tag: "Glass",
     fonts: ["500 100px Inter", "700 100px Inter", "800 100px Inter"],
-    drawBg(g, W, H, t, en, pulse) {
+    drawBg(g, W, H, t, en, pulse, video) {
+      if (video && coverTo(g, video, W, H)) {
+        g.fillStyle = "rgba(4,5,13,0.28)";
+        g.fillRect(0, 0, W, H);
+        return;
+      }
       g.fillStyle = "#04050d";
       g.fillRect(0, 0, W, H);
       g.save();
@@ -1504,7 +1538,7 @@
       const u = safe.w / 825;
       const en = f.energy();
       const pulse = f.pulse();
-      this.drawBg(g, W, H, t, en, pulse);
+      this.drawBg(g, W, H, t, en, pulse, f.video);
       // fine stars over the light
       for (let i = 0; i < 40; i++) {
         const tw = 0.5 + 0.5 * Math.sin(t * (0.6 + rand(i) * 1.5) + i * 3);
@@ -1520,7 +1554,7 @@
         auroraSmall.width = sw;
         auroraSmall.height = sh;
       }
-      this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse);
+      this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse, f.video);
       g.save();
       g.translate(f.shift.x, f.shift.y);
       this.drawCard(g, f, u, pulse);
@@ -1740,6 +1774,11 @@
         ink = look === 2 ? "#0b0b0b" : "#f4f4f4";
         ghost = "rgba(255,255,255,0.085)";
       }
+      // footage goes black & white, washed light or dark to match the cut
+      if (videoBg(g, f, "grayscale(1) contrast(1.2)")) {
+        g.fillStyle = look === 0 ? "rgba(246,246,246,0.66)" : "rgba(0,0,0,0.58)";
+        g.fillRect(0, 0, W, H);
+      }
       if (!L || !L.words.length || j < 0) {
         grainOver(g, W, H, t, 0.06);
         return;
@@ -1909,7 +1948,11 @@
       const { W, H, t, safe, lines } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      // footage stand-in: warm out-of-focus lights, handheld drift
+      // the user's footage, or a stand-in: warm out-of-focus lights, handheld drift
+      if (videoBg(g, f, "saturate(1.3) contrast(0.92) blur(1px)")) {
+        g.fillStyle = "rgba(60,30,10,0.18)";
+        g.fillRect(0, 0, W, H);
+      } else {
       g.save();
       g.translate(Math.sin(t * 0.9) * u * 6, Math.cos(t * 0.7) * u * 5);
       const bg = g.createLinearGradient(0, 0, 0, H);
@@ -1930,6 +1973,7 @@
         g.fillRect(0, 0, W, H);
       });
       g.restore();
+      }
       // washed-out tape colour
       g.fillStyle = "rgba(255,236,214,0.06)";
       g.fillRect(0, 0, W, H);

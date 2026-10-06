@@ -317,7 +317,7 @@
     }
 
     /** Lyrics Pro: draw the preset into the screen canvas at display resolution. */
-    renderMotion(t) {
+    renderMotion(t, playing) {
       const L = this.layout;
       const c = this.motionCanvas;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -336,7 +336,7 @@
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null }));
       if (this.guides) this.drawGuides(g, L);
     }
 
@@ -463,7 +463,7 @@
     render(state, { playing = false, time = state.time, duration = 0 } = {}) {
       if (this.chrome) this.chrome.update({ time, duration, playing, ...this.meta });
       if (this.motionCanvas) {
-        this.renderMotion(time);
+        this.renderMotion(time, playing);
         return { scroll: 0, looks: [] };
       }
       if (this.clockEl) {
