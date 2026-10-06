@@ -1147,12 +1147,11 @@ kbd {
 .framing {
   flex-wrap: nowrap;
 }
-/* First-time hint: a calm pill just above the chat's bottom edge (on
-   the mockup, right above the "Mensaje" bar), clear of the bubbles. */
+/* First-time hint: a calm pill in the middle of the screen. */
 .full-hint {
   position: absolute;
   left: 50%;
-  bottom: 5%;
+  top: 50%;
   z-index: 4;
   display: block;
   width: max-content;
@@ -1167,7 +1166,7 @@ kbd {
   color: #fff;
   background: linear-gradient(120deg, rgba(30, 139, 255, 0.95), rgba(34, 211, 245, 0.95));
   box-shadow: 0 8px 26px rgba(var(--accent-rgb), 0.45);
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   animation: hint-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 /* The icon flows with the text, so icon + words centre as one block
@@ -1187,14 +1186,15 @@ kbd {
 .full-hint.leaving {
   animation: hint-out 0.35s ease both;
 }
+/* Mockup: centre of the phone's screen (13.8% top, 11% bottom inset). */
 .stage-host[data-layout="mockup"] .full-hint {
-  bottom: calc(11% + 14px);
+  top: 51.4%;
 }
 @keyframes hint-in {
-  from { opacity: 0; transform: translate(-50%, 10px) scale(0.96); }
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 10px)) scale(0.96); }
 }
 @keyframes hint-out {
-  to { opacity: 0; transform: translate(-50%, 6px) scale(0.97); }
+  to { opacity: 0; transform: translate(-50%, calc(-50% + 6px)) scale(0.97); }
 }
 .stage-host.is-empty .full-hint,
 .full-stage .full-hint {
