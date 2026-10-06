@@ -23,11 +23,10 @@
   // Ajuste manual state
   const A = WM.Adjust;
   const history = new A.History();
-  let baseline = null; // timeline as generated, before manual tweaks
+  let adj = null; // Adjustments over the generated (baseline) timeline
   let selected = -1; // explicitly chosen line (-1 = follow playback)
   let scope = "line";
   let listenUntil = null;
-  let dragging = false;
 
   // ---------- helpers ----------
   function toast(msg) {
@@ -59,7 +58,7 @@
   /** New lyrics/sync: rebuild everything and make it the new baseline. */
   function applyTimeline(tl) {
     timeline = tl;
-    baseline = tl;
+    adj = tl ? new A.Adjustments(tl, audio.duration || tl.entries[tl.entries.length - 1].end) : null;
     selected = -1;
     history.clear();
     sync.setTimeline(tl);
@@ -74,9 +73,9 @@
   }
 
   /** Same lines, new times (manual adjust): no DOM rebuild, so dragging
-   * stays smooth. Pass record=false while a drag is in progress. */
-  function commitTimes(tl, record = true) {
-    if (record) history.push(timeline);
+   * the slider stays smooth. */
+  function commitTimes() {
+    const tl = adj.timeline();
     timeline = tl;
     sync.setTimeline(tl);
     preview.timeline = tl;
@@ -93,7 +92,12 @@
 
   function refreshAdjustButtons() {
     $("btn-undo").disabled = !history.canUndo;
-    $("btn-reset").disabled = !timeline || !baseline || timeline === baseline;
+    $("btn-reset").disabled = !adj || !adj.dirty;
+  }
+
+  /** Record the current adjustments so the next change can be undone. */
+  function checkpoint() {
+    if (adj) history.push(adj.snapshot());
   }
 
   function sourceLabel(id) {
@@ -143,20 +147,24 @@
       input.value = T.format(e.start, true);
       row.querySelector(".ts-text").textContent = e.text;
       row.querySelector(".ts-text").onclick = () => {
-        select(i, true);
+        select(i);
         audio.seek(timeline.entries[i].start + 0.01);
       };
       input.onchange = () => {
         const v = T.parse(input.value);
         if (Number.isNaN(v)) return (input.value = T.format(timeline.entries[i].start, true));
         select(i);
-        commitTimes(A.setStart(timeline, i, v, audio.duration));
+        checkpoint();
+        adj.setLineStart(i, v);
+        commitTimes();
         input.value = T.format(timeline.entries[i].start, true);
       };
       input.onkeydown = (ev) => ev.key === "Enter" && input.blur();
       row.querySelector(".ts-set").onclick = () => {
         select(i);
-        commitTimes(A.setStart(timeline, i, audio.currentTime, audio.duration));
+        checkpoint();
+        adj.setLineStart(i, audio.currentTime);
+        commitTimes();
         toast("Línea " + (i + 1) + " → " + T.format(timeline.entries[i].start, true));
       };
       list.appendChild(row);
@@ -222,39 +230,56 @@
     return state && state.activeIndex >= 0 ? state.activeIndex : Math.max(0, (state ? state.visibleCount : 1) - 1);
   }
 
-  function select(i, center) {
+  function select(i) {
     selected = i;
-    if (center && timeline) strip.follow(timeline.entries[i].start, true);
   }
 
-  let lastSelKey = "";
+  const fmtMs = (v) => {
+    const ms = Math.round(v * 1000);
+    return ms === 0 ? "0 ms" : (ms > 0 ? "+" : "−") + Math.abs(ms) + " ms";
+  };
+
+  let lastAdjKey = "";
   function renderAdjust(t, state) {
     const i = currentLine(state);
-    if (audio.playing) strip.follow(t);
-    strip.draw({ timeline, time: t, selected: i, duration: audio.duration });
-
     const e = timeline && timeline.entries[i];
-    const base = e && baseline && baseline.entries[i];
-    const key = e ? [i, e.start, base && base.start, selected].join() : "";
-    if (key === lastSelKey) return;
-    lastSelKey = key;
+    const key = e ? [i, e.start, scope, selected, adj.global, adj.line[i]].join() : "";
+    if (key === lastAdjKey) return;
+    lastAdjKey = key;
     $("sel-num").textContent = e ? i + 1 : "–";
     $("sel-text").textContent = e ? e.text : "";
     $("sel-start").textContent = e ? T.format(e.start, true) : "--:--.--";
-    const d = e && base ? Math.round((e.start - base.start) * 1000) : 0;
-    $("sel-delta").textContent = d ? (d > 0 ? "+" : "−") + Math.abs(d) + " ms" : "original";
-    $("sel-delta").classList.toggle("moved", !!d);
-    document.querySelectorAll(".ts-row").forEach((r) => r.classList.toggle("selected", Number(r.dataset.index) === i && selected >= 0));
+    if (!e) return slider.set(0, [-A.RANGE, A.RANGE]);
+    const v = scope === "all" ? adj.global : adj.line[i];
+    slider.set(v, scope === "all" ? adj.globalRange() : adj.lineRange(i));
+    $("adj-label").textContent = scope === "all" ? "Desplazamiento de todas las líneas" : "Desplazamiento de la línea " + (i + 1);
+    $("adj-value").textContent = fmtMs(v);
+    $("adj-value").classList.toggle("moved", v !== 0);
+    document
+      .querySelectorAll(".ts-row")
+      .forEach((r) => r.classList.toggle("selected", Number(r.dataset.index) === i && selected >= 0));
   }
 
-  function nudge(delta) {
-    if (!timeline) return;
+  /** Set the slider's value (line or global offset, in seconds). */
+  function setOffset(v) {
+    if (!adj) return;
     const i = currentLine(sync.stateAt(audio.currentTime));
     if (i < 0) return;
     if (selected < 0) select(i);
-    const next = scope === "all" ? A.shiftAll(timeline, delta, audio.duration) : A.shiftLine(timeline, i, delta, audio.duration);
-    commitTimes(next);
-    if (!audio.playing) strip.follow(timeline.entries[i].start);
+    if (scope === "all") adj.setGlobal(v);
+    else adj.setLine(i, v);
+    commitTimes();
+    // While paused, park the playhead on the line's start so the preview
+    // shows the bubble arriving at its new time.
+    if (scope === "line" && !audio.playing) audio.seek(timeline.entries[i].start + 0.001);
+  }
+
+  function nudge(delta) {
+    if (!adj) return;
+    const i = currentLine(sync.stateAt(audio.currentTime));
+    if (i < 0) return;
+    checkpoint();
+    setOffset((scope === "all" ? adj.global : adj.line[i]) + delta);
   }
 
   function listen() {
@@ -269,53 +294,26 @@
 
   function undo() {
     const prev = history.undo();
-    if (!prev) return;
-    commitTimes(prev, false);
+    if (!prev || !adj) return;
+    adj.restore(prev);
+    commitTimes();
     toast("Ajuste deshecho");
   }
 
-  const strip = new WM.AdjustStrip($("strip"), {
-    onSeek: (t) => {
-      audio.seek(t);
-      const s = sync.stateAt(t);
-      selected = s.visibleCount - 1 >= 0 ? s.visibleCount - 1 : 0;
-    },
-    onDragStart: (i) => {
-      dragging = true;
-      select(i);
-      history.push(timeline);
+  const slider = new WM.AdjustSlider($("adj-slider"), {
+    min: -A.RANGE,
+    max: A.RANGE,
+    step: 0.01,
+    onStart: checkpoint,
+    onChange: setOffset,
+    onEnd: () => {
       refreshAdjustButtons();
-    },
-    onDrag: (i, t) => {
-      commitTimes(A.setStart(timeline, i, t, audio.duration), false);
-      if (!audio.playing) audio.seek(timeline.entries[i].start + 0.001);
-    },
-    onDragEnd: () => {
-      dragging = false;
-      refreshAdjustButtons();
+      // Hear the result right away when adjusting a single line.
+      if (scope === "line" && !audio.playing) listen();
     },
   });
 
-  async function analyzeAudio() {
-    const status = $("strip-status");
-    strip.setPeaks(null);
-    status.textContent = "Analizando audio…";
-    try {
-      const peaks = await WM.Waveform.computePeaks(await audio.getArrayBuffer());
-      strip.setPeaks(peaks);
-      status.textContent = "";
-    } catch (e) {
-      status.textContent = "Sin forma de onda";
-    }
-  }
-
-  document.querySelectorAll("[data-nudge]").forEach((b) => (b.onclick = () => nudge(Number(b.dataset.nudge))));
-  document.querySelectorAll("[data-zoom]").forEach((b) => {
-    b.onclick = () => {
-      document.querySelectorAll("[data-zoom]").forEach((x) => x.setAttribute("aria-pressed", x === b));
-      strip.setZoom(Number(b.dataset.zoom));
-    };
-  });
+  document.querySelectorAll(".adj-step").forEach((b) => (b.onclick = () => nudge(Number(b.dataset.step))));
   document.querySelectorAll("[data-scope]").forEach((b) => {
     b.onclick = () => {
       document.querySelectorAll("[data-scope]").forEach((x) => x.setAttribute("aria-pressed", x === b));
@@ -325,8 +323,10 @@
   $("btn-listen").onclick = listen;
   $("btn-undo").onclick = undo;
   $("btn-reset").onclick = () => {
-    if (!baseline) return;
-    commitTimes(baseline);
+    if (!adj || !adj.dirty) return;
+    checkpoint();
+    adj.reset();
+    commitTimes();
     toast("Tiempos restablecidos");
   };
 
@@ -367,7 +367,6 @@
     try {
       await audio.loadFile(f);
       toast("Audio cargado");
-      analyzeAudio();
       if (timeline) applyTimeline(T.buildTimeline(parsed.lines, timeline.entries.map((e) => e.start), audio.duration, timeline.source));
     } catch (e) {
       toast(e.message);
@@ -414,7 +413,6 @@
     parsed = WM.Lyrics.parseLyrics(D.lyrics);
     try {
       await audio.load(D.audioSrc, D.audioName);
-      analyzeAudio();
     } catch (e) {
       toast(e.message);
     }

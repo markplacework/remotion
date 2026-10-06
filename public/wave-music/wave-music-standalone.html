@@ -149,7 +149,7 @@ button:disabled {
 }
 .preview {
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -380,41 +380,6 @@ select option:disabled {
   opacity: 0.35;
   pointer-events: none;
 }
-.strip-wrap {
-  position: relative;
-}
-.strip {
-  display: block;
-  width: 100%;
-  height: 112px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  touch-action: none;
-  cursor: pointer;
-}
-.strip-status {
-  position: absolute;
-  right: 8px;
-  bottom: 18px;
-  font-size: 11px;
-  color: var(--faint);
-  pointer-events: none;
-}
-.strip-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.strip-bar .hint {
-  margin: 0;
-  font-size: 11px;
-}
-.segmented.small button {
-  padding: 4px 10px;
-  font-size: 11px;
-}
 .sel {
   display: flex;
   align-items: center;
@@ -447,60 +412,128 @@ select option:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.sel-time {
+.sel-start {
   flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-variant-numeric: tabular-nums;
-}
-#sel-start {
   font-size: 15px;
   font-weight: 600;
-}
-.delta {
-  font-size: 11px;
-  color: var(--muted);
-}
-.delta.moved {
-  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
 }
 .scope {
   align-self: flex-start;
 }
-.nudge {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-}
-.nudge button {
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--line-2);
-  background: var(--surface-2);
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+/* photo-editor style adjustment slider */
+.adj {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 1px;
-  transition: border-color 0.15s, background 0.15s;
+  flex-direction: column;
+  gap: 8px;
 }
-.nudge button small {
-  font-size: 9px;
-  font-weight: 500;
+.adj-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
   color: var(--muted);
 }
-.nudge button:nth-child(3) {
-  margin-right: 6px;
+.adj-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
-.nudge button:hover {
+.adj-value.moved {
+  color: var(--accent-2);
+}
+.adj-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.adj-control #adj-slider {
+  flex: 1;
+  min-width: 0;
+}
+.adj-step {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.adj-step:hover {
+  color: var(--text);
   border-color: rgba(var(--accent-rgb), 0.6);
-  background: rgba(var(--accent-rgb), 0.08);
 }
-.nudge button:active {
-  transform: scale(0.96);
+.adj-track {
+  position: relative;
+  height: 28px;
+  cursor: pointer;
+  touch-action: none;
+}
+.adj-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 13px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.adj-limit {
+  position: absolute;
+  top: 13px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+.adj-fill {
+  position: absolute;
+  top: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+.adj-zero {
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.adj-knob {
+  position: absolute;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 4px rgba(var(--accent-rgb), 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.15s;
+  outline: none;
+}
+.adj-track:active .adj-knob,
+.adj-knob:focus-visible {
+  box-shadow:
+    0 0 0 6px rgba(var(--accent-rgb), 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.adj-scale {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 36px;
+  font-size: 10px;
+  color: var(--faint);
 }
 .adjust-actions {
   display: flex;
@@ -542,42 +575,22 @@ kbd {
 }
 
 /* ---------- 9:16 stage ---------- */
+/* The phone (or 9:16 video) always fits whole: it takes all the height
+   the preview column has, and its width follows from the aspect ratio. */
 .preview-body {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  width: 100%;
 }
-/* Wide screens: controls beside the phone, so they never cover it. */
-@media (min-width: 1200px) {
-  .preview-body {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 40px;
-  }
-  .preview-body .transport {
-    position: sticky;
-    top: calc(50% - 90px);
-    bottom: auto;
-    align-self: flex-start;
-    margin: 380px 0 0;
-    width: 400px;
-    flex: none;
-    border-radius: 18px;
-    border-bottom: 1px solid var(--line);
-    padding: 16px 20px 18px;
-  }
-}
-
-/* Near real size: 920px tall is the supplied 853x1843 mockup at its
-   native resolution on a 2x (retina) screen. The preview column
-   scrolls if the window is shorter; the controls stay pinned below. */
 .stage-host {
   position: relative;
-  flex: none;
-  height: 920px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   aspect-ratio: var(--stage-aspect, 9 / 16);
   max-width: 100%;
   border-radius: 22px;
@@ -586,6 +599,21 @@ kbd {
   box-shadow:
     0 0 0 1px var(--line-2),
     0 30px 80px -20px rgba(0, 0, 0, 0.8);
+}
+/* Wide screens: controls beside the phone instead of under it, so the
+   phone gets the full column height. */
+@media (min-width: 1200px) {
+  .preview-body {
+    flex-direction: row;
+    justify-content: center;
+    gap: 40px;
+  }
+  .preview-body .stage-host {
+    flex: none;
+  }
+  .preview-body .transport {
+    width: 380px;
+  }
 }
 .wm-stage {
   position: absolute;
@@ -721,19 +749,12 @@ kbd {
 /* ---------- transport ---------- */
 .transport {
   width: 100%;
-  max-width: 500px;
+  max-width: 460px;
   flex: none;
-  position: sticky;
-  bottom: -16px;
-  z-index: 4;
-  margin-top: -8px;
-  padding: 12px 20px 22px;
-  border-radius: 18px 18px 0 0;
-  background: rgba(6, 8, 14, 0.82);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  padding: 14px 18px 16px;
+  border-radius: 18px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-bottom: 0;
   transition: opacity 0.2s;
 }
 .transport.disabled {
@@ -938,7 +959,8 @@ kbd {
   .stage-host {
     flex: none;
     height: auto;
-    width: min(100%, 430px);
+    /* phone + controls fit on one phone screen */
+    width: min(100%, 430px, calc((100svh - 300px) * var(--stage-ratio, 0.5625)));
   }
   .editor {
     border-right: 0;
@@ -1016,28 +1038,12 @@ kbd {
           </div>
 
           <div id="adjust" class="adjust disabled">
-            <div class="strip-wrap">
-              <canvas id="strip" class="strip" aria-label="Barra de tiempo: arrastrá un marcador para mover su línea"></canvas>
-              <div id="strip-status" class="strip-status"></div>
-            </div>
-            <div class="strip-bar">
-              <div class="segmented small" id="zoom" role="group" aria-label="Zoom">
-                <button data-zoom="4" aria-pressed="false">4 s</button>
-                <button data-zoom="8" aria-pressed="true">8 s</button>
-                <button data-zoom="16" aria-pressed="false">16 s</button>
-              </div>
-              <span class="hint">Arrastrá un marcador para moverlo</span>
-            </div>
-
             <div class="sel">
               <div class="sel-info">
                 <span id="sel-num" class="sel-num">1</span>
                 <span id="sel-text" class="sel-text"></span>
               </div>
-              <div class="sel-time">
-                <span id="sel-start">00:00.00</span>
-                <span id="sel-delta" class="delta"></span>
-              </div>
+              <span id="sel-start" class="sel-start">00:00.00</span>
             </div>
 
             <div class="segmented scope" id="scope" role="group" aria-label="Qué mover">
@@ -1045,13 +1051,17 @@ kbd {
               <button data-scope="all" aria-pressed="false">Todas las líneas</button>
             </div>
 
-            <div class="nudge" role="group" aria-label="Mover">
-              <button data-nudge="-0.5">−500<small>ms</small></button>
-              <button data-nudge="-0.1">−100<small>ms</small></button>
-              <button data-nudge="-0.01">−10<small>ms</small></button>
-              <button data-nudge="0.01">+10<small>ms</small></button>
-              <button data-nudge="0.1">+100<small>ms</small></button>
-              <button data-nudge="0.5">+500<small>ms</small></button>
+            <div class="adj">
+              <div class="adj-head">
+                <span id="adj-label">Desplazamiento</span>
+                <span id="adj-value" class="adj-value">0 ms</span>
+              </div>
+              <div class="adj-control">
+                <button class="adj-step" data-step="-0.01" aria-label="Adelantar 10 ms">−</button>
+                <div id="adj-slider"></div>
+                <button class="adj-step" data-step="0.01" aria-label="Atrasar 10 ms">+</button>
+              </div>
+              <div class="adj-scale"><span>← Antes</span><span>0</span><span>Después →</span></div>
             </div>
 
             <div class="adjust-actions">
@@ -1060,9 +1070,9 @@ kbd {
                 Escuchar
               </button>
               <button id="btn-undo" class="btn btn-ghost" disabled>Deshacer</button>
-              <button id="btn-reset" class="btn-link" disabled>Restablecer</button>
+              <button id="btn-reset" class="btn-link" disabled>Restablecer todo</button>
             </div>
-            <p class="shortcuts">Atajos: <kbd>[</kbd> <kbd>]</kbd> 10 ms · <kbd>Shift</kbd> 100 ms · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer</p>
+            <p class="shortcuts">Doble clic en la línea vuelve a 0 · <kbd>[</kbd> <kbd>]</kbd> 10 ms · <kbd>Shift</kbd> 100 ms · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer</p>
           </div>
 
           <div id="ts-list" class="ts-list"></div>
@@ -1473,82 +1483,83 @@ kbd {
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
-// Wave Music · FORMA DE ONDA
-// Decodes the audio once and keeps an energy envelope (RMS per bucket),
-// so the manual-adjust strip can show where the voice starts.
-(function (WM) {
-  /**
-   * @returns {Promise<{ peaks: Float32Array, perSecond: number, duration: number }>}
-   */
-  async function computePeaks(arrayBuffer, perSecond = 200) {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new Ctx();
-    try {
-      const buf = await ctx.decodeAudioData(arrayBuffer);
-      const n = Math.ceil(buf.duration * perSecond);
-      const size = buf.sampleRate / perSecond;
-      // RMS energy per bucket (not raw peaks): a loud, compressed master
-      // has peaks near full scale everywhere, while RMS still shows where
-      // the singing starts and stops.
-      const sum = new Float64Array(n);
-      for (let c = 0; c < buf.numberOfChannels; c++) {
-        const data = buf.getChannelData(c);
-        for (let i = 0; i < n; i++) {
-          const from = Math.floor(i * size);
-          const to = Math.min(data.length, Math.floor((i + 1) * size));
-          let acc = 0;
-          for (let j = from; j < to; j++) acc += data[j] * data[j];
-          sum[i] += to > from ? acc / (to - from) : 0;
-        }
-      }
-      const peaks = new Float32Array(n);
-      for (let i = 0; i < n; i++) peaks[i] = Math.sqrt(sum[i] / buf.numberOfChannels);
-      // Normalise to the loud end (98th percentile) and expand contrast.
-      const sorted = Array.from(peaks).sort((a, b) => a - b);
-      const ref = sorted[Math.floor(sorted.length * 0.98)] || 1;
-      for (let i = 0; i < n; i++) peaks[i] = Math.pow(Math.min(1, peaks[i] / ref), 1.6);
-      return { peaks, perSecond, duration: buf.duration };
-    } finally {
-      ctx.close && ctx.close();
-    }
-  }
-
-  WM.Waveform = { computePeaks };
-})((window.WaveMusic = window.WaveMusic || {}));
-</script>
-    <script>
 // Wave Music · AJUSTE MANUAL (lógica)
-// Fine-tuning on top of whatever produced the timeline (test provider
-// today, AI later). Pure operations that return a new timeline, plus an
-// undo history. Times have 10 ms resolution (finer than one 30fps frame,
-// which is ~33 ms).
+// Non-destructive fine-tuning, like photo-editing adjustments: the
+// generated timeline (test provider today, AI later) is never modified.
+// We keep offsets on top of it and derive the final timeline:
+//
+//   final start[i] = baseline start[i] + global + line[i]
+//
+// Offsets are in seconds with 10 ms resolution (finer than one 30fps
+// frame, ~33 ms). A line can't be moved past its neighbours.
 (function (WM) {
   const T = WM.Timestamps;
-  const MIN_GAP = 0.05; // two lines never collapse onto the same instant
-
-  const linesOf = (tl) => tl.entries.map((e) => ({ id: e.lineId, text: e.text }));
-  const startsOf = (tl) => tl.entries.map((e) => e.start);
+  const MIN_GAP = 0.05;
+  const RANGE = 1.5; // slider reach, seconds either way
+  const r2 = (n) => Math.round(n * 100) / 100;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-  /** Move one line to `t`, kept between its neighbours. */
-  function setStart(tl, i, t, duration) {
-    const s = startsOf(tl);
-    const lo = i > 0 ? s[i - 1] + MIN_GAP : 0;
-    const hi = i < s.length - 1 ? s[i + 1] - MIN_GAP : Math.max(lo, duration - MIN_GAP);
-    s[i] = clamp(t, lo, hi);
-    return T.buildTimeline(linesOf(tl), s, duration, "manual");
-  }
+  class Adjustments {
+    constructor(baseline, duration) {
+      this.baseline = baseline;
+      this.duration = duration;
+      this.global = 0;
+      this.line = baseline ? baseline.entries.map(() => 0) : [];
+    }
 
-  function shiftLine(tl, i, delta, duration) {
-    return setStart(tl, i, tl.entries[i].start + delta, duration);
-  }
+    get dirty() {
+      return this.global !== 0 || this.line.some((v) => v !== 0);
+    }
 
-  /** Move every line by the same amount (whole sync early/late). */
-  function shiftAll(tl, delta, duration) {
-    const s = startsOf(tl);
-    if (!s.length) return tl;
-    const d = clamp(delta, -s[0], Math.max(0, duration - MIN_GAP - s[s.length - 1]));
-    return T.buildTimeline(linesOf(tl), s.map((v) => v + d), duration, "manual");
+    startOf(i) {
+      return this.baseline.entries[i].start + this.global + this.line[i];
+    }
+
+    /** Range the line's own offset can take without crossing neighbours. */
+    lineRange(i) {
+      const n = this.line.length;
+      const base = this.baseline.entries[i].start + this.global;
+      const lo = i > 0 ? this.startOf(i - 1) + MIN_GAP : 0;
+      const hi = i < n - 1 ? this.startOf(i + 1) - MIN_GAP : this.duration - MIN_GAP;
+      return [Math.max(-RANGE, lo - base), Math.min(RANGE, hi - base)];
+    }
+
+    globalRange() {
+      const s = this.line.map((_, i) => this.startOf(i) - this.global);
+      return [Math.max(-RANGE, -Math.min(...s)), Math.min(RANGE, this.duration - MIN_GAP - Math.max(...s))];
+    }
+
+    setLine(i, v) {
+      const [lo, hi] = this.lineRange(i);
+      this.line[i] = r2(clamp(v, lo, hi));
+    }
+    setGlobal(v) {
+      const [lo, hi] = this.globalRange();
+      this.global = r2(clamp(v, lo, hi));
+    }
+    /** Put line i at an absolute time (typed in, or "fijar aquí"). */
+    setLineStart(i, t) {
+      this.setLine(i, t - this.baseline.entries[i].start - this.global);
+    }
+
+    snapshot() {
+      return { global: this.global, line: this.line.slice() };
+    }
+    restore(s) {
+      this.global = s.global;
+      this.line = s.line.slice();
+    }
+    reset() {
+      this.restore({ global: 0, line: this.line.map(() => 0) });
+    }
+
+    /** The timeline everything else (sync, preview) uses. */
+    timeline() {
+      const b = this.baseline;
+      if (!this.dirty) return b;
+      const lines = b.entries.map((e) => ({ id: e.lineId, text: e.text }));
+      return T.buildTimeline(lines, lines.map((_, i) => this.startOf(i)), this.duration, "manual");
+    }
   }
 
   class History {
@@ -1556,9 +1567,8 @@ kbd {
       this.stack = [];
       this.limit = limit;
     }
-    push(tl) {
-      if (!tl) return;
-      this.stack.push(tl);
+    push(s) {
+      this.stack.push(s);
       if (this.stack.length > this.limit) this.stack.shift();
     }
     undo() {
@@ -1572,249 +1582,105 @@ kbd {
     }
   }
 
-  WM.Adjust = { setStart, shiftLine, shiftAll, History, MIN_GAP };
+  WM.Adjust = { Adjustments, History, RANGE, MIN_GAP };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
-// Wave Music · AJUSTE MANUAL (barra de tiempo)
-// Zoomed timeline strip: waveform + one draggable marker per line start
-// + playhead. Shows a window of a few seconds so a pixel is ~10-30 ms.
-//   drag a marker      -> move that line
-//   click elsewhere    -> seek there
-//   drag empty / wheel -> pan the window
+// Wave Music · AJUSTE MANUAL (deslizador)
+// Photo-editor style slider: zero in the middle, drag the knob left
+// (earlier) or right (later). Double-click/tap the knob to reset to 0.
+// Keyboard: ←/→ 10 ms, Shift 100 ms, Home = 0.
 (function (WM) {
-  const HIT = 9; // px either side of a marker that grabs it
-  const LABEL_H = 18;
-
-  class AdjustStrip {
+  class AdjustSlider {
     /**
-     * @param {HTMLCanvasElement} canvas
-     * @param {{ onSeek(t), onDragStart(i), onDrag(i, t), onDragEnd(i) }} cb
+     * @param {HTMLElement} root
+     * @param {{ min:number, max:number, step:number,
+     *           onStart(), onChange(v), onEnd() }} o
      */
-    constructor(canvas, cb) {
-      this.canvas = canvas;
-      this.cb = cb;
-      this.peaks = null;
-      this.windowSec = 8;
-      this.viewStart = 0;
-      this.drag = null; // { kind: 'marker'|'pan'|'click', ... }
-      this.state = { timeline: null, time: 0, selected: -1, duration: 0 };
+    constructor(root, o) {
+      this.o = o;
+      this.value = 0;
+      this.limits = [o.min, o.max];
+      root.classList.add("adj-slider");
+      root.innerHTML =
+        '<div class="adj-track"><span class="adj-limit"></span><span class="adj-fill"></span>' +
+        '<span class="adj-zero"></span><span class="adj-knob" role="slider" tabindex="0" ' +
+        'aria-label="Desplazamiento" aria-valuemin="' + o.min * 1000 + '" aria-valuemax="' + o.max * 1000 + '"></span></div>';
+      this.track = root.querySelector(".adj-track");
+      this.fill = root.querySelector(".adj-fill");
+      this.knob = root.querySelector(".adj-knob");
+      this.limitEl = root.querySelector(".adj-limit");
 
-      canvas.addEventListener("pointerdown", (e) => this.onDown(e));
-      canvas.addEventListener("pointermove", (e) => this.onMove(e));
-      canvas.addEventListener("pointerup", (e) => this.onUp(e));
-      canvas.addEventListener("pointercancel", (e) => this.onUp(e));
-      canvas.addEventListener(
-        "wheel",
-        (e) => {
-          e.preventDefault();
-          const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-          this.pan((d / this.width) * this.windowSec);
-        },
-        { passive: false },
-      );
-    }
-
-    setPeaks(p) {
-      this.peaks = p;
-    }
-
-    setZoom(sec) {
-      const center = this.viewStart + this.windowSec / 2;
-      this.windowSec = sec;
-      this.viewStart = center - sec / 2;
-      this.clampView();
-    }
-
-    get width() {
-      return this.canvas.clientWidth || 1;
-    }
-    get height() {
-      return this.canvas.clientHeight || 1;
-    }
-    xOf(t) {
-      return ((t - this.viewStart) / this.windowSec) * this.width;
-    }
-    tOf(x) {
-      return this.viewStart + (x / this.width) * this.windowSec;
-    }
-
-    clampView() {
-      const d = this.state.duration || 0;
-      this.viewStart = Math.max(0, Math.min(this.viewStart, Math.max(0, d - this.windowSec)));
-    }
-    pan(dt) {
-      this.viewStart += dt;
-      this.clampView();
-      this.userPanned = performance.now();
-    }
-    /** Re-centre if `t` is outside the comfortable middle of the window. */
-    follow(t, force) {
-      if (this.drag) return;
-      const a = this.viewStart + this.windowSec * 0.12;
-      const b = this.viewStart + this.windowSec * 0.88;
-      if (force || t < a || t > b) {
-        this.viewStart = t - this.windowSec * 0.35;
-        this.clampView();
-      }
-    }
-
-    // ---------- pointer ----------
-    pointerX(e) {
-      return e.clientX - this.canvas.getBoundingClientRect().left;
-    }
-    markerAt(x) {
-      const tl = this.state.timeline;
-      if (!tl) return -1;
-      let best = -1;
-      let bestD = HIT + 1;
-      tl.entries.forEach((en, i) => {
-        let d = Math.abs(this.xOf(en.start) - x);
-        if (i === this.state.selected) d -= 3; // prefer the selected one
-        if (d < bestD) {
-          bestD = d;
-          best = i;
-        }
+      const fromX = (x) => {
+        const r = this.track.getBoundingClientRect();
+        const k = Math.min(1, Math.max(0, (x - r.left) / r.width));
+        return o.min + k * (o.max - o.min);
+      };
+      let dragging = false;
+      this.track.addEventListener("pointerdown", (e) => {
+        if (e.detail > 1) return; // let dblclick reset
+        dragging = true;
+        this.track.setPointerCapture(e.pointerId);
+        o.onStart();
+        this.emit(fromX(e.clientX));
       });
-      return bestD <= HIT ? best : -1;
-    }
-    onDown(e) {
-      const x = this.pointerX(e);
-      this.canvas.setPointerCapture(e.pointerId);
-      const i = this.markerAt(x);
-      if (i >= 0) {
-        const en = this.state.timeline.entries[i];
-        this.drag = { kind: "marker", i, grab: this.tOf(x) - en.start };
-        this.cb.onDragStart(i);
-      } else {
-        this.drag = { kind: "click", x0: x, view0: this.viewStart };
-      }
-    }
-    onMove(e) {
-      const x = this.pointerX(e);
-      if (!this.drag) {
-        this.canvas.style.cursor = this.markerAt(x) >= 0 ? "ew-resize" : "pointer";
-        return;
-      }
-      if (this.drag.kind === "marker") {
-        this.cb.onDrag(this.drag.i, this.tOf(x) - this.drag.grab);
-      } else {
-        const dx = x - this.drag.x0;
-        if (this.drag.kind === "click" && Math.abs(dx) > 4) this.drag.kind = "pan";
-        if (this.drag.kind === "pan") {
-          this.viewStart = this.drag.view0 - (dx / this.width) * this.windowSec;
-          this.clampView();
-          this.userPanned = performance.now();
-        }
-      }
-    }
-    onUp(e) {
-      if (!this.drag) return;
-      const d = this.drag;
-      this.drag = null;
-      if (d.kind === "marker") this.cb.onDragEnd(d.i);
-      else if (d.kind === "click") this.cb.onSeek(this.tOf(this.pointerX(e)));
+      this.track.addEventListener("pointermove", (e) => dragging && this.emit(fromX(e.clientX)));
+      const end = () => {
+        if (!dragging) return;
+        dragging = false;
+        o.onEnd();
+      };
+      this.track.addEventListener("pointerup", end);
+      this.track.addEventListener("pointercancel", end);
+      this.track.addEventListener("dblclick", () => {
+        o.onStart();
+        this.emit(0);
+        o.onEnd();
+      });
+      this.knob.addEventListener("keydown", (e) => {
+        const step = e.shiftKey ? 0.1 : o.step;
+        let v = null;
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") v = this.value - step;
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") v = this.value + step;
+        if (e.key === "Home" || e.key === "0") v = 0;
+        if (v == null) return;
+        e.preventDefault();
+        e.stopPropagation();
+        o.onStart();
+        this.emit(v);
+        o.onEnd();
+      });
     }
 
-    // ---------- drawing ----------
-    draw(state) {
-      this.state = state;
-      const c = this.canvas;
-      const dpr = window.devicePixelRatio || 1;
-      const W = this.width;
-      const H = this.height;
-      if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) {
-        c.width = Math.round(W * dpr);
-        c.height = Math.round(H * dpr);
-      }
-      const g = c.getContext("2d");
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, W, H);
-      const css = getComputedStyle(document.documentElement);
-      const col = (n) => css.getPropertyValue(n).trim();
-      const accent2 = col("--accent-2") || "#22d3f5";
+    emit(v) {
+      const s = this.o.step;
+      this.o.onChange(Math.round(v / s) * s);
+    }
 
-      const top = LABEL_H;
-      const waveH = H - top - 14;
-      const mid = top + waveH / 2;
+    pct(v) {
+      return ((v - this.o.min) / (this.o.max - this.o.min)) * 100;
+    }
 
-      // second grid + labels
-      g.font = "10px Inter, sans-serif";
-      g.textBaseline = "alphabetic";
-      const step = this.windowSec > 10 ? 2 : 1;
-      for (let s = Math.ceil(this.viewStart / step) * step; s <= this.viewStart + this.windowSec; s += step) {
-        const x = Math.round(this.xOf(s)) + 0.5;
-        g.fillStyle = "rgba(255,255,255,0.06)";
-        g.fillRect(x, top, 1, waveH);
-        g.fillStyle = "rgba(255,255,255,0.32)";
-        g.fillText(WM.Timestamps.format(s), x + 3, H - 3);
-      }
-
-      // waveform
-      if (this.peaks) {
-        const { peaks, perSecond } = this.peaks;
-        for (let x = 0; x < W; x += 2) {
-          const i0 = Math.floor(this.tOf(x) * perSecond);
-          const i1 = Math.max(i0 + 1, Math.floor(this.tOf(x + 2) * perSecond));
-          let m = 0;
-          for (let i = i0; i < i1 && i < peaks.length; i++) if (i >= 0 && peaks[i] > m) m = peaks[i];
-          const h = Math.max(1, m * waveH * 0.92);
-          g.fillStyle = this.tOf(x) <= state.time ? "rgba(34,211,245,0.55)" : "rgba(255,255,255,0.2)";
-          g.fillRect(x, mid - h / 2, 1.4, h);
-        }
-      } else {
-        g.fillStyle = "rgba(255,255,255,0.08)";
-        g.fillRect(0, mid, W, 1);
-      }
-
-      // line regions + markers
-      const tl = state.timeline;
-      if (tl) {
-        tl.entries.forEach((en, i) => {
-          const x0 = this.xOf(en.start);
-          const x1 = this.xOf(en.end);
-          if (x1 < 0 || x0 > W) return;
-          const sel = i === state.selected;
-          if (sel) {
-            g.fillStyle = "rgba(30,139,255,0.13)";
-            g.fillRect(x0, top, x1 - x0, waveH);
-          }
-          // label lane
-          g.save();
-          g.beginPath();
-          g.rect(x0, 0, Math.max(0, x1 - x0 - 4), LABEL_H);
-          g.clip();
-          g.fillStyle = sel ? "#eef1f7" : "rgba(255,255,255,0.45)";
-          g.font = (sel ? "600 " : "") + "11px Inter, sans-serif";
-          g.fillText(i + 1 + "  " + en.text, x0 + 7, 12);
-          g.restore();
-          // marker
-          g.fillStyle = sel ? accent2 : "rgba(255,255,255,0.55)";
-          g.fillRect(Math.round(x0) - 1, 2, 2, top + waveH - 2);
-          // grip
-          g.beginPath();
-          const gx = Math.round(x0);
-          g.roundRect ? g.roundRect(gx - 4, top + waveH - 14, 8, 14, 3) : g.rect(gx - 4, top + waveH - 14, 8, 14);
-          g.fillStyle = sel ? accent2 : "rgba(255,255,255,0.4)";
-          g.fill();
-        });
-      }
-
-      // playhead
-      const px = this.xOf(state.time);
-      if (px >= 0 && px <= W) {
-        g.fillStyle = "#fff";
-        g.fillRect(Math.round(px), 0, 1.5, H - 12);
-        g.beginPath();
-        g.moveTo(px - 4, 0);
-        g.lineTo(px + 5, 0);
-        g.lineTo(px + 0.5, 6);
-        g.fill();
+    /** @param {number} v  current value  @param {[number,number]} limits reachable range */
+    set(v, limits) {
+      this.value = v;
+      const p = this.pct(v);
+      const z = this.pct(0);
+      this.knob.style.left = p + "%";
+      this.fill.style.left = Math.min(p, z) + "%";
+      this.fill.style.width = Math.abs(p - z) + "%";
+      this.knob.setAttribute("aria-valuenow", Math.round(v * 1000));
+      this.knob.setAttribute("aria-valuetext", Math.round(v * 1000) + " ms");
+      if (limits) {
+        const a = this.pct(limits[0]);
+        const b = this.pct(limits[1]);
+        this.limitEl.style.left = a + "%";
+        this.limitEl.style.width = Math.max(0, b - a) + "%";
       }
     }
   }
 
-  WM.AdjustStrip = AdjustStrip;
+  WM.AdjustSlider = AdjustSlider;
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -2198,11 +2064,10 @@ kbd {
   // Ajuste manual state
   const A = WM.Adjust;
   const history = new A.History();
-  let baseline = null; // timeline as generated, before manual tweaks
+  let adj = null; // Adjustments over the generated (baseline) timeline
   let selected = -1; // explicitly chosen line (-1 = follow playback)
   let scope = "line";
   let listenUntil = null;
-  let dragging = false;
 
   // ---------- helpers ----------
   function toast(msg) {
@@ -2234,7 +2099,7 @@ kbd {
   /** New lyrics/sync: rebuild everything and make it the new baseline. */
   function applyTimeline(tl) {
     timeline = tl;
-    baseline = tl;
+    adj = tl ? new A.Adjustments(tl, audio.duration || tl.entries[tl.entries.length - 1].end) : null;
     selected = -1;
     history.clear();
     sync.setTimeline(tl);
@@ -2249,9 +2114,9 @@ kbd {
   }
 
   /** Same lines, new times (manual adjust): no DOM rebuild, so dragging
-   * stays smooth. Pass record=false while a drag is in progress. */
-  function commitTimes(tl, record = true) {
-    if (record) history.push(timeline);
+   * the slider stays smooth. */
+  function commitTimes() {
+    const tl = adj.timeline();
     timeline = tl;
     sync.setTimeline(tl);
     preview.timeline = tl;
@@ -2268,7 +2133,12 @@ kbd {
 
   function refreshAdjustButtons() {
     $("btn-undo").disabled = !history.canUndo;
-    $("btn-reset").disabled = !timeline || !baseline || timeline === baseline;
+    $("btn-reset").disabled = !adj || !adj.dirty;
+  }
+
+  /** Record the current adjustments so the next change can be undone. */
+  function checkpoint() {
+    if (adj) history.push(adj.snapshot());
   }
 
   function sourceLabel(id) {
@@ -2318,20 +2188,24 @@ kbd {
       input.value = T.format(e.start, true);
       row.querySelector(".ts-text").textContent = e.text;
       row.querySelector(".ts-text").onclick = () => {
-        select(i, true);
+        select(i);
         audio.seek(timeline.entries[i].start + 0.01);
       };
       input.onchange = () => {
         const v = T.parse(input.value);
         if (Number.isNaN(v)) return (input.value = T.format(timeline.entries[i].start, true));
         select(i);
-        commitTimes(A.setStart(timeline, i, v, audio.duration));
+        checkpoint();
+        adj.setLineStart(i, v);
+        commitTimes();
         input.value = T.format(timeline.entries[i].start, true);
       };
       input.onkeydown = (ev) => ev.key === "Enter" && input.blur();
       row.querySelector(".ts-set").onclick = () => {
         select(i);
-        commitTimes(A.setStart(timeline, i, audio.currentTime, audio.duration));
+        checkpoint();
+        adj.setLineStart(i, audio.currentTime);
+        commitTimes();
         toast("Línea " + (i + 1) + " → " + T.format(timeline.entries[i].start, true));
       };
       list.appendChild(row);
@@ -2397,39 +2271,56 @@ kbd {
     return state && state.activeIndex >= 0 ? state.activeIndex : Math.max(0, (state ? state.visibleCount : 1) - 1);
   }
 
-  function select(i, center) {
+  function select(i) {
     selected = i;
-    if (center && timeline) strip.follow(timeline.entries[i].start, true);
   }
 
-  let lastSelKey = "";
+  const fmtMs = (v) => {
+    const ms = Math.round(v * 1000);
+    return ms === 0 ? "0 ms" : (ms > 0 ? "+" : "−") + Math.abs(ms) + " ms";
+  };
+
+  let lastAdjKey = "";
   function renderAdjust(t, state) {
     const i = currentLine(state);
-    if (audio.playing) strip.follow(t);
-    strip.draw({ timeline, time: t, selected: i, duration: audio.duration });
-
     const e = timeline && timeline.entries[i];
-    const base = e && baseline && baseline.entries[i];
-    const key = e ? [i, e.start, base && base.start, selected].join() : "";
-    if (key === lastSelKey) return;
-    lastSelKey = key;
+    const key = e ? [i, e.start, scope, selected, adj.global, adj.line[i]].join() : "";
+    if (key === lastAdjKey) return;
+    lastAdjKey = key;
     $("sel-num").textContent = e ? i + 1 : "–";
     $("sel-text").textContent = e ? e.text : "";
     $("sel-start").textContent = e ? T.format(e.start, true) : "--:--.--";
-    const d = e && base ? Math.round((e.start - base.start) * 1000) : 0;
-    $("sel-delta").textContent = d ? (d > 0 ? "+" : "−") + Math.abs(d) + " ms" : "original";
-    $("sel-delta").classList.toggle("moved", !!d);
-    document.querySelectorAll(".ts-row").forEach((r) => r.classList.toggle("selected", Number(r.dataset.index) === i && selected >= 0));
+    if (!e) return slider.set(0, [-A.RANGE, A.RANGE]);
+    const v = scope === "all" ? adj.global : adj.line[i];
+    slider.set(v, scope === "all" ? adj.globalRange() : adj.lineRange(i));
+    $("adj-label").textContent = scope === "all" ? "Desplazamiento de todas las líneas" : "Desplazamiento de la línea " + (i + 1);
+    $("adj-value").textContent = fmtMs(v);
+    $("adj-value").classList.toggle("moved", v !== 0);
+    document
+      .querySelectorAll(".ts-row")
+      .forEach((r) => r.classList.toggle("selected", Number(r.dataset.index) === i && selected >= 0));
   }
 
-  function nudge(delta) {
-    if (!timeline) return;
+  /** Set the slider's value (line or global offset, in seconds). */
+  function setOffset(v) {
+    if (!adj) return;
     const i = currentLine(sync.stateAt(audio.currentTime));
     if (i < 0) return;
     if (selected < 0) select(i);
-    const next = scope === "all" ? A.shiftAll(timeline, delta, audio.duration) : A.shiftLine(timeline, i, delta, audio.duration);
-    commitTimes(next);
-    if (!audio.playing) strip.follow(timeline.entries[i].start);
+    if (scope === "all") adj.setGlobal(v);
+    else adj.setLine(i, v);
+    commitTimes();
+    // While paused, park the playhead on the line's start so the preview
+    // shows the bubble arriving at its new time.
+    if (scope === "line" && !audio.playing) audio.seek(timeline.entries[i].start + 0.001);
+  }
+
+  function nudge(delta) {
+    if (!adj) return;
+    const i = currentLine(sync.stateAt(audio.currentTime));
+    if (i < 0) return;
+    checkpoint();
+    setOffset((scope === "all" ? adj.global : adj.line[i]) + delta);
   }
 
   function listen() {
@@ -2444,53 +2335,26 @@ kbd {
 
   function undo() {
     const prev = history.undo();
-    if (!prev) return;
-    commitTimes(prev, false);
+    if (!prev || !adj) return;
+    adj.restore(prev);
+    commitTimes();
     toast("Ajuste deshecho");
   }
 
-  const strip = new WM.AdjustStrip($("strip"), {
-    onSeek: (t) => {
-      audio.seek(t);
-      const s = sync.stateAt(t);
-      selected = s.visibleCount - 1 >= 0 ? s.visibleCount - 1 : 0;
-    },
-    onDragStart: (i) => {
-      dragging = true;
-      select(i);
-      history.push(timeline);
+  const slider = new WM.AdjustSlider($("adj-slider"), {
+    min: -A.RANGE,
+    max: A.RANGE,
+    step: 0.01,
+    onStart: checkpoint,
+    onChange: setOffset,
+    onEnd: () => {
       refreshAdjustButtons();
-    },
-    onDrag: (i, t) => {
-      commitTimes(A.setStart(timeline, i, t, audio.duration), false);
-      if (!audio.playing) audio.seek(timeline.entries[i].start + 0.001);
-    },
-    onDragEnd: () => {
-      dragging = false;
-      refreshAdjustButtons();
+      // Hear the result right away when adjusting a single line.
+      if (scope === "line" && !audio.playing) listen();
     },
   });
 
-  async function analyzeAudio() {
-    const status = $("strip-status");
-    strip.setPeaks(null);
-    status.textContent = "Analizando audio…";
-    try {
-      const peaks = await WM.Waveform.computePeaks(await audio.getArrayBuffer());
-      strip.setPeaks(peaks);
-      status.textContent = "";
-    } catch (e) {
-      status.textContent = "Sin forma de onda";
-    }
-  }
-
-  document.querySelectorAll("[data-nudge]").forEach((b) => (b.onclick = () => nudge(Number(b.dataset.nudge))));
-  document.querySelectorAll("[data-zoom]").forEach((b) => {
-    b.onclick = () => {
-      document.querySelectorAll("[data-zoom]").forEach((x) => x.setAttribute("aria-pressed", x === b));
-      strip.setZoom(Number(b.dataset.zoom));
-    };
-  });
+  document.querySelectorAll(".adj-step").forEach((b) => (b.onclick = () => nudge(Number(b.dataset.step))));
   document.querySelectorAll("[data-scope]").forEach((b) => {
     b.onclick = () => {
       document.querySelectorAll("[data-scope]").forEach((x) => x.setAttribute("aria-pressed", x === b));
@@ -2500,8 +2364,10 @@ kbd {
   $("btn-listen").onclick = listen;
   $("btn-undo").onclick = undo;
   $("btn-reset").onclick = () => {
-    if (!baseline) return;
-    commitTimes(baseline);
+    if (!adj || !adj.dirty) return;
+    checkpoint();
+    adj.reset();
+    commitTimes();
     toast("Tiempos restablecidos");
   };
 
@@ -2542,7 +2408,6 @@ kbd {
     try {
       await audio.loadFile(f);
       toast("Audio cargado");
-      analyzeAudio();
       if (timeline) applyTimeline(T.buildTimeline(parsed.lines, timeline.entries.map((e) => e.start), audio.duration, timeline.source));
     } catch (e) {
       toast(e.message);
@@ -2589,7 +2454,6 @@ kbd {
     parsed = WM.Lyrics.parseLyrics(D.lyrics);
     try {
       await audio.load(D.audioSrc, D.audioName);
-      analyzeAudio();
     } catch (e) {
       toast(e.message);
     }
