@@ -1745,6 +1745,30 @@ canvas.th-pro {
     overflow: visible;
   }
 }
+
+/* Lyrics Pro: the lyric can be dragged on the picture */
+#stage-host[data-drag] {
+  cursor: grab;
+  touch-action: none;
+}
+#stage-host.dragging {
+  cursor: grabbing;
+}
+/* Draggable lyric: keep the picture clear — no dimming, and the play
+   button moves to the corner so the centre is free to grab. */
+.stage-host[data-drag] .stage-ui {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent 22%);
+  place-items: end start;
+}
+.stage-host[data-drag] .ui-play {
+  width: 40px;
+  height: 40px;
+  margin: 0 0 9px 12px;
+}
+.stage-host[data-drag] .ui-play svg {
+  width: 16px;
+  height: 16px;
+}
 </style>
   </head>
   <body>
@@ -1921,6 +1945,9 @@ canvas.th-pro {
               <button data-framing="mockup" aria-pressed="true" title="Solo para la vista previa: el video descargado no incluye el teléfono">Mockup</button>
               <button data-framing="video" aria-pressed="false" title="El video sin el teléfono. La descarga es 9:16 (1080 × 1920) completa">Video final</button>
             </div>
+            <button id="btn-center" class="full-btn" aria-label="Centrar el texto" title="Centrar el texto" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></svg>
+            </button>
             <button id="btn-full" class="full-btn" aria-label="Ver en pantalla completa" title="Pantalla completa">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
             </button>
@@ -3015,7 +3042,7 @@ canvas.th-pro {
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", pro: true, background: { type: "motion" }, statusInk: "#16140f", meta: true },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", pro: true, background: { type: "motion" } },
     wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", pro: true, background: { type: "motion" } },
-    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true },
+    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", pro: true, background: { type: "motion" }, meta: true, drag: false },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", pro: true, background: { type: "motion" }, meta: true },
     couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", pro: true, background: { type: "motion" } },
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", pro: true, background: { type: "motion" } },
@@ -3165,34 +3192,43 @@ canvas.th-pro {
    * The input every preset draws from.
    * @param {object} o { lines (prepare()), t, W, H, safe, energy, mockup, meta }
    */
+  // Text that lands exactly with the voice reads as late on screen, so the
+  // lyric runs a hair ahead of the audio (the beat stays on the audio).
+  const LEAD = 0.08;
+
   function frame(o) {
     const lines = o.lines;
+    const audioT = o.t;
+    const t = o.t + LEAD;
     let current = -1;
-    for (let i = 0; i < lines.length; i++) if (lines[i].start <= o.t) current = i;
+    for (let i = 0; i < lines.length; i++) if (lines[i].start <= t) current = i;
     const track = o.energy;
     if (track && track.avg == null) {
       let s = 0;
       for (let i = 0; i < track.energy.length; i++) s += track.energy[i];
       track.avg = s / Math.max(1, track.energy.length);
     }
+    const off = o.offset || { x: 0, y: 0 };
     return {
       W: o.W,
       H: o.H,
-      t: o.t,
+      t,
       safe: o.safe,
+      // where the user dragged the lyric, in canvas units (from safe-area fractions)
+      shift: { x: off.x * o.safe.w, y: off.y * o.safe.h },
       lines,
       current, // index of the newest line that has started (-1: none yet)
       mockup: !!o.mockup,
       meta: o.meta || {},
-      energy: (t = o.t) => (track ? sample(track.energy, track.rate, t) : 0.5),
+      energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
       energyAvg: track ? track.avg : 0.5,
       // Beat pulse; without an analysed track, word onsets stand in.
-      pulse: (t = o.t) => {
-        if (track) return sample(track.pulse, track.rate, t);
+      pulse: (at = audioT) => {
+        if (track) return sample(track.pulse, track.rate, at);
         let p = 0;
         const L = lines[current];
-        if (L) for (const w of L.words) if (t >= w.t0) p = Math.max(p, Math.exp(-(t - w.t0) / 0.14));
+        if (L) for (const w of L.words) if (at >= w.t0) p = Math.max(p, Math.exp(-(at - w.t0) / 0.14));
         return p;
       },
     };
@@ -3307,6 +3343,8 @@ canvas.th-pro {
       g.save();
       g.translate((rand(Math.floor(t * 30)) - 0.5) * shake, (rand(Math.floor(t * 30) + 7) - 0.5) * shake);
 
+      // the lyric sits wherever it was dragged to
+      g.translate(f.shift.x, f.shift.y);
       // outgoing line flies past the camera
       const prev = f.lines[f.current - 1];
       const out = t - L.start;
@@ -3506,6 +3544,8 @@ canvas.th-pro {
       }
       g.globalCompositeOperation = "source-over";
 
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       this.drawTitle(g, f, u);
       const ly = this.drawLyric(g, f, u);
       // anamorphic flare through the lyric, flaring on the beat
@@ -3519,9 +3559,10 @@ canvas.th-pro {
         g.fillStyle = streak;
         g.fillRect(0, ly - u * 2, W, u * 4);
         g.fillStyle = `rgba(80,190,255,${0.05 * fl})`;
-        g.fillRect(0, ly - u * 14, W, u * 28);
+        g.fillRect(-W, ly - u * 14, W * 3, u * 28);
         g.globalCompositeOperation = "source-over";
       }
+      g.restore();
       g.restore();
 
       // grade, vignette, grain and the scope bars
@@ -3747,8 +3788,11 @@ canvas.th-pro {
       if (L) {
         const prev = f.lines[f.current - 1];
         const out = t - L.start;
+        g.save();
+        g.translate(f.shift.x, f.shift.y);
         if (prev && out < 0.25) this.drawLine(g, f, prev, u, hz, { exit: out / 0.25 });
         this.drawLine(g, f, L, u, hz, { pulse });
+        g.restore();
       }
       // scanlines
       g.fillStyle = "rgba(0,0,0,0.18)";
@@ -3919,11 +3963,14 @@ canvas.th-pro {
       g.fill();
 
       const prev = lines[f.current - 1];
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       if (L && prev) {
         const e = clamp((t - L.start) / 0.32);
         if (e < 1) this.drawLine(g, f, prev, u, x0, x1, e);
       }
       if (L) this.drawLine(g, f, L, u, x0, x1, null);
+      g.restore();
     },
     /** The lyric: tight bold sans, the key word in an accent italic serif. */
     drawLine(g, f, line, u, x0, x1, exit) {
@@ -4062,7 +4109,10 @@ canvas.th-pro {
         g.fillRect(rand(i * 3.3) * W - sz / 2, rand(i * 6.1) * H - sz / 2, sz, sz);
       }
       g.restore();
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       this.drawLyrics(g, f, u);
+      g.restore();
     },
     layout(g, line, u, safe) {
       const size = u * 84;
@@ -4294,14 +4344,15 @@ canvas.th-pro {
       const off = (t * u * 20) % sp;
       for (let x = -H; x < H; x += sp) g.fillRect(x + off, -H, u * 18, H * 2);
       g.restore();
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
+      g.restore();
     },
     drawChunk(g, f, L, u, accent, pulse) {
       const { safe } = f;
       let t = f.t;
       const ws = L.words;
-      // a hair early: on screen, text that lands with the voice reads as late
-      t += 0.06;
       const j = Math.max(0, activeWord(L, t));
       const last = ws[ws.length - 1];
       const out = clamp(1 - (t - last.t1 - 0.9) / 0.2);
@@ -4402,8 +4453,11 @@ canvas.th-pro {
       const u = safe.w / 825;
       g.fillStyle = NOTE.bg;
       g.fillRect(0, 0, W, H);
-      const x0 = safe.x;
-      const x1 = safe.x + safe.w;
+      // without the phone around it the note needs its own side margins
+      const pad = f.mockup ? 0 : u * 48;
+      const x0 = safe.x + pad;
+      const x1 = safe.x + safe.w - pad;
+      const cw = x1 - x0;
       const navY = safe.y + u * (f.mockup ? 78 : 24);
       const barY = safe.y + safe.h - u * 30;
       const top = navY + u * 70;
@@ -4418,7 +4472,7 @@ canvas.th-pro {
       const blocks = [];
       let yy = head.date + head.title;
       for (let i = 0; i <= Math.min(f.current, lines.length - 1); i++) {
-        const rows = this.rows(g, lines[i], body, safe.w);
+        const rows = this.rows(g, lines[i], body, cw);
         blocks.push({ y: yy, rows });
         yy += rows.length * lh + para;
       }
@@ -4439,12 +4493,12 @@ canvas.th-pro {
       g.textAlign = "center";
       g.fillStyle = NOTE.mute;
       g.font = NOTE_FONT(500, u * 26);
-      g.fillText(`${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}, ${hh}`, safe.x + safe.w / 2, oy + u * 26);
+      g.fillText(`${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}, ${hh}`, x0 + cw / 2, oy + u * 26);
       g.textAlign = "left";
       g.fillStyle = NOTE.ink;
       g.font = NOTE_FONT(700, u * 60);
       const title = (f.meta && f.meta.title) || "Letra";
-      g.fillText(title, x0, oy + head.date + u * 66, safe.w);
+      g.fillText(title, x0, oy + head.date + u * 66, cw);
       g.font = NOTE_FONT(400, body);
       let cursor = null;
       blocks.forEach((b, i) => {
@@ -4656,7 +4710,10 @@ canvas.th-pro {
         auroraSmall.height = sh;
       }
       this.drawBg(auroraSmall.getContext("2d"), sw, sh, t, en, pulse);
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       this.drawCard(g, f, u, pulse);
+      g.restore();
     },
     layout(g, line, size, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
@@ -4694,7 +4751,8 @@ canvas.th-pro {
       g.clip();
       g.imageSmoothingEnabled = true;
       g.imageSmoothingQuality = "high";
-      g.drawImage(auroraSmall, 0, 0, W, H);
+      // the blurred copy stays put while the card moves over it
+      g.drawImage(auroraSmall, -f.shift.x, -f.shift.y, W, H);
       g.fillStyle = "rgba(255,255,255,0.10)";
       g.fillRect(cx, cy, cw, ch);
       const sheen = g.createLinearGradient(cx, cy, cx + cw * 0.6, cy + ch);
@@ -4885,6 +4943,8 @@ canvas.th-pro {
       g.fillText(upper(L.text), gx, cy + u * 10);
       g.restore();
 
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       // the sung words, re-set on every word
       const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
       g.font = COUT_FONT(100);
@@ -4951,6 +5011,7 @@ canvas.th-pro {
         });
       });
       g.restore();
+      g.restore();
       if (has) g.letterSpacing = "0px";
       grainOver(g, W, H, t, look === 0 ? 0.07 : 0.1);
     },
@@ -4978,8 +5039,8 @@ canvas.th-pro {
       g.fillRect(0, 0, W, H);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
-      const cx = safe.x + safe.w / 2;
-      const cy = safe.y + safe.h / 2;
+      const cx = safe.x + safe.w / 2 + f.shift.x;
+      const cy = safe.y + safe.h / 2 + f.shift.y;
       const w = L.words[j];
       g.fillStyle = ink;
       g.textBaseline = "middle";
@@ -5064,6 +5125,8 @@ canvas.th-pro {
 
       const L = lines[f.current];
       if (L && L.words.length) {
+        g.save();
+        g.translate(f.shift.x, f.shift.y);
         const j = activeWord(L, t);
         const shown = L.words.slice(0, j + 1).map((w) => ({ ...w, label: upper(w.text) }));
         const size = u * 108;
@@ -5099,6 +5162,7 @@ canvas.th-pro {
           g.fillStyle = "#fffbe8";
           g.fillRect(safe.x + (safe.w - last.width) / 2 + last.width + size * 0.12, y - size * 0.32, size * 0.42, size * 0.6);
         }
+        g.restore();
       }
 
       // on-screen display
@@ -5150,206 +5214,337 @@ canvas.th-pro {
   };
 
   // ======================================================================
-  // 12. VINILO — 70s sleeve: sunburst, a spinning record, groovy type
+  // 12. VINILO — a record on the turntable: sleeve, spinning vinyl, tone arm
   // ======================================================================
-  const VIN = { cream: "#f6e7c8", orange: "#e8632b", mustard: "#f2a93b", brown: "#4e2414", teal: "#2e6e68" };
-  const VIN_FONT = (size) => `400 ${size}px Shrikhand, 'Cooper Black', Georgia, serif`;
+  const VIN = { cream: "#f3e9d8", amber: "#e9a35b", mute: "rgba(243,233,216,0.55)" };
+  const VIN_SERIF = (size, it) => `${it ? "italic " : ""}400 ${size}px 'Instrument Serif', Georgia, serif`;
+  const SLEEVES = [
+    ["#b8452f", "#f0a046", "#2a120b"],
+    ["#1f5e5e", "#e2b65c", "#0b1f1f"],
+    ["#4b2f7a", "#e8706a", "#160c26"],
+    ["#183f66", "#e9a35b", "#08172a"],
+  ];
   const vinilo = {
     id: "vinilo",
     label: "Vinilo",
-    tag: "70s",
-    fonts: ["400 100px Shrikhand", "700 100px Inter"],
+    tag: "Analógico",
+    fonts: ["400 100px 'Instrument Serif'", "italic 400 100px 'Instrument Serif'", "600 100px Inter"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      const R = safe.w * 0.54;
-      const rcx = safe.x + safe.w / 2;
-      const rcy = safe.y + safe.h - R * 0.45;
-      g.fillStyle = VIN.cream;
+      // a dark listening room under one warm spotlight
+      g.fillStyle = "#0c0907";
       g.fillRect(0, 0, W, H);
-      // sunburst turning slowly behind the record
+      const spot = g.createRadialGradient(W * 0.5, H * 0.05, 0, W * 0.5, H * 0.05, H * 0.95);
+      spot.addColorStop(0, "rgba(255,196,128,0.30)");
+      spot.addColorStop(0.45, "rgba(255,160,90,0.08)");
+      spot.addColorStop(1, "rgba(255,160,90,0)");
+      g.fillStyle = spot;
+      g.fillRect(0, 0, W, H);
       g.save();
-      g.translate(rcx, rcy);
-      g.rotate(t * 0.06);
-      const N = 28;
-      for (let i = 0; i < N; i++) {
-        g.fillStyle = i % 2 ? hexA(VIN.mustard, 0.32) : hexA(VIN.orange, 0.16);
+      g.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 50; i++) {
+        const depth = 0.3 + rand(i * 5.3) * 0.7;
+        const x = (rand(i * 1.9) * W + t * u * 8 * depth + Math.sin(t * 0.4 + i) * u * 16) % W;
+        const y = (rand(i * 8.3) * H * 0.75 + H * 10 - t * u * 6 * depth) % (H * 0.75);
+        g.fillStyle = `rgba(255,220,170,${0.35 * depth * (0.5 + 0.5 * Math.sin(t + i))})`;
         g.beginPath();
-        g.moveTo(0, 0);
-        g.arc(0, 0, H * 1.2, (i / N) * Math.PI * 2, ((i + 1) / N) * Math.PI * 2);
-        g.closePath();
+        g.arc(x, y, u * (1 + 2 * depth), 0, Math.PI * 2);
         g.fill();
       }
       g.restore();
-      // 70s stripes arching over the record
-      [VIN.brown, VIN.orange, VIN.mustard].forEach((c, i) => {
-        g.strokeStyle = c;
-        g.lineWidth = u * 22;
-        g.beginPath();
-        g.arc(rcx, rcy, R + u * (40 + i * 26), Math.PI * 1.05, Math.PI * 1.95);
-        g.stroke();
-      });
-      this.drawRecord(g, f, u, rcx, rcy, R * (1 + 0.012 * pulse));
+
+      // sleeve + record, low in the frame
+      // sized so sleeve + record sit inside the safe area, centred
+      const R = safe.w * 0.33;
+      const sleeveS = R * 2.1;
+      const scx = safe.x + (safe.w - R * 2.806) / 2 + R * 1.05;
+      const cy = safe.y + safe.h - sleeveS / 2 - u * 90;
+      const rcx = scx + sleeveS * 0.36;
+      const meta = f.meta || {};
+      const pal = SLEEVES[Math.floor(rand((meta.title || "x").length * 3.7) * SLEEVES.length)];
+      this.drawSleeve(g, u, scx, cy, sleeveS, pal, meta);
+      this.drawRecord(g, f, u, rcx, cy, R * (1 + 0.008 * pulse), pal, meta);
+      this.drawArm(g, f, u, rcx, cy, R);
+      // caption under the turntable
+      g.save();
+      g.textAlign = "center";
+      g.textBaseline = "alphabetic";
+      g.fillStyle = VIN.cream;
+      g.font = VIN_SERIF(u * 34, true);
+      const cap = (meta.title || "Wave Music") + (meta.artist ? "  —  " : "");
+      const capW = g.measureText(cap).width;
+      g.font = `600 ${u * 20}px Inter, sans-serif`;
+      const art = meta.artist ? upper(meta.artist) : "";
+      const artW = g.measureText(art).width;
+      const x0 = safe.x + (safe.w - capW - artW) / 2;
+      const yCap = cy + sleeveS / 2 + u * 66;
+      g.textAlign = "left";
+      g.font = VIN_SERIF(u * 34, true);
+      g.fillText(cap, x0, yCap, safe.w);
+      g.fillStyle = VIN.mute;
+      g.font = `600 ${u * 20}px Inter, sans-serif`;
+      g.fillText(art, x0 + capW, yCap - u * 4);
+      g.restore();
+
       // header
       g.save();
-      g.font = `700 ${u * 24}px Inter, sans-serif`;
-      if ("letterSpacing" in g) g.letterSpacing = `${u * 5}px`;
-      g.fillStyle = VIN.teal;
+      g.font = `600 ${u * 22}px Inter, sans-serif`;
+      if ("letterSpacing" in g) g.letterSpacing = `${u * 6}px`;
+      g.fillStyle = VIN.mute;
       g.textBaseline = "top";
       g.textAlign = "left";
-      g.fillText("LADO A", safe.x, safe.y + u * 8);
+      g.fillText("LADO A  ·  33⅓", safe.x, safe.y + u * 10);
       g.textAlign = "right";
-      g.fillText("33⅓ RPM", safe.x + safe.w, safe.y + u * 8);
+      g.fillText(fmt(t), safe.x + safe.w, safe.y + u * 10);
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       g.restore();
-      this.drawLyric(g, f, u, safe.y + u * 70, rcy - R - u * 100);
-      grainOver(g, W, H, t, 0.06);
-    },
-    drawRecord(g, f, u, cx, cy, R) {
-      const { t } = f;
-      const meta = f.meta || {};
+
       g.save();
-      g.shadowColor = "rgba(78,36,20,0.45)";
+      g.translate(f.shift.x, f.shift.y);
+      this.drawLyric(g, f, u, safe.y + u * 70, cy - sleeveS / 2 - u * 40);
+      g.restore();
+      grainOver(g, W, H, t, 0.07);
+    },
+    drawSleeve(g, u, cx, cy, S, pal, meta) {
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(-0.05);
+      g.shadowColor = "rgba(0,0,0,0.6)";
+      g.shadowBlur = u * 50;
+      g.shadowOffsetY = u * 24;
+      g.fillStyle = pal[2];
+      g.fillRect(-S / 2, -S / 2, S, S);
+      g.shadowColor = "transparent";
+      g.save();
+      g.beginPath();
+      g.rect(-S / 2, -S / 2, S, S);
+      g.clip();
+      // cover art: duotone sun and rings
+      const bg = g.createLinearGradient(0, -S / 2, 0, S / 2);
+      bg.addColorStop(0, pal[0]);
+      bg.addColorStop(1, pal[2]);
+      g.fillStyle = bg;
+      g.fillRect(-S / 2, -S / 2, S, S);
+      const sun = g.createRadialGradient(0, -S * 0.08, 0, 0, -S * 0.08, S * 0.3);
+      sun.addColorStop(0, pal[1]);
+      sun.addColorStop(1, hexA(pal[1], 0.9));
+      g.fillStyle = sun;
+      g.beginPath();
+      g.arc(0, -S * 0.08, S * 0.24, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = hexA(pal[1], 0.5);
+      g.lineWidth = Math.max(1, u * 2);
+      for (let i = 1; i <= 4; i++) {
+        g.beginPath();
+        g.arc(0, -S * 0.08, S * (0.24 + i * 0.06), 0, Math.PI * 2);
+        g.stroke();
+      }
+      // ring wear from the record inside, and a worn edge
+      g.strokeStyle = "rgba(255,255,255,0.07)";
+      g.lineWidth = S * 0.04;
+      g.beginPath();
+      g.arc(S * 0.03, 0, S * 0.44, 0, Math.PI * 2);
+      g.stroke();
+      const sheen = g.createLinearGradient(-S / 2, -S / 2, S / 2, S / 2);
+      sheen.addColorStop(0, "rgba(255,255,255,0.14)");
+      sheen.addColorStop(0.4, "rgba(255,255,255,0)");
+      sheen.addColorStop(1, "rgba(0,0,0,0.25)");
+      g.fillStyle = sheen;
+      g.fillRect(-S / 2, -S / 2, S, S);
+      g.restore();
+      g.restore();
+    },
+    drawRecord(g, f, u, cx, cy, R, pal, meta) {
+      const { t } = f;
+      g.save();
+      g.shadowColor = "rgba(0,0,0,0.7)";
       g.shadowBlur = u * 40;
-      g.shadowOffsetY = u * 16;
-      g.fillStyle = "#111";
+      g.shadowOffsetX = u * 10;
+      g.shadowOffsetY = u * 18;
+      const base = g.createRadialGradient(cx, cy, R * 0.3, cx, cy, R);
+      base.addColorStop(0, "#161616");
+      base.addColorStop(1, "#070707");
+      g.fillStyle = base;
       g.beginPath();
       g.arc(cx, cy, R, 0, Math.PI * 2);
       g.fill();
       g.restore();
-      g.lineWidth = Math.max(1, u * 1.2);
-      for (let r = R * 0.4; r < R * 0.97; r += u * 7) {
-        g.strokeStyle = (r / (u * 7)) % 2 < 1 ? "#1d1d1d" : "#0b0b0b";
+      // grooves, with the gaps between tracks
+      g.lineWidth = Math.max(0.6, u * 1);
+      for (let i = 0, r = R * 0.38; r < R * 0.965; i++, r += u * 3.2) {
+        const gap = Math.abs(((r / R - 0.38) * 5) % 1 - 0.5) < 0.03;
+        g.strokeStyle = gap ? "rgba(0,0,0,0.9)" : `rgba(255,255,255,${0.025 + 0.03 * rand(i)})`;
         g.beginPath();
         g.arc(cx, cy, r, 0, Math.PI * 2);
         g.stroke();
       }
-      // fixed light catching the grooves
-      g.save();
+      g.strokeStyle = "rgba(255,255,255,0.12)";
+      g.lineWidth = Math.max(1, u * 2);
       g.beginPath();
-      g.arc(cx, cy, R * 0.97, 0, Math.PI * 2);
-      g.clip();
-      [-0.75, 2.39].forEach((a) => {
-        const gr = g.createConicGradient ? g.createConicGradient(a - 0.35, cx, cy) : null;
-        if (!gr) return;
-        gr.addColorStop(0, "rgba(255,255,255,0)");
-        gr.addColorStop(0.055, "rgba(255,255,255,0.16)");
-        gr.addColorStop(0.11, "rgba(255,255,255,0)");
-        gr.addColorStop(1, "rgba(255,255,255,0)");
-        g.fillStyle = gr;
+      g.arc(cx, cy, R - u, 0, Math.PI * 2);
+      g.stroke();
+      // the light catching the grooves stays still while the record spins
+      if (g.createConicGradient) {
+        g.save();
+        g.beginPath();
+        g.arc(cx, cy, R * 0.97, 0, Math.PI * 2);
+        g.arc(cx, cy, R * 0.37, 0, Math.PI * 2, true);
+        g.clip("evenodd");
+        const sh = g.createConicGradient(-0.9, cx, cy);
+        [0, 0.5].forEach((o) => {
+          sh.addColorStop(o, "rgba(255,255,255,0)");
+          sh.addColorStop(o + 0.04, "rgba(255,236,210,0.22)");
+          sh.addColorStop(o + 0.06, "rgba(190,220,255,0.14)");
+          sh.addColorStop(o + 0.12, "rgba(255,255,255,0)");
+        });
+        sh.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = sh;
         g.fillRect(cx - R, cy - R, R * 2, R * 2);
-      });
-      g.restore();
-      // label, turning at 33⅓
-      const lr = R * 0.36;
+        g.restore();
+      }
+      // label, turning at 33⅓ with the title running round it
+      const lr = R * 0.34;
       g.save();
       g.translate(cx, cy);
       g.rotate(t * ((33.333 / 60) * Math.PI * 2));
-      g.fillStyle = VIN.orange;
+      const lab = g.createRadialGradient(0, 0, 0, 0, 0, lr);
+      lab.addColorStop(0, pal[1]);
+      lab.addColorStop(1, pal[0]);
+      g.fillStyle = lab;
       g.beginPath();
       g.arc(0, 0, lr, 0, Math.PI * 2);
       g.fill();
-      g.strokeStyle = VIN.mustard;
-      g.lineWidth = lr * 0.08;
-      g.beginPath();
-      g.arc(0, 0, lr * 0.86, 0, Math.PI * 2);
-      g.stroke();
-      g.fillStyle = VIN.cream;
+      const ring = upper(`${meta.title || "Wave Music"} · ${meta.artist || "Lado A"} · `);
+      g.fillStyle = "rgba(20,10,5,0.75)";
+      g.font = `600 ${lr * 0.12}px Inter, sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
-      g.font = VIN_FONT(lr * 0.2);
-      g.fillText(meta.title || "Wave Music", 0, -lr * 0.42, lr * 1.5);
-      g.font = `700 ${lr * 0.11}px Inter, sans-serif`;
-      g.fillText(upper(meta.artist || "Lado A"), 0, lr * 0.45, lr * 1.4);
-      g.fillStyle = "#111";
+      const n = ring.length;
+      for (let i = 0; i < n; i++) {
+        g.save();
+        g.rotate((i / n) * Math.PI * 2);
+        g.fillText(ring[i], 0, -lr * 0.8);
+        g.restore();
+      }
+      g.fillStyle = "rgba(20,10,5,0.8)";
+      g.font = VIN_SERIF(lr * 0.26, true);
+      g.fillText("Wave", 0, -lr * 0.22);
+      g.font = `600 ${lr * 0.1}px Inter, sans-serif`;
+      g.fillText("33⅓ RPM  ·  STEREO", 0, lr * 0.36);
+      const pin = g.createRadialGradient(-lr * 0.02, -lr * 0.02, 0, 0, 0, lr * 0.07);
+      pin.addColorStop(0, "#f2f2f2");
+      pin.addColorStop(1, "#7a7a7a");
+      g.fillStyle = pin;
       g.beginPath();
-      g.arc(0, 0, lr * 0.07, 0, Math.PI * 2);
-      g.fill();
-      g.restore();
-      // tone arm resting on the outer grooves
-      const px = cx + R * 0.98;
-      const py = cy - R * 0.98;
-      const ex = cx + R * 0.52;
-      const ey = cy - R * 0.32;
-      g.save();
-      g.lineCap = "round";
-      g.strokeStyle = "#c9c2b4";
-      g.lineWidth = u * 12;
-      g.beginPath();
-      g.moveTo(px, py);
-      g.lineTo(ex, ey);
-      g.stroke();
-      g.fillStyle = "#3a3a3a";
-      g.save();
-      g.translate(ex, ey);
-      g.rotate(Math.atan2(ey - py, ex - px));
-      rrect(g, -u * 10, -u * 14, u * 46, u * 28, u * 5);
-      g.fill();
-      g.restore();
-      g.fillStyle = "#b9b2a4";
-      g.beginPath();
-      g.arc(px, py, u * 30, 0, Math.PI * 2);
-      g.fill();
-      g.fillStyle = "#8d8676";
-      g.beginPath();
-      g.arc(px, py, u * 14, 0, Math.PI * 2);
+      g.arc(0, 0, lr * 0.065, 0, Math.PI * 2);
       g.fill();
       g.restore();
     },
-    /** Groovy lyric with a stacked retro drop shadow; words drop in. */
+    /** Tone arm, creeping inwards as the song plays. */
+    drawArm(g, f, u, cx, cy, R) {
+      const { t, lines } = f;
+      const end = lines.length ? lines[lines.length - 1].end || lines[lines.length - 1].start + 4 : 60;
+      const prog = clamp(t / Math.max(1, end));
+      const px = cx + R * 0.92;
+      const py = cy - R * 1.02;
+      const len = R * 1.18;
+      const a0 = Math.PI * 0.56;
+      const a = a0 + prog * 0.32;
+      const ex = px + Math.cos(a) * len;
+      const ey = py + Math.sin(a) * len;
+      g.save();
+      g.lineCap = "round";
+      // base
+      g.shadowColor = "rgba(0,0,0,0.6)";
+      g.shadowBlur = u * 20;
+      g.shadowOffsetY = u * 10;
+      const plate = g.createRadialGradient(px - u * 8, py - u * 8, 0, px, py, u * 46);
+      plate.addColorStop(0, "#d9d4ca");
+      plate.addColorStop(1, "#5d5952");
+      g.fillStyle = plate;
+      g.beginPath();
+      g.arc(px, py, u * 42, 0, Math.PI * 2);
+      g.fill();
+      // arm tube with a metal highlight
+      const ang = Math.atan2(ey - py, ex - px);
+      g.translate(px, py);
+      g.rotate(ang);
+      const tube = g.createLinearGradient(0, -u * 8, 0, u * 8);
+      tube.addColorStop(0, "#f4f1ea");
+      tube.addColorStop(0.5, "#a9a49a");
+      tube.addColorStop(1, "#55514b");
+      g.fillStyle = tube;
+      rrect(g, -u * 70, -u * 7, len + u * 70, u * 14, u * 7);
+      g.fill();
+      g.shadowColor = "transparent";
+      // counterweight
+      g.fillStyle = "#2b2926";
+      rrect(g, -u * 96, -u * 20, u * 40, u * 40, u * 8);
+      g.fill();
+      // headshell
+      g.translate(len, 0);
+      g.rotate(0.35);
+      g.fillStyle = "#1d1c1a";
+      rrect(g, -u * 12, -u * 18, u * 58, u * 36, u * 6);
+      g.fill();
+      g.fillStyle = "#c9a45c";
+      g.fillRect(u * 30, -u * 6, u * 12, u * 12);
+      g.restore();
+      g.fillStyle = "#9b968c";
+      g.beginPath();
+      g.arc(px, py, u * 16, 0, Math.PI * 2);
+      g.fill();
+    },
+    /** Serif lyric, the key word in amber italic; words rise in softly. */
     drawLyric(g, f, u, top, bottom) {
       const { t, safe } = f;
       const L = f.lines[f.current];
       const prev = f.lines[f.current - 1];
       const show = (line, exit) => {
         if (!line || !line.words.length) return;
+        const hero = longestIndex(line.words);
         let size = u * 104;
-        const words = line.words.map((w) => ({ ...w, label: w.text }));
-        let rows = wrapCached(g, `vi|${line.index}|${line.text}|${Math.round(size * 10)}`, words, () => VIN_FONT(size), safe.w * 0.9, size * 0.26);
-        const lh0 = size * 1.08;
-        if (rows.length * lh0 > bottom - top) {
-          size *= (bottom - top) / (rows.length * lh0);
-          rows = wrapCached(g, `vi|${line.index}|${line.text}|${Math.round(size * 10)}`, words, () => VIN_FONT(size), safe.w * 0.9, size * 0.26);
+        const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.text }));
+        const fontOf = (sz) => (w) => VIN_SERIF(w.hero ? sz * 1.08 : sz, w.hero);
+        let rows = wrapCached(g, `vn|${line.index}|${line.text}|${Math.round(size * 10)}`, words, fontOf(size), safe.w * 0.9, size * 0.24);
+        if (rows.length * size * 1.04 > bottom - top) {
+          size *= (bottom - top) / (rows.length * size * 1.04);
+          rows = wrapCached(g, `vn|${line.index}|${line.text}|${Math.round(size * 10)}`, words, fontOf(size), safe.w * 0.9, size * 0.24);
         }
-        const lh = size * 1.08;
+        const lh = size * 1.04;
         const cy = (top + bottom) / 2;
         g.textBaseline = "middle";
         g.textAlign = "left";
-        g.font = VIN_FONT(size);
         rows.forEach((row, ri) => {
           const y0 = cy + (ri - (rows.length - 1) / 2) * lh;
           row.items.forEach((it) => {
             const w = it.w;
-            let dy = 0;
-            let a = 1;
-            let rot = 0;
+            let a;
+            let dy;
             if (exit != null) {
-              dy = u * 60 * ease.inOut(exit);
               a = 1 - exit;
+              dy = -u * 30 * ease.out(exit);
             } else {
-              const p = clamp((t - w.t0 + 0.05) / 0.4);
+              const p = clamp((t - w.t0 + 0.04) / 0.55);
               if (p <= 0) return;
-              dy = -u * 70 * (1 - ease.back(p));
-              a = clamp(p * 3);
-              rot = (rand(w.index + line.index * 7) - 0.5) * 0.12 * (1 - p);
+              a = ease.out(p);
+              dy = u * 26 * (1 - ease.out(p));
             }
-            const x = safe.x + (safe.w - row.width) / 2 + it.x;
-            g.save();
             g.globalAlpha = a;
-            g.translate(x + it.width / 2, y0 + dy);
-            g.rotate(rot);
-            const depth = Math.max(1, Math.round(size * 0.07));
-            g.fillStyle = VIN.brown;
-            for (let d = depth; d > 0; d--) g.fillText(w.label, -it.width / 2 + d * 0.9, d * 0.9);
-            g.fillStyle = (w.index + line.index) % 3 === 0 ? VIN.orange : (w.index + line.index) % 3 === 1 ? VIN.mustard : VIN.teal;
-            g.fillText(w.label, -it.width / 2, 0);
-            g.restore();
+            g.font = fontOf(size)(w);
+            g.shadowColor = "rgba(0,0,0,0.5)";
+            g.shadowBlur = u * 18;
+            g.fillStyle = w.hero ? VIN.amber : VIN.cream;
+            g.fillText(w.label, safe.x + (safe.w - row.width) / 2 + it.x, y0 + dy);
           });
         });
+        g.shadowBlur = 0;
+        g.globalAlpha = 1;
       };
       if (L && prev) {
-        const e = clamp((t - L.start) / 0.3);
+        const e = clamp((t - L.start) / 0.35);
         if (e < 1) show(prev, e);
       }
       show(L, null);
@@ -5534,7 +5729,7 @@ canvas.th-pro {
   // Lyrics Pro: where text may go. Video: inside the TikTok-safe area and
   // the preview's visible box; mockup: the phone screen minus status bar
   // and home indicator (canvas-local coordinates).
-  const MOTION_SAFE = { video: { x: 110, y: 230, w: 825, h: 1310 }, mockup: { x: 46, y: 150, w: 634, h: 1390 } };
+  const MOTION_SAFE = { video: { x: 140, y: 230, w: 800, h: 1310 }, mockup: { x: 46, y: 150, w: 634, h: 1390 } };
   const NO_CHAT = { x: 0, y: 0, scale: 1, width: 1, height: 1 };
 
   function layoutFor(framing, theme) {
@@ -5618,6 +5813,9 @@ canvas.th-pro {
       this.theme = WM.Themes.get(theme);
       this.spotifyColor = spotifyColor;
       this.meta = { title: "", artist: "" };
+      // Lyrics Pro: where the lyric was dragged, as fractions of the safe area
+      this.offset = { x: 0, y: 0 };
+      this.guides = null; // { x: bool, y: bool } while dragging
       this.timeline = null;
       this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
@@ -5627,6 +5825,22 @@ canvas.th-pro {
     setTheme(id) {
       this.theme = WM.Themes.get(id);
       this.setLayout(this.framing);
+    }
+    /** Can the lyric be dragged around in this style? */
+    get draggable() {
+      return this.theme.kind === "motion" && this.theme.drag !== false;
+    }
+    setOffset(o) {
+      this.offset = { x: o.x, y: o.y };
+    }
+    /** Map a pointer movement (CSS px) to safe-area fractions. */
+    pointerToOffset(dx, dy) {
+      const c = this.motionCanvas;
+      if (!c) return { x: 0, y: 0 };
+      const r = c.getBoundingClientRect();
+      const L = this.layout;
+      const k = L.bg.w / (r.width || 1);
+      return { x: (dx * k) / L.safe.w, y: (dy * k) / L.safe.h };
     }
     setSpotifyColor(id) {
       this.spotifyColor = id;
@@ -5647,6 +5861,7 @@ canvas.th-pro {
       if (this.stage) this.stage.remove();
       this.host.dataset.layout = L.id;
       this.host.dataset.theme = theme.id;
+      this.host.toggleAttribute("data-drag", this.draggable);
       // The preview box keeps the phone's proportions in both framings, so
       // switching never changes its size. "Video final" fills it like
       // object-fit: cover — the exported file is still the full 1080x1920.
@@ -5802,7 +6017,35 @@ canvas.th-pro {
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null }));
+      if (this.guides) this.drawGuides(g, L);
+    }
+
+    /** Preview only: safe area and the centre lines the lyric snaps to. */
+    drawGuides(g, L) {
+      const s = L.safe;
+      const u = s.w / 825;
+      g.save();
+      g.setLineDash([u * 10, u * 8]);
+      g.lineWidth = Math.max(1, u * 2);
+      g.strokeStyle = "rgba(255,255,255,0.45)";
+      g.strokeRect(s.x, s.y, s.w, s.h);
+      g.setLineDash([]);
+      g.lineWidth = Math.max(1, u * 3);
+      g.strokeStyle = "#ff2d78";
+      g.shadowColor = "rgba(0,0,0,0.5)";
+      g.shadowBlur = 4;
+      g.beginPath();
+      if (this.guides.x) {
+        g.moveTo(s.x + s.w / 2, 0);
+        g.lineTo(s.x + s.w / 2, L.bg.h);
+      }
+      if (this.guides.y) {
+        g.moveTo(0, s.y + s.h / 2);
+        g.lineTo(L.bg.w, s.y + s.h / 2);
+      }
+      g.stroke();
+      g.restore();
     }
 
     fillHeader() {
@@ -6387,15 +6630,16 @@ canvas.th-pro {
       this.preset = WM.Presets.get(theme.preset);
       this.lines = WM.Motion.prepare(timeline);
       this.meta = style.meta || {};
+      this.offset = style.offset || null;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
       this.g = this.canvas.getContext("2d");
-      this.safe = { x: 110, y: 230, w: 825, h: 1310 }; // = preview.js MOTION_SAFE.video
+      this.safe = { x: 140, y: 230, w: 800, h: 1310 }; // = preview.js MOTION_SAFE.video
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset }));
       return this.canvas;
     }
     dispose() {}
@@ -6926,10 +7170,66 @@ canvas.th-pro {
     needsSnap = true;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
+  // Lyrics Pro: drag the lyric anywhere on the canvas (TikTok style). It
+  // snaps to the centre lines, which show while dragging. A tap without
+  // movement still opens full screen.
+  const SNAP = 0.03;
+  const LIMIT = 0.45;
+  let drag = null;
+  let justDragged = false;
+  host.addEventListener("pointerdown", (e) => {
+    if (!preview.draggable || !timeline || e.button > 0 || e.target.closest(".empty-cta, button")) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false };
+  });
+  host.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      host.setPointerCapture(e.pointerId);
+      host.classList.add("dragging");
+      hideHint();
+    }
+    const d = preview.pointerToOffset(dx, dy);
+    let x = Math.max(-LIMIT, Math.min(LIMIT, drag.from.x + d.x));
+    let y = Math.max(-LIMIT, Math.min(LIMIT, drag.from.y + d.y));
+    const snapX = Math.abs(x) < SNAP;
+    const snapY = Math.abs(y) < SNAP;
+    if (snapX) x = 0;
+    if (snapY) y = 0;
+    preview.setOffset({ x, y });
+    preview.guides = { x: snapX, y: snapY };
+    updateCenterBtn();
+    e.preventDefault();
+  });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    if (drag.moved) {
+      justDragged = true;
+      setTimeout(() => (justDragged = false), 0);
+    }
+    drag = null;
+    preview.guides = null;
+    host.classList.remove("dragging");
+  }
+  host.addEventListener("pointerup", endDrag);
+  host.addEventListener("pointercancel", endDrag);
+  function updateCenterBtn() {
+    const o = preview.offset;
+    $("btn-center").hidden = !(preview.draggable && (o.x || o.y));
+  }
+  $("btn-center").onclick = (e) => {
+    e.stopPropagation();
+    preview.setOffset({ x: 0, y: 0 });
+    updateCenterBtn();
+  };
+
   // One tap/click on the picture opens full screen. On desktop, hovering
   // also shows a small player overlay (play/pause + "Pantalla completa").
   host.addEventListener("click", (e) => {
-    if (!$("full").hidden || !timeline || e.target.closest(".empty-cta, button")) return;
+    if (justDragged || !$("full").hidden || !timeline || e.target.closest(".empty-cta, button")) return;
     openFull();
   });
   $("ui-play").onclick = (e) => {
@@ -7023,7 +7323,7 @@ canvas.th-pro {
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
-        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta },
+        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta, offset: preview.draggable ? preview.offset : null },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
         onProgress: (t, d) => {
@@ -7196,6 +7496,9 @@ canvas.th-pro {
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     preview.setTheme(id);
+    // each style has its own composition: start it centred
+    preview.setOffset({ x: 0, y: 0 });
+    updateCenterBtn();
     needsSnap = true;
   }
   WM.Themes.list.forEach((t) => {

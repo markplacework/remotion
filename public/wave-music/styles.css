@@ -1610,3 +1610,27 @@ canvas.th-pro {
     overflow: visible;
   }
 }
+
+/* Lyrics Pro: the lyric can be dragged on the picture */
+#stage-host[data-drag] {
+  cursor: grab;
+  touch-action: none;
+}
+#stage-host.dragging {
+  cursor: grabbing;
+}
+/* Draggable lyric: keep the picture clear — no dimming, and the play
+   button moves to the corner so the centre is free to grab. */
+.stage-host[data-drag] .stage-ui {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent 22%);
+  place-items: end start;
+}
+.stage-host[data-drag] .ui-play {
+  width: 40px;
+  height: 40px;
+  margin: 0 0 9px 12px;
+}
+.stage-host[data-drag] .ui-play svg {
+  width: 16px;
+  height: 16px;
+}

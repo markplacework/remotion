@@ -423,15 +423,16 @@
       this.preset = WM.Presets.get(theme.preset);
       this.lines = WM.Motion.prepare(timeline);
       this.meta = style.meta || {};
+      this.offset = style.offset || null;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
       this.g = this.canvas.getContext("2d");
-      this.safe = { x: 110, y: 230, w: 825, h: 1310 }; // = preview.js MOTION_SAFE.video
+      this.safe = { x: 140, y: 230, w: 800, h: 1310 }; // = preview.js MOTION_SAFE.video
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset }));
       return this.canvas;
     }
     dispose() {}

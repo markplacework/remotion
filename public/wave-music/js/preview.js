@@ -48,7 +48,7 @@
   // Lyrics Pro: where text may go. Video: inside the TikTok-safe area and
   // the preview's visible box; mockup: the phone screen minus status bar
   // and home indicator (canvas-local coordinates).
-  const MOTION_SAFE = { video: { x: 110, y: 230, w: 825, h: 1310 }, mockup: { x: 46, y: 150, w: 634, h: 1390 } };
+  const MOTION_SAFE = { video: { x: 140, y: 230, w: 800, h: 1310 }, mockup: { x: 46, y: 150, w: 634, h: 1390 } };
   const NO_CHAT = { x: 0, y: 0, scale: 1, width: 1, height: 1 };
 
   function layoutFor(framing, theme) {
@@ -132,6 +132,9 @@
       this.theme = WM.Themes.get(theme);
       this.spotifyColor = spotifyColor;
       this.meta = { title: "", artist: "" };
+      // Lyrics Pro: where the lyric was dragged, as fractions of the safe area
+      this.offset = { x: 0, y: 0 };
+      this.guides = null; // { x: bool, y: bool } while dragging
       this.timeline = null;
       this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
@@ -141,6 +144,22 @@
     setTheme(id) {
       this.theme = WM.Themes.get(id);
       this.setLayout(this.framing);
+    }
+    /** Can the lyric be dragged around in this style? */
+    get draggable() {
+      return this.theme.kind === "motion" && this.theme.drag !== false;
+    }
+    setOffset(o) {
+      this.offset = { x: o.x, y: o.y };
+    }
+    /** Map a pointer movement (CSS px) to safe-area fractions. */
+    pointerToOffset(dx, dy) {
+      const c = this.motionCanvas;
+      if (!c) return { x: 0, y: 0 };
+      const r = c.getBoundingClientRect();
+      const L = this.layout;
+      const k = L.bg.w / (r.width || 1);
+      return { x: (dx * k) / L.safe.w, y: (dy * k) / L.safe.h };
     }
     setSpotifyColor(id) {
       this.spotifyColor = id;
@@ -161,6 +180,7 @@
       if (this.stage) this.stage.remove();
       this.host.dataset.layout = L.id;
       this.host.dataset.theme = theme.id;
+      this.host.toggleAttribute("data-drag", this.draggable);
       // The preview box keeps the phone's proportions in both framings, so
       // switching never changes its size. "Video final" fills it like
       // object-fit: cover — the exported file is still the full 1080x1920.
@@ -316,7 +336,35 @@
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
       const preset = WM.Presets.get(this.theme.preset);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null }));
+      if (this.guides) this.drawGuides(g, L);
+    }
+
+    /** Preview only: safe area and the centre lines the lyric snaps to. */
+    drawGuides(g, L) {
+      const s = L.safe;
+      const u = s.w / 825;
+      g.save();
+      g.setLineDash([u * 10, u * 8]);
+      g.lineWidth = Math.max(1, u * 2);
+      g.strokeStyle = "rgba(255,255,255,0.45)";
+      g.strokeRect(s.x, s.y, s.w, s.h);
+      g.setLineDash([]);
+      g.lineWidth = Math.max(1, u * 3);
+      g.strokeStyle = "#ff2d78";
+      g.shadowColor = "rgba(0,0,0,0.5)";
+      g.shadowBlur = 4;
+      g.beginPath();
+      if (this.guides.x) {
+        g.moveTo(s.x + s.w / 2, 0);
+        g.lineTo(s.x + s.w / 2, L.bg.h);
+      }
+      if (this.guides.y) {
+        g.moveTo(0, s.y + s.h / 2);
+        g.lineTo(L.bg.w, s.y + s.h / 2);
+      }
+      g.stroke();
+      g.restore();
     }
 
     fillHeader() {

@@ -128,34 +128,43 @@
    * The input every preset draws from.
    * @param {object} o { lines (prepare()), t, W, H, safe, energy, mockup, meta }
    */
+  // Text that lands exactly with the voice reads as late on screen, so the
+  // lyric runs a hair ahead of the audio (the beat stays on the audio).
+  const LEAD = 0.08;
+
   function frame(o) {
     const lines = o.lines;
+    const audioT = o.t;
+    const t = o.t + LEAD;
     let current = -1;
-    for (let i = 0; i < lines.length; i++) if (lines[i].start <= o.t) current = i;
+    for (let i = 0; i < lines.length; i++) if (lines[i].start <= t) current = i;
     const track = o.energy;
     if (track && track.avg == null) {
       let s = 0;
       for (let i = 0; i < track.energy.length; i++) s += track.energy[i];
       track.avg = s / Math.max(1, track.energy.length);
     }
+    const off = o.offset || { x: 0, y: 0 };
     return {
       W: o.W,
       H: o.H,
-      t: o.t,
+      t,
       safe: o.safe,
+      // where the user dragged the lyric, in canvas units (from safe-area fractions)
+      shift: { x: off.x * o.safe.w, y: off.y * o.safe.h },
       lines,
       current, // index of the newest line that has started (-1: none yet)
       mockup: !!o.mockup,
       meta: o.meta || {},
-      energy: (t = o.t) => (track ? sample(track.energy, track.rate, t) : 0.5),
+      energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
       energyAvg: track ? track.avg : 0.5,
       // Beat pulse; without an analysed track, word onsets stand in.
-      pulse: (t = o.t) => {
-        if (track) return sample(track.pulse, track.rate, t);
+      pulse: (at = audioT) => {
+        if (track) return sample(track.pulse, track.rate, at);
         let p = 0;
         const L = lines[current];
-        if (L) for (const w of L.words) if (t >= w.t0) p = Math.max(p, Math.exp(-(t - w.t0) / 0.14));
+        if (L) for (const w of L.words) if (at >= w.t0) p = Math.max(p, Math.exp(-(at - w.t0) / 0.14));
         return p;
       },
     };

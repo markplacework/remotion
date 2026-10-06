@@ -362,10 +362,66 @@
     needsSnap = true;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
+  // Lyrics Pro: drag the lyric anywhere on the canvas (TikTok style). It
+  // snaps to the centre lines, which show while dragging. A tap without
+  // movement still opens full screen.
+  const SNAP = 0.03;
+  const LIMIT = 0.45;
+  let drag = null;
+  let justDragged = false;
+  host.addEventListener("pointerdown", (e) => {
+    if (!preview.draggable || !timeline || e.button > 0 || e.target.closest(".empty-cta, button")) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false };
+  });
+  host.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      host.setPointerCapture(e.pointerId);
+      host.classList.add("dragging");
+      hideHint();
+    }
+    const d = preview.pointerToOffset(dx, dy);
+    let x = Math.max(-LIMIT, Math.min(LIMIT, drag.from.x + d.x));
+    let y = Math.max(-LIMIT, Math.min(LIMIT, drag.from.y + d.y));
+    const snapX = Math.abs(x) < SNAP;
+    const snapY = Math.abs(y) < SNAP;
+    if (snapX) x = 0;
+    if (snapY) y = 0;
+    preview.setOffset({ x, y });
+    preview.guides = { x: snapX, y: snapY };
+    updateCenterBtn();
+    e.preventDefault();
+  });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    if (drag.moved) {
+      justDragged = true;
+      setTimeout(() => (justDragged = false), 0);
+    }
+    drag = null;
+    preview.guides = null;
+    host.classList.remove("dragging");
+  }
+  host.addEventListener("pointerup", endDrag);
+  host.addEventListener("pointercancel", endDrag);
+  function updateCenterBtn() {
+    const o = preview.offset;
+    $("btn-center").hidden = !(preview.draggable && (o.x || o.y));
+  }
+  $("btn-center").onclick = (e) => {
+    e.stopPropagation();
+    preview.setOffset({ x: 0, y: 0 });
+    updateCenterBtn();
+  };
+
   // One tap/click on the picture opens full screen. On desktop, hovering
   // also shows a small player overlay (play/pause + "Pantalla completa").
   host.addEventListener("click", (e) => {
-    if (!$("full").hidden || !timeline || e.target.closest(".empty-cta, button")) return;
+    if (justDragged || !$("full").hidden || !timeline || e.target.closest(".empty-cta, button")) return;
     openFull();
   });
   $("ui-play").onclick = (e) => {
@@ -459,7 +515,7 @@
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
-        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta },
+        style: { theme: preview.theme.id, spotifyColor: preview.spotifyColor, meta: preview.meta, offset: preview.draggable ? preview.offset : null },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
         onProgress: (t, d) => {
@@ -632,6 +688,9 @@
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     preview.setTheme(id);
+    // each style has its own composition: start it centred
+    preview.setOffset({ x: 0, y: 0 });
+    updateCenterBtn();
     needsSnap = true;
   }
   WM.Themes.list.forEach((t) => {
