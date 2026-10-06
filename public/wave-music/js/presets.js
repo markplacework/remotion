@@ -1062,7 +1062,173 @@
   };
 
   // ======================================================================
-  // 6. CHROME — liquid-metal Y2K type with moving reflections
+  // 6. WORD POP — subtitles the way creators edit them (big, word by word)
+  // ======================================================================
+  const POP_ACCENTS = ["#ffe600", "#3dff8b", "#ff4fa3", "#4fd8ff"];
+  const POP_FONT = (size) => `900 ${size}px Poppins, 'Arial Black', sans-serif`;
+  /** Split a line into chunks of up to three words / ~14 letters. */
+  const chunkCache = new Map();
+  function chunksOf(line) {
+    const key = line.index + "|" + line.text;
+    let c = chunkCache.get(key);
+    if (c) return c;
+    c = [];
+    let cur = [];
+    let chars = 0;
+    line.words.forEach((w) => {
+      if (cur.length && (cur.length >= 3 || chars + w.text.length > 14)) {
+        c.push(cur);
+        cur = [];
+        chars = 0;
+      }
+      cur.push(w);
+      chars += w.text.length + 1;
+    });
+    if (cur.length) c.push(cur);
+    if (chunkCache.size > 400) chunkCache.clear();
+    chunkCache.set(key, c);
+    return c;
+  }
+  const wordPop = {
+    id: "wordpop",
+    label: "Word Pop",
+    tag: "Redes",
+    fonts: ["900 100px Poppins"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      const L = f.lines[f.current];
+      const accent = POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length];
+      g.fillStyle = "#0b0b0f";
+      g.fillRect(0, 0, W, H);
+      const bx = W * (0.5 + 0.22 * Math.sin(t * 0.23));
+      const by = H * (0.5 + 0.1 * Math.cos(t * 0.19));
+      const blob = g.createRadialGradient(bx, by, 0, bx, by, H * 0.58);
+      blob.addColorStop(0, hexA(accent, 0.3 + 0.15 * pulse));
+      blob.addColorStop(0.6, hexA(accent, 0.07));
+      blob.addColorStop(1, hexA(accent, 0));
+      g.fillStyle = blob;
+      g.fillRect(0, 0, W, H);
+      // speaker rings travelling out from the centre
+      g.save();
+      g.strokeStyle = "#ffffff";
+      g.lineWidth = u * 3;
+      for (let i = 0; i < 5; i++) {
+        const ph = (t * 0.32 + i / 5) % 1;
+        g.globalAlpha = (1 - ph) * (0.05 + 0.1 * pulse);
+        g.beginPath();
+        g.arc(W / 2, safe.y + safe.h / 2, ph * H * 0.75, 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.restore();
+      // diagonal stripes, very subtle texture
+      g.save();
+      g.globalAlpha = 0.035;
+      g.fillStyle = "#ffffff";
+      g.translate(W / 2, H / 2);
+      g.rotate(-0.5);
+      const sp = u * 60;
+      const off = (t * u * 20) % sp;
+      for (let x = -H; x < H; x += sp) g.fillRect(x + off, -H, u * 18, H * 2);
+      g.restore();
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
+      if (L && L.words.length) this.drawChunk(g, f, L, u, accent, pulse);
+      g.restore();
+    },
+    drawChunk(g, f, L, u, accent, pulse) {
+      const { safe } = f;
+      let t = f.t;
+      const ws = L.words;
+      const j = Math.max(0, activeWord(L, t));
+      const last = ws[ws.length - 1];
+      const out = clamp(1 - (t - last.t1 - 0.9) / 0.2);
+      if (out <= 0) return;
+      const chunks = chunksOf(L);
+      const ci = chunks.findIndex((c) => c.includes(ws[j]));
+      const chunk = chunks[ci];
+      const words = chunk.map((w) => ({ ...w, label: upper(w.text) }));
+      let size = u * 128;
+      g.font = POP_FONT(100);
+      const widest = Math.max(...words.map((w) => g.measureText(w.label).width));
+      size = Math.min(size, (100 * safe.w * 0.86) / widest);
+      const rows = wrapCached(g, `p|${L.index}|${ci}|${L.text}|${Math.round(size * 10)}`, words, () => POP_FONT(size), safe.w * 0.9, size * 0.28);
+      const lh = size * 1.3;
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h * 0.5;
+      const enter = clamp((t - chunk[0].t0) / 0.3);
+      const k = lerp(0.6, 1, ease.back(enter)) * (1 + 0.035 * pulse);
+      g.save();
+      g.translate(cx, cy);
+      g.scale(k, k);
+      g.rotate((rand(L.index * 7 + ci) - 0.5) * 0.06 * (1 - ease.out(enter)));
+      g.globalAlpha = clamp(enter * 3) * out;
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.font = POP_FONT(size);
+      const rects = {};
+      rows.forEach((row, ri) => {
+        const ry = (ri - (rows.length - 1) / 2) * lh;
+        row.items.forEach((it) => (rects[it.w.index] = { x: -row.width / 2 + it.x, y: ry, w: it.width }));
+      });
+      // the highlight box glides from the previous word to the active one
+      const act = ws[j];
+      const prevW = ws[j - 1];
+      const A = rects[act.index];
+      if (A && act.t0 <= t) {
+        const B = prevW && rects[prevW.index] ? rects[prevW.index] : A;
+        const m = ease.out(clamp((t - act.t0) / 0.13));
+        const bx = lerp(B.x, A.x, m);
+        const by = lerp(B.y, A.y, m);
+        const bw = lerp(B.w, A.w, m);
+        const pad = size * 0.16;
+        const pop = lerp(1.18, 1, ease.back(clamp((t - act.t0) / 0.22)));
+        g.save();
+        g.translate(bx + bw / 2, by);
+        g.rotate(-0.035);
+        g.scale(pop, pop);
+        g.shadowColor = hexA(accent, 0.6);
+        g.shadowBlur = size * 0.4;
+        g.fillStyle = accent;
+        rrect(g, -bw / 2 - pad, -size * 0.6, bw + pad * 2, size * 1.14, size * 0.2);
+        g.fill();
+        g.restore();
+      }
+      chunk.forEach((w) => {
+        const R = rects[w.index];
+        if (!R) return;
+        // the whole chunk is on screen; each word kicks as it is sung
+        const p = w.t0 <= t ? clamp((t - w.t0) / 0.22) : 1;
+        const sc = lerp(1.16, 1, ease.back(p));
+        const isAct = w === act;
+        g.save();
+        g.translate(R.x + R.w / 2, R.y + size * 0.04);
+        g.scale(sc, sc);
+        g.translate(-R.w / 2, 0);
+        const label = upper(w.text);
+        if (!isAct) {
+          g.lineJoin = "round";
+          g.lineWidth = size * 0.16;
+          g.strokeStyle = "#000000";
+          g.shadowColor = "rgba(0,0,0,0.5)";
+          g.shadowBlur = size * 0.15;
+          g.shadowOffsetY = size * 0.05;
+          g.strokeText(label, 0, 0);
+          g.shadowColor = "transparent";
+        }
+        g.fillStyle = isAct ? "#0b0b0f" : "#ffffff";
+        g.fillText(label, 0, 0);
+        g.restore();
+      });
+      g.restore();
+    },
+  };
+
+  // ======================================================================
+  // CHROME — liquid-metal Y2K type with moving reflections.
+  // Saved for later: registered here but not offered in the style picker
+  // (add it back to THEMES in themes.js to show it).
   // ======================================================================
   const CHROME_FONT = (size) => `900 ${size}px Montserrat, 'Arial Black', sans-serif`;
   /** Polished metal: sky above the horizon line, dark ground, bright floor. */
@@ -2405,7 +2571,7 @@
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, chrome, notes, aurora, couture, blackout, vhs, vinilo };
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo };
   WM.Presets = {
     list: Object.values(PRESETS),
     get: (id) => PRESETS[id],
