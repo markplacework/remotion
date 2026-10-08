@@ -203,6 +203,48 @@
   }
   window.addEventListener("hashchange", route);
 
+  // Home: slow sound waves behind the hero, only while the home is shown.
+  (function homeWaves() {
+    const c = $("studio-waves");
+    const g = c.getContext("2d");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const waves = [
+      { amp: 38, len: 0.0042, speed: 0.35, y: 0.3, col: "34,211,245", a: 0.22 },
+      { amp: 52, len: 0.0031, speed: -0.25, y: 0.34, col: "30,139,255", a: 0.18 },
+      { amp: 30, len: 0.0058, speed: 0.5, y: 0.38, col: "139,61,245", a: 0.16 },
+    ];
+    function draw(now) {
+      requestAnimationFrame(draw);
+      if (view !== "home" || document.hidden) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = c.clientWidth;
+      const h = c.clientHeight;
+      if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      }
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, w, h);
+      const t = still ? 0 : now / 1000;
+      waves.forEach((wv) => {
+        const grad = g.createLinearGradient(0, 0, w, 0);
+        grad.addColorStop(0, `rgba(${wv.col},0)`);
+        grad.addColorStop(0.5, `rgba(${wv.col},${wv.a})`);
+        grad.addColorStop(1, `rgba(${wv.col},0)`);
+        g.strokeStyle = grad;
+        g.lineWidth = 2;
+        g.beginPath();
+        for (let x = 0; x <= w; x += 6) {
+          const env = Math.sin((x / w) * Math.PI);
+          const y = h * wv.y + Math.sin(x * wv.len + t * wv.speed * 2) * wv.amp * env + Math.sin(x * wv.len * 2.3 - t * wv.speed) * wv.amp * 0.3 * env;
+          x ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.stroke();
+      });
+    }
+    requestAnimationFrame(draw);
+  })();
+
   /** The Modal service's URL and token, asking once if needed. */
   async function modalCreds(error) {
     if (!error && WM.ModalSync.isConfigured()) return { url: WM.ModalSync.getUrl(), token: WM.ModalSync.getToken() };

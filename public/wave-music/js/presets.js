@@ -871,6 +871,8 @@
   const KARA_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   const karaoke = {
     id: "karaoke",
+    // the fill follows the singing: always word by word, paced inside each line
+    wordBased: "spread",
     label: "Karaoke",
     tag: "Canto",
     fonts: ["800 100px Montserrat"],

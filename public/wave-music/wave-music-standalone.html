@@ -1901,93 +1901,252 @@ body[data-view="captions"] #btn-demo {
   display: none;
 }
 
-.studio-inner {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 56px 20px 40px;
+.studio {
+  position: relative;
 }
-.studio-title {
-  margin: 0;
-  font-size: 40px;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  background: linear-gradient(120deg, #fff 30%, var(--accent-2));
+.studio-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.studio-inner {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 64px 24px 40px;
+}
+.hero {
+  text-align: center;
+  margin-bottom: 44px;
+}
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.08);
+  color: #cfe6ff;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
+}
+.hero-title {
+  margin: 20px 0 14px;
+  font-family: Figtree, Inter, sans-serif;
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+.hero-grad {
+  background: linear-gradient(100deg, var(--accent-2), var(--accent) 45%, var(--accent-3));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.studio-sub {
-  margin: 10px 0 32px;
+.hero-sub {
+  margin: 0 auto;
+  max-width: 600px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 17px;
+  line-height: 1.5;
 }
-.tools {
+.tcards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.tool {
-  display: flex;
-  align-items: center;
   gap: 16px;
-  padding: 20px;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--line-2);
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 0.2s, transform 0.15s, background 0.2s;
 }
-.tool:hover {
-  border-color: rgba(var(--accent-rgb), 0.6);
-  background: var(--surface-2);
-  transform: translateY(-2px);
-}
-.tool-icon,
-.drop-icon {
-  flex: none;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(140deg, var(--accent), var(--accent-3));
-  box-shadow: 0 8px 24px -10px rgba(var(--accent-rgb), 0.8);
-}
-.tool-text {
-  flex: 1;
-  min-width: 0;
+.tcard {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-}
-.tool-name {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.tool-desc {
-  color: var(--muted);
-  font-size: 13.5px;
-}
-.tool-go {
-  color: var(--faint);
-}
-.tool-soon .tool-icon {
-  background: var(--surface-2);
-  box-shadow: none;
-  color: var(--muted);
-}
-.soon {
-  margin-left: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
+  border-radius: 22px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
   border: 1px solid var(--line-2);
-  border-radius: 99px;
-  padding: 2px 8px;
-  vertical-align: 2px;
+  transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+}
+.tcard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 24px 60px -30px rgba(var(--accent-rgb), 0.7);
+}
+.tcard-art {
+  display: block;
+  height: 150px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(var(--accent-rgb), 0.18), transparent 70%),
+    #070a12;
+  border-bottom: 1px solid var(--line);
+}
+.tc-karaoke .tcard-art {
+  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 61, 139, 0.2), transparent 70%), #0a0710;
+}
+.tc-split .tcard-art {
+  background: radial-gradient(120% 90% at 50% 0%, rgba(139, 61, 245, 0.2), transparent 70%), #08070f;
+}
+.tcard-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.tcard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 20px 20px;
+}
+.tcard-name {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.tcard-desc {
+  color: var(--muted);
+  font-size: 14px;
+}
+.tcard-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent-2);
+}
+.tcard:hover .tcard-cta svg {
+  transform: translateX(3px);
+}
+.tcard-cta svg {
+  transition: transform 0.2s;
+}
+.tcard-soon {
+  opacity: 0.6;
+}
+.tcard-soon .tcard-cta {
+  color: var(--muted);
+}
+.studio-foot {
+  margin: 28px 0 0;
+  text-align: center;
+  color: var(--faint);
+  font-size: 12.5px;
+}
+/* card art motion */
+.art-label {
+  font: 600 11px Inter, sans-serif;
+  fill: rgba(255, 255, 255, 0.55);
+}
+.art-split-top {
+  animation: split-up 3.2s ease-in-out infinite;
+}
+.art-split-bottom {
+  animation: split-down 3.2s ease-in-out infinite;
+}
+@keyframes split-up {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@keyframes split-down {
+  50% {
+    transform: translateY(7px);
+  }
+}
+.art-lyric-on {
+  animation: glow-line 2.4s ease-in-out infinite;
+}
+@keyframes glow-line {
+  50% {
+    opacity: 0.55;
+  }
+}
+.art-karaoke-text {
+  font: 800 26px Montserrat, Inter, sans-serif;
+}
+.art-karaoke-fill {
+  animation: karaoke-fill 3.4s linear infinite;
+  transform-origin: 56px 0;
+}
+@keyframes karaoke-fill {
+  from {
+    transform: scaleX(0);
+  }
+  85%,
+  to {
+    transform: scaleX(1);
+  }
+}
+.art-karaoke-ball {
+  animation: karaoke-ball 3.4s linear infinite;
+}
+@keyframes karaoke-ball {
+  0% {
+    transform: translate(-96px, 0);
+  }
+  10% {
+    transform: translate(-72px, -10px);
+  }
+  20% {
+    transform: translate(-48px, 0);
+  }
+  30% {
+    transform: translate(-24px, -10px);
+  }
+  40% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(24px, -10px);
+  }
+  60% {
+    transform: translate(48px, 0);
+  }
+  70% {
+    transform: translate(72px, -10px);
+  }
+  85%,
+  100% {
+    transform: translate(96px, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .art-split-top,
+  .art-split-bottom,
+  .art-lyric-on,
+  .art-karaoke-fill,
+  .art-karaoke-ball {
+    animation: none;
+  }
+}
+
+/* Karaoke: only its own style for now */
+.karaoke-only {
+  display: none;
+  margin: 2px 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+body[data-view="karaoke"] .karaoke-only {
+  display: block;
+}
+body[data-view="karaoke"] #styles .style-group-head,
+body[data-view="karaoke"] #styles-classic,
+body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
+  display: none;
 }
 
 /* tool pages */
@@ -2177,19 +2336,43 @@ body[data-view="captions"] #btn-demo {
 }
 
 @media (max-width: 640px) {
-  .tools {
+  .tcards {
     grid-template-columns: 1fr;
   }
   .studio-inner {
-    padding-top: 32px;
+    padding: 36px 16px 32px;
   }
-  .studio-title {
-    font-size: 32px;
+  .hero {
+    margin-bottom: 28px;
+  }
+  .hero-sub {
+    font-size: 15px;
   }
   .tool-crumb {
     padding-left: 8px;
     font-size: 13px;
   }
+}
+.drop-icon {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--accent), var(--accent-3));
+  box-shadow: 0 8px 24px -10px rgba(var(--accent-rgb), 0.8);
+}
+.soon {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  padding: 2px 8px;
+  vertical-align: 3px;
 }
 </style>
   </head>
@@ -2211,31 +2394,64 @@ body[data-view="captions"] #btn-demo {
 
     <!-- ========== Wave Studio: inicio ========== -->
     <main id="studio" class="view studio">
+      <canvas id="studio-waves" class="studio-waves" aria-hidden="true"></canvas>
       <div class="studio-inner">
-        <h1 class="studio-title">Wave Studio</h1>
-        <p class="studio-sub">Herramientas con IA para tus canciones.</p>
-        <nav class="tools" aria-label="Herramientas">
-          <a class="tool" href="#remove-vocal">
-            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M3 3l18 18"/></svg></span>
-            <span class="tool-text"><span class="tool-name">Remove Vocal</span><span class="tool-desc">Separá la voz de la música</span></span>
-            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        <header class="hero">
+          <span class="hero-pill"><span class="hero-dot"></span>Wave Studio · con IA</span>
+          <h1 class="hero-title">Tu canción,<br /><span class="hero-grad">lista para las redes.</span></h1>
+          <p class="hero-sub">Quitá la voz, creá videos con la letra y karaokes en minutos, con IA.</p>
+        </header>
+        <nav class="tcards" aria-label="Herramientas">
+          <a class="tcard tc-split" href="#remove-vocal">
+            <span class="tcard-art"><svg viewBox="0 0 320 132" aria-hidden="true"><defs><linearGradient id="gv" x1="0" x2="1"><stop offset="0" stop-color="#22d3f5"/><stop offset="1" stop-color="#1e8bff"/></linearGradient><linearGradient id="gm" x1="0" x2="1"><stop offset="0" stop-color="#8b3df5"/><stop offset="1" stop-color="#c05cff"/></linearGradient></defs>
+<g class="art-split-top"><rect x="78" y="36.0" width="7" height="8.0" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="91" y="31.2" width="7" height="17.6" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="104" y="26.4" width="7" height="27.200000000000003" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="117" y="32.8" width="7" height="14.4" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="130" y="24.0" width="7" height="32.0" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="143" y="29.6" width="7" height="20.8" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="156" y="34.4" width="7" height="11.200000000000001" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="169" y="28.0" width="7" height="24.0" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="182" y="22.4" width="7" height="35.2" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="195" y="30.4" width="7" height="19.200000000000003" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="208" y="33.6" width="7" height="12.8" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="221" y="25.6" width="7" height="28.8" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="234" y="32.0" width="7" height="16.0" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="247" y="35.2" width="7" height="9.600000000000001" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="260" y="28.8" width="7" height="22.400000000000002" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="273" y="24.8" width="7" height="30.400000000000002" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="286" y="31.2" width="7" height="17.6" rx="3.5" fill="url(#gv)" opacity="1"/><rect x="299" y="36.0" width="7" height="8.0" rx="3.5" fill="url(#gv)" opacity="1"/></g>
+<g class="art-split-bottom"><rect x="78" y="87.6" width="7" height="12.8" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="91" y="82.8" width="7" height="22.400000000000002" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="104" y="89.2" width="7" height="9.600000000000001" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="117" y="79.6" width="7" height="28.8" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="130" y="85.2" width="7" height="17.6" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="143" y="82.0" width="7" height="24.0" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="156" y="86.8" width="7" height="14.4" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="169" y="78.0" width="7" height="32.0" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="182" y="88.4" width="7" height="11.200000000000001" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="195" y="83.6" width="7" height="20.8" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="208" y="80.4" width="7" height="27.200000000000003" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="221" y="86.0" width="7" height="16.0" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="234" y="84.4" width="7" height="19.200000000000003" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="247" y="78.8" width="7" height="30.400000000000002" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="260" y="87.6" width="7" height="12.8" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="273" y="82.8" width="7" height="22.400000000000002" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="286" y="89.2" width="7" height="9.600000000000001" rx="3.5" fill="url(#gm)" opacity="1"/><rect x="299" y="82.0" width="7" height="24.0" rx="3.5" fill="url(#gm)" opacity="1"/></g>
+<text x="22" y="44" class="art-label">Voz</text><text x="22" y="98" class="art-label">Música</text></svg></span>
+            <span class="tcard-body">
+              <span class="tcard-name">Remove Vocal</span>
+              <span class="tcard-desc">Separá la voz de la música</span>
+              <span class="tcard-cta">Separar voz <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            </span>
           </a>
-          <a class="tool" href="#lyrics">
-            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M4 11h10"/><path d="M4 16h6"/><path d="M17 17V5l4-1"/><circle cx="15" cy="17" r="2"/></svg></span>
-            <span class="tool-text"><span class="tool-name">Lyrics</span><span class="tool-desc">Videos con la letra sincronizada</span></span>
-            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          <a class="tcard tc-lyrics" href="#lyrics">
+            <span class="tcard-art"><svg viewBox="0 0 320 132" aria-hidden="true"><defs><linearGradient id="gl" x1="0" x2="1"><stop offset="0" stop-color="#1e8bff"/><stop offset="1" stop-color="#22d3f5"/></linearGradient></defs>
+<rect x="118" y="8" width="84" height="150" rx="16" fill="#0b0e16" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+<rect x="132" y="38" width="44" height="7" rx="3.5" fill="rgba(255,255,255,.22)"/>
+<rect x="132" y="56" width="58" height="9" rx="4.5" fill="url(#gl)" class="art-lyric-on"/>
+<rect x="132" y="76" width="50" height="7" rx="3.5" fill="rgba(255,255,255,.22)"/>
+<rect x="132" y="94" width="36" height="7" rx="3.5" fill="rgba(255,255,255,.14)"/>
+<rect x="132" y="112" width="48" height="7" rx="3.5" fill="rgba(255,255,255,.1)"/></svg></span>
+            <span class="tcard-body">
+              <span class="tcard-name">Lyrics</span>
+              <span class="tcard-desc">Videos con la letra sincronizada</span>
+              <span class="tcard-cta">Crear video <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            </span>
           </a>
-          <a class="tool" href="#karaoke">
-            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 9.5l-9 9a1.5 1.5 0 0 1-2-2l9-9"/><circle cx="17" cy="7" r="4"/><path d="M8 20l-1 1"/></svg></span>
-            <span class="tool-text"><span class="tool-name">Karaoke</span><span class="tool-desc">Video karaoke con la pista sin voz</span></span>
-            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          <a class="tcard tc-karaoke" href="#karaoke">
+            <span class="tcard-art"><svg viewBox="0 0 320 132" aria-hidden="true"><defs><linearGradient id="gk" x1="0" x2="1"><stop offset="0" stop-color="#ff3d8b"/><stop offset="1" stop-color="#ffb43d"/></linearGradient><clipPath id="ck"><rect x="56" y="54" width="208" height="30" class="art-karaoke-fill"/></clipPath></defs>
+<text x="160" y="76" text-anchor="middle" class="art-karaoke-text" fill="rgba(255,255,255,.28)">Cantá conmigo</text>
+<text x="160" y="76" text-anchor="middle" class="art-karaoke-text" fill="url(#gk)" clip-path="url(#ck)">Cantá conmigo</text>
+<circle cx="160" cy="36" r="7" fill="#fff" class="art-karaoke-ball"/>
+<rect x="88" y="100" width="144" height="5" rx="2.5" fill="rgba(255,255,255,.14)"/></svg></span>
+            <span class="tcard-body">
+              <span class="tcard-name">Karaoke</span>
+              <span class="tcard-desc">Video karaoke con la pista sin voz</span>
+              <span class="tcard-cta">Crear karaoke <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            </span>
           </a>
-          <a class="tool tool-soon" href="#captions">
-            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 13h4"/><path d="M13 13h4"/><path d="M7 16h6"/></svg></span>
-            <span class="tool-text"><span class="tool-name">Captions <span class="soon">Próximamente</span></span><span class="tool-desc">Subtítulos automáticos para tus videos</span></span>
-            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          <a class="tcard tc-captions tcard-soon" href="#captions">
+            <span class="tcard-art"><svg viewBox="0 0 320 132" aria-hidden="true">
+<rect x="96" y="14" width="128" height="104" rx="12" fill="#0b0e16" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
+<circle cx="160" cy="54" r="16" fill="rgba(255,255,255,.08)"/><path d="M154 46l14 8-14 8z" fill="rgba(255,255,255,.3)"/>
+<rect x="116" y="86" width="88" height="10" rx="3" fill="rgba(255,255,255,.18)"/><rect x="128" y="100" width="64" height="8" rx="3" fill="rgba(255,255,255,.12)"/></svg></span>
+            <span class="tcard-body">
+              <span class="tcard-name">Captions <span class="soon">Próximamente</span></span>
+              <span class="tcard-desc">Subtítulos automáticos para tus videos</span>
+              <span class="tcard-cta">Muy pronto </span>
+            </span>
           </a>
         </nav>
+        <p class="studio-foot">Para artistas, creadores y fans · Exporta en 9:16 para TikTok, Reels y Shorts</p>
       </div>
     </main>
 
@@ -2397,6 +2613,7 @@ body[data-view="captions"] #btn-demo {
           <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
           <div id="styles" role="group" aria-label="Estilo">
             <div class="style-group-head"><span>Animados</span></div>
+            <p class="karaoke-only">Estilo karaoke · más estilos de karaoke, muy pronto</p>
             <div id="styles-pro" class="styles"></div>
             <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
             <div id="styles-classic" class="styles"></div>
@@ -5179,6 +5396,8 @@ body[data-view="captions"] #btn-demo {
   const KARA_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
   const karaoke = {
     id: "karaoke",
+    // the fill follows the singing: always word by word, paced inside each line
+    wordBased: "spread",
     label: "Karaoke",
     tag: "Canto",
     fonts: ["800 100px Montserrat"],
@@ -8527,6 +8746,48 @@ body[data-view="captions"] #btn-demo {
     needsSnap = true;
   }
   window.addEventListener("hashchange", route);
+
+  // Home: slow sound waves behind the hero, only while the home is shown.
+  (function homeWaves() {
+    const c = $("studio-waves");
+    const g = c.getContext("2d");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const waves = [
+      { amp: 38, len: 0.0042, speed: 0.35, y: 0.3, col: "34,211,245", a: 0.22 },
+      { amp: 52, len: 0.0031, speed: -0.25, y: 0.34, col: "30,139,255", a: 0.18 },
+      { amp: 30, len: 0.0058, speed: 0.5, y: 0.38, col: "139,61,245", a: 0.16 },
+    ];
+    function draw(now) {
+      requestAnimationFrame(draw);
+      if (view !== "home" || document.hidden) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = c.clientWidth;
+      const h = c.clientHeight;
+      if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      }
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, w, h);
+      const t = still ? 0 : now / 1000;
+      waves.forEach((wv) => {
+        const grad = g.createLinearGradient(0, 0, w, 0);
+        grad.addColorStop(0, `rgba(${wv.col},0)`);
+        grad.addColorStop(0.5, `rgba(${wv.col},${wv.a})`);
+        grad.addColorStop(1, `rgba(${wv.col},0)`);
+        g.strokeStyle = grad;
+        g.lineWidth = 2;
+        g.beginPath();
+        for (let x = 0; x <= w; x += 6) {
+          const env = Math.sin((x / w) * Math.PI);
+          const y = h * wv.y + Math.sin(x * wv.len + t * wv.speed * 2) * wv.amp * env + Math.sin(x * wv.len * 2.3 - t * wv.speed) * wv.amp * 0.3 * env;
+          x ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.stroke();
+      });
+    }
+    requestAnimationFrame(draw);
+  })();
 
   /** The Modal service's URL and token, asking once if needed. */
   async function modalCreds(error) {
