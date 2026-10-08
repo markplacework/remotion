@@ -68,20 +68,20 @@ class Syncer:
 
         self.pipe = Pipeline(device="cuda", whisper_model=WHISPER_MODEL)
 
-    def _run(self, audio: bytes, filename: str, lines: list[str], separate=True, forced=True) -> dict:
+    def _run(self, audio: bytes, filename: str, lines: list[str], separate=True, forced=True, refine=True) -> dict:
         import tempfile
 
         suffix = os.path.splitext(filename or "")[1] or ".mp3"
         with tempfile.NamedTemporaryFile(suffix=suffix) as f:
             f.write(audio)
             f.flush()
-            return self.pipe.run(f.name, lines, separate=separate, forced=forced)
+            return self.pipe.run(f.name, lines, separate=separate, forced=forced, refine=refine)
 
     @modal.method()
     def sync(self, audio: bytes, lines: list[str], filename: str = "song.mp3", separate: bool = True,
-             forced: bool = True) -> dict:
+             forced: bool = True, refine: bool = True) -> dict:
         """Python entry point (used by test_demo.py for the comparisons)."""
-        return self._run(audio, filename, lines, separate, forced)
+        return self._run(audio, filename, lines, separate, forced, refine)
 
     @modal.asgi_app()
     def web(self):

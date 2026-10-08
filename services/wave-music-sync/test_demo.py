@@ -32,21 +32,22 @@ def demo_data():
     return lines, starts
 
 
-def vocal_onsets(vocals, starts_hint, sr=16000):
-    """First moment the isolated vocal gets loud, searched from 1.5 s before
-    each hinted line start (but after the previous line's hint)."""
+def vocal_onsets(vocals, candidates, sr=16000):
+    """Reference that no Whisper model produced: in the isolated vocals,
+    each line starts right after a breath / silence. Around every line,
+    take the span the methods disagree on (plus 1 s before), find the
+    quietest moment and return where the voice comes back (> -30 dB)."""
     import numpy as np
 
     hop = int(sr * 0.01)
-    rms = np.sqrt(np.convolve(vocals ** 2, np.ones(hop * 3) / (hop * 3), "same"))[::hop]
+    rms = np.sqrt(np.convolve(vocals ** 2, np.ones(hop * 5) / (hop * 5), "same"))[::hop]
     db = 20 * np.log10(rms + 1e-6)
-    thr = np.percentile(db, 90) - 20
     out = []
-    for i, h in enumerate(starts_hint):
-        lo = max(0.0, h - 1.5, (starts_hint[i - 1] + 0.5) if i else 0.0)
-        hi = h + 1.5
+    for c in zip(*candidates):
+        lo, hi = max(0.0, min(c) - 1.0), max(c) + 0.5
         seg = db[int(lo * 100):int(hi * 100)]
-        k = next((k for k, v in enumerate(seg) if v > thr), None)
+        dip = int(np.argmin(seg))
+        k = next((k for k in range(dip, len(seg)) if seg[k] > -30), None)
         out.append(round(lo + k / 100, 2) if k is not None else None)
     return out
 
@@ -67,7 +68,8 @@ def report(lines, demo, whisper, modal, onsets):
     print("\nMean |difference| vs vocal onset:")
     for name, st in (("demo", demo), ("whisper solo", whisper["starts"]), ("modal", modal["starts"])):
         print(f"  {name:13s} {mae(st, onsets):.2f} s")
-    print(f"\nWords timed: whisper solo {whisper['matched']}/{whisper['total']}, modal {modal['matched']}/{modal['total']}")
+    print(f"\nWords timed: whisper solo {whisper['matched']}/{whisper['total']}, "
+          f"modal {modal['matched']}/{modal['total']} ({modal['forced']} by forced alignment)")
 
     print("\nWord times, modal (absolute s):")
     for i, w in enumerate(modal["words"]):
@@ -93,9 +95,9 @@ def run_local(argv):
     a = ap.parse_args(argv)
     lines, demo = demo_data()
     p = Pipeline(device="cpu", whisper_model=a.model, demucs_repo=a.demucs_repo)
-    whisper = p.run(str(SONG), lines, separate=False, forced=False)
+    whisper = p.run(str(SONG), lines, separate=False, forced=False, refine=False)
     modal = p.run(str(SONG), lines)
-    onsets = vocal_onsets(p.vocals(str(SONG)), demo)
+    onsets = vocal_onsets(p.vocals(str(SONG)), [demo, whisper["starts"], modal["starts"]])
     report(lines, demo, whisper, modal, onsets)
     if a.out:
         Path(a.out).write_text(json.dumps({"demo": demo, "whisper": whisper, "modal": modal, "onsets": onsets}, indent=1))
@@ -115,7 +117,7 @@ else:
         Syncer = modal.Cls.from_name("wave-music-sync", "Syncer")
         audio = SONG.read_bytes()
         s = Syncer()
-        whisper = s.sync.remote(audio, lines, separate=False, forced=False)
+        whisper = s.sync.remote(audio, lines, separate=False, forced=False, refine=False)
         modal_r = s.sync.remote(audio, lines)
         # the loudness reference needs local vocals; run --local for it
         report(lines, demo, whisper, modal_r, [None] * len(lines))

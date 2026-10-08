@@ -194,7 +194,14 @@ class Pipeline:
         return AF.resample(voc.cpu(), sr, ASR_SR).numpy().astype(np.float32)
 
     # 2. rough word times from Whisper
-    def transcribe(self, audio: np.ndarray, prompt: str) -> list[dict]:
+    def transcribe(self, audio: np.ndarray, prompt: str, refine: bool = True) -> list[dict]:
+        if not refine:
+            # Whisper's own word timestamps, no wav2vec2: what an API like
+            # OpenAI's whisper-1 gives (used for the comparison only)
+            segs, _ = self.asr.model.transcribe(audio, language=self.language, initial_prompt=prompt[:600],
+                                                word_timestamps=True, vad_filter=False)
+            return [{"text": w.word, "start": float(w.start), "end": float(w.end)}
+                    for sg in segs for w in (sg.words or []) if norm(w.word)]
         opts = self.asr.options
         try:
             self.asr.options = dataclasses.replace(opts, initial_prompt=prompt[:600])
@@ -235,14 +242,15 @@ class Pipeline:
             out.append([(float(w["start"]), float(w["end"])) if "start" in w else None for w in got])
         return out
 
-    def run(self, path: str, lines: list[str], separate: bool = True, forced: bool = True) -> dict:
+    def run(self, path: str, lines: list[str], separate: bool = True, forced: bool = True,
+            refine: bool = True) -> dict:
         lines = [re.sub(r"\s+", " ", l).strip() for l in lines]
         line_words = [l.split(" ") if l else [] for l in lines]
         flat = [(li, w) for li, ws in enumerate(line_words) for w in ws]
 
         audio = self.vocals(path) if separate else load_audio(path, ASR_SR, 1)[0]
         duration = len(audio) / ASR_SR
-        sung = self.transcribe(audio, " ".join(lines))
+        sung = self.transcribe(audio, " ".join(lines), refine=refine)
 
         # rough per-word times from the transcript match
         hit = match_words([norm(w) for _, w in flat], [norm(w["text"]) for w in sung]) if sung else [None] * len(flat)
@@ -262,6 +270,7 @@ class Pipeline:
         s1 = [r1[i] if r1[i] is not None else (s0[i + 1] if i + 1 < len(s0) else duration) for i in range(len(s0))]
 
         times = rough
+        n_forced = 0
         if forced:
             # search window: the rough span plus up to 2 s of air on each
             # side, but not into the neighbouring lines' rough spans
@@ -275,8 +284,11 @@ class Pipeline:
             fa = self.force(audio, line_words, windows)
             # keep forced times; fall back to the rough ones word by word
             times = [[f or r for f, r in zip(fl, rl)] for fl, rl in zip(fa, rough)]
+            n_forced = sum(f is not None for fl in fa for f in fl)
 
-        return self._format(lines, line_words, times, duration, matched=sum(t is not None for r in times for t in r))
+        out = self._format(lines, line_words, times, duration, matched=sum(t is not None for r in times for t in r))
+        out["forced"] = n_forced
+        return out
 
     @staticmethod
     def _format(lines, line_words, times, duration, matched):
