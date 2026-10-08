@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Wave Music Studio</title>
+    <title>Wave Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Figtree:wght@700&display=swap"
@@ -15,8 +15,11 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <img class="brand-mark" src="assets/logo-mark.jpg" alt="" />
-        <img class="brand-word" src="assets/logo-word.jpg" alt="Wave Music" />
+        <a class="brand-home" href="#" title="Wave Studio">
+          <img class="brand-mark" src="assets/logo-mark.jpg" alt="" />
+          <img class="brand-word" src="assets/logo-word.jpg" alt="Wave Music" />
+        </a>
+        <span id="tool-crumb" class="tool-crumb"></span>
         <span class="badge">Prueba v0.1</span>
       </div>
       <button id="btn-demo" class="btn btn-primary">
@@ -25,7 +28,87 @@
       </button>
     </header>
 
-    <main class="layout">
+    <!-- ========== Wave Studio: inicio ========== -->
+    <main id="studio" class="view studio">
+      <div class="studio-inner">
+        <h1 class="studio-title">Wave Studio</h1>
+        <p class="studio-sub">Herramientas con IA para tus canciones.</p>
+        <nav class="tools" aria-label="Herramientas">
+          <a class="tool" href="#remove-vocal">
+            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M3 3l18 18"/></svg></span>
+            <span class="tool-text"><span class="tool-name">Remove Vocal</span><span class="tool-desc">Separá la voz de la música</span></span>
+            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool" href="#lyrics">
+            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M4 11h10"/><path d="M4 16h6"/><path d="M17 17V5l4-1"/><circle cx="15" cy="17" r="2"/></svg></span>
+            <span class="tool-text"><span class="tool-name">Lyrics</span><span class="tool-desc">Videos con la letra sincronizada</span></span>
+            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool" href="#karaoke">
+            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 9.5l-9 9a1.5 1.5 0 0 1-2-2l9-9"/><circle cx="17" cy="7" r="4"/><path d="M8 20l-1 1"/></svg></span>
+            <span class="tool-text"><span class="tool-name">Karaoke</span><span class="tool-desc">Video karaoke con la pista sin voz</span></span>
+            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool tool-soon" href="#captions">
+            <span class="tool-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 13h4"/><path d="M13 13h4"/><path d="M7 16h6"/></svg></span>
+            <span class="tool-text"><span class="tool-name">Captions <span class="soon">Próximamente</span></span><span class="tool-desc">Subtítulos automáticos para tus videos</span></span>
+            <span class="tool-go" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+        </nav>
+      </div>
+    </main>
+
+    <!-- ========== Remove Vocal ========== -->
+    <main id="split" class="view tool-page">
+      <div class="tool-wrap">
+        <a class="back" href="#">← Wave Studio</a>
+        <h1 class="tool-title">Remove Vocal</h1>
+        <p class="tool-sub">Separá la voz de la música con IA. Descargá la pista sin voz o la voz sola.</p>
+        <div class="split-card">
+          <label id="split-drop" class="drop">
+            <input id="split-file" type="file" accept="audio/*" hidden />
+            <span class="drop-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M3 3l18 18"/></svg></span>
+            <strong id="split-name">Subí una canción</strong>
+            <small id="split-meta">mp3 · wav · m4a · hasta 60 MB</small>
+          </label>
+          <button id="split-go" class="btn btn-primary wide" disabled>Separar voz</button>
+          <button id="split-demo" class="btn-link split-demo">Probar con la canción demo</button>
+          <div id="split-busy" class="split-busy" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <div><strong id="split-status">Separando la voz…</strong><small>La primera vez puede tardar hasta un minuto mientras arranca la IA.</small></div>
+          </div>
+          <div id="split-result" class="split-result" hidden>
+            <div class="stem">
+              <div class="stem-head"><strong>Pista sin voz</strong><small>Instrumental</small></div>
+              <audio id="stem-inst" controls preload="auto"></audio>
+              <button id="dl-inst" class="btn btn-ghost">Descargar MP3</button>
+            </div>
+            <div class="stem">
+              <div class="stem-head"><strong>Voz sola</strong><small>A capela</small></div>
+              <audio id="stem-voc" controls preload="auto"></audio>
+              <button id="dl-voc" class="btn btn-ghost" disabled>Descargar MP3</button>
+            </div>
+            <button id="split-karaoke" class="btn btn-primary wide">Hacer video karaoke con esta pista</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========== Captions ========== -->
+    <main id="captions-page" class="view tool-page">
+      <div class="tool-wrap">
+        <a class="back" href="#">← Wave Studio</a>
+        <h1 class="tool-title">Captions</h1>
+        <p class="tool-sub">Subtítulos automáticos para tus videos.</p>
+        <div class="split-card soon-card">
+          <span class="drop-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 13h4"/><path d="M13 13h4"/><path d="M7 16h6"/></svg></span>
+          <strong>Próximamente</strong>
+          <small>Subís un video y la IA le pone subtítulos animados, con los estilos de Lyrics.</small>
+        </div>
+      </div>
+    </main>
+
+    <main id="lyrics-view" class="layout">
       <!-- ========== Editor ========== -->
       <section class="editor">
         <div class="card" data-step="1">
@@ -41,6 +124,11 @@
             </span>
             <span class="link">Cargar</span>
           </label>
+          <div id="karaoke-row" class="karaoke-row" hidden>
+            <span id="karaoke-dot" class="karaoke-dot"></span>
+            <span id="karaoke-status">Cargá una canción: la voz se quita sola.</span>
+            <button id="karaoke-retry" class="btn-link" hidden>Reintentar</button>
+          </div>
         </div>
 
         <div class="card" data-step="2">
@@ -293,11 +381,11 @@
     <div id="modalcfg" class="export" hidden>
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="modalcfg-title">
         <div class="export-head">
-          <h3 id="modalcfg-title">IA precisa (Modal)</h3>
+          <h3 id="modalcfg-title">IA de Wave Studio</h3>
           <span class="export-spec">Versión de prueba</span>
         </div>
         <div class="export-step">
-          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá el token del servicio.</p>
+          <p class="export-note">Nuestro servicio de IA separa la voz de la música y ubica cada palabra de tu letra. Pegá el token del servicio.</p>
           <label class="field aikey-field">
             <span>URL del servicio</span>
             <input id="modalcfg-url" type="url" placeholder="https://…--wave-music-sync-syncer-web.modal.run" autocomplete="off" spellcheck="false" />
@@ -310,7 +398,7 @@
           <p class="export-note aikey-small">Se guarda solo en este navegador. La primera canción tarda más (el servicio arranca la GPU); después, unos segundos por canción.</p>
           <div class="export-actions">
             <button id="modalcfg-cancel" class="btn btn-ghost">Cancelar</button>
-            <button id="modalcfg-ok" class="btn btn-primary">Sincronizar</button>
+            <button id="modalcfg-ok" class="btn btn-primary">Continuar</button>
           </div>
         </div>
       </div>

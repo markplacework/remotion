@@ -83,5 +83,36 @@
     return data;
   }
 
-  WM.ModalSync = { getUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync };
+  /** Remove Vocal: one stem of the song ("instrumental" or "vocals") as an MP3 blob. */
+  async function stems({ blob, filename, stem, url, token, signal }) {
+    if (blob.size > MAX_BYTES) throw Object.assign(new Error("El audio pesa más de 60 MB. Probá con un mp3 más liviano."), { code: "size" });
+    const fd = new FormData();
+    fd.append("audio", blob, filename);
+    fd.append("stem", stem);
+    let res;
+    try {
+      res = await fetch(url.replace(/\/+$/, "") + "/stems", {
+        method: "POST",
+        headers: token ? { Authorization: "Bearer " + token } : {},
+        body: fd,
+        signal,
+      });
+    } catch {
+      throw Object.assign(new Error("No se pudo conectar con la IA. Si estás en la vista previa de Claude, abrí el archivo descargado en Chrome."), { code: "network" });
+    }
+    if (res.status === 401) throw Object.assign(new Error("El token del servicio no es válido."), { code: "auth" });
+    if (res.status === 404) throw Object.assign(new Error("El servicio no tiene Remove Vocal todavía."), { code: "missing" });
+    if (!res.ok) {
+      let msg = "";
+      try {
+        msg = (await res.json()).detail;
+      } catch {
+        /* ignore */
+      }
+      throw new Error("No se pudo separar la voz" + (msg ? ": " + msg : " (" + res.status + ")"));
+    }
+    return res.blob();
+  }
+
+  WM.ModalSync = { getUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync, stems };
 })((window.WaveMusic = window.WaveMusic || {}));

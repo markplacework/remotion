@@ -2,12 +2,20 @@
 
     modal deploy services/wave-music-sync/app.py
 
-Exposes one web endpoint (POST, multipart form):
+Exposes two web endpoints (POST, multipart form):
+
+POST /  — lyric sync
     audio   the song file (mp3, wav, m4a...)
     lyrics  the lyrics, one line per row
     language optional, default "es"
 and answers with the JSON the app already uses:
     { starts: [...], words: [{ text, words: [{ text, d0, d1 }] }], matched, total, duration }
+
+POST /stems — Remove Vocal
+    audio   the song file
+    stem    "instrumental" (default) or "vocals"
+and answers with that stem as an MP3. Asking for both stems of the same
+song separates it once (cached on the warm container).
 
 The endpoint requires `Authorization: Bearer <token>`. The token lives in
 the Modal secret "wave-music-sync-token" (key WAVE_SYNC_TOKEN), so every
@@ -78,6 +86,20 @@ class Syncer:
             f.flush()
             return self.pipe.run(f.name, lines, separate=separate, forced=forced, refine=refine)
 
+    def _stem(self, audio: bytes, filename: str, stem: str) -> bytes:
+        import tempfile
+
+        suffix = os.path.splitext(filename or "")[1] or ".mp3"
+        with tempfile.NamedTemporaryFile(suffix=suffix) as f:
+            f.write(audio)
+            f.flush()
+            return self.pipe.stem_mp3(f.name, stem)
+
+    @modal.method()
+    def stems(self, audio: bytes, filename: str = "song.mp3", stem: str = "instrumental") -> bytes:
+        """Python entry point for tests."""
+        return self._stem(audio, filename, stem)
+
     @modal.method()
     def sync(self, audio: bytes, lines: list[str], filename: str = "song.mp3", separate: bool = True,
              forced: bool = True, refine: bool = True) -> dict:
@@ -86,7 +108,7 @@ class Syncer:
 
     @modal.asgi_app()
     def web(self):
-        from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+        from fastapi import FastAPI, File, Form, Header, HTTPException, Response, UploadFile
         from fastapi.middleware.cors import CORSMiddleware
 
         api = FastAPI(title="Wave Music sync")
@@ -121,5 +143,27 @@ class Syncer:
                 return self._run(data, audio.filename, lines)
             except Exception as e:  # noqa: BLE001
                 raise HTTPException(500, f"No se pudo sincronizar: {e}") from e
+
+        @api.post("/stems")
+        async def stems(
+            audio: UploadFile = File(...),
+            stem: str = Form("instrumental"),
+            authorization: str = Header(""),
+        ):
+            token = os.environ.get("WAVE_SYNC_TOKEN")
+            if token and authorization != f"Bearer {token}":
+                raise HTTPException(401, "Token inválido")
+            if stem not in ("instrumental", "vocals"):
+                raise HTTPException(400, "stem tiene que ser instrumental o vocals")
+            data = await audio.read()
+            if not data:
+                raise HTTPException(400, "Falta el audio")
+            if len(data) > MAX_BYTES:
+                raise HTTPException(413, "El audio pesa más de 60 MB")
+            try:
+                mp3 = self._stem(data, audio.filename, stem)
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(500, f"No se pudo separar la voz: {e}") from e
+            return Response(content=mp3, media_type="audio/mpeg")
 
         return api

@@ -181,6 +181,188 @@
     });
   }
 
+  // ---------- Wave Studio: herramientas ----------
+  const VIEWS = { home: "", "remove-vocal": "Remove Vocal", lyrics: "Lyrics", karaoke: "Karaoke", captions: "Captions" };
+  let view = "home";
+  function route() {
+    const v = location.hash.slice(1);
+    const next = v in VIEWS ? v : "home";
+    if (next !== "lyrics" && next !== "karaoke") closeFull();
+    const enteringKaraoke = next === "karaoke" && view !== "karaoke";
+    if (next !== view) document.querySelector("#lyrics-view .editor").scrollTop = 0;
+    view = next;
+    document.body.dataset.view = view;
+    $("tool-crumb").textContent = VIEWS[view];
+    $("tool-crumb").hidden = !VIEWS[view];
+    $("karaoke-row").hidden = view !== "karaoke";
+    if (view === "karaoke") {
+      if (enteringKaraoke) chooseStyle("karaoke");
+      ensureInstrumental();
+    } else if (audio.playbackUrl) audio.usePlayback(null);
+    needsSnap = true;
+  }
+  window.addEventListener("hashchange", route);
+
+  /** The Modal service's URL and token, asking once if needed. */
+  async function modalCreds(error) {
+    if (!error && WM.ModalSync.isConfigured()) return { url: WM.ModalSync.getUrl(), token: WM.ModalSync.getToken() };
+    return askModal(error);
+  }
+  // stems already separated, per song (same song asked twice runs once)
+  const stemCache = new Map();
+  async function getStem(song, stem) {
+    const key = song.key + "|" + stem;
+    if (stemCache.has(key)) return stemCache.get(key);
+    let creds = await modalCreds();
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const blob = await WM.ModalSync.stems({ blob: song.blob, filename: song.name, stem, url: creds.url, token: creds.token });
+        stemCache.set(key, blob);
+        return blob;
+      } catch (e) {
+        if (e.code !== "auth" || attempt) throw e;
+        WM.ModalSync.setConfig(creds.url, "");
+        creds = await modalCreds(e.message + " Revisalo y probá de nuevo.");
+      }
+    }
+  }
+  const slugOf = (name) =>
+    (name || "cancion")
+      .replace(/\.[^.]+$/, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase() || "cancion";
+
+  // ----- Remove Vocal -----
+  let splitSong = null; // { blob, name, key, demo }
+  let splitStems = {};
+  let splitKeySeq = 0;
+  function pickSplit(song) {
+    splitSong = { ...song, key: "split-" + ++splitKeySeq };
+    splitStems = {};
+    $("split-name").textContent = song.name.replace(/\.[^.]+$/, "");
+    $("split-meta").textContent = (song.blob.size / 1e6).toFixed(1) + " MB · tocá para cambiar";
+    $("split-drop").classList.add("picked");
+    $("split-go").disabled = false;
+    $("split-result").hidden = true;
+  }
+  $("split-file").onchange = (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = "";
+    if (f) pickSplit({ blob: f, name: f.name });
+  };
+  $("split-demo").onclick = async () => {
+    try {
+      const blob = await (await fetch(WM.DEMO.audioSrc)).blob();
+      pickSplit({ blob, name: "cancion-demo.mp3", demo: true });
+    } catch {
+      toast("No se pudo cargar la canción demo");
+    }
+  };
+  function splitBusy(msg) {
+    $("split-busy").hidden = !msg;
+    if (msg) $("split-status").textContent = msg;
+    $("split-go").disabled = !!msg || !splitSong;
+    $("split-drop").classList.toggle("disabled", !!msg);
+  }
+  $("split-go").onclick = async () => {
+    if (!splitSong) return;
+    const song = splitSong;
+    $("split-result").hidden = true;
+    splitBusy("Separando la voz…");
+    try {
+      const inst = await getStem(song, "instrumental");
+      if (song !== splitSong) return;
+      splitStems.instrumental = inst;
+      $("stem-inst").src = URL.createObjectURL(inst);
+      $("dl-voc").disabled = true;
+      $("stem-voc").removeAttribute("src");
+      $("split-result").hidden = false;
+      splitBusy("Preparando la voz sola…");
+      const voc = await getStem(song, "vocals");
+      if (song !== splitSong) return;
+      splitStems.vocals = voc;
+      $("stem-voc").src = URL.createObjectURL(voc);
+      $("dl-voc").disabled = false;
+      splitBusy("");
+    } catch (e) {
+      splitBusy("");
+      if (e.code !== "cancelled") toast(e.message);
+    }
+  };
+  async function saveStem(stem, suffix) {
+    const blob = splitStems[stem];
+    if (!blob) return;
+    const res = await WM.Exporter.saveFile(blob, slugOf(splitSong.name) + suffix);
+    toast(res.ok ? "Guardado" : res.message);
+  }
+  $("dl-inst").onclick = () => saveStem("instrumental", "-sin-voz.mp3");
+  $("dl-voc").onclick = () => saveStem("vocals", "-voz.mp3");
+  $("split-karaoke").onclick = async () => {
+    if (!splitSong || !splitStems.instrumental) return;
+    const song = splitSong;
+    try {
+      // load the song first (still on this page), hand Karaoke the
+      // instrumental we already have, then switch
+      if (song.demo) await loadDemo();
+      else {
+        const file = song.blob instanceof File ? song.blob : new File([song.blob], song.name, { type: song.blob.type || "audio/mpeg" });
+        await audio.loadFile(file);
+        analyzeEnergy();
+        $("sp-title").value = audio.name;
+        syncMeta();
+        refreshReadiness();
+      }
+      stemCache.set(audio.sourceUrl + "|instrumental", splitStems.instrumental);
+      location.hash = "karaoke";
+      if (!song.demo) toast("Canción cargada · pegá la letra y sincronizá");
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+
+  // ----- Karaoke: the lyric editor playing the instrumental -----
+  function karaokeStatus(state, msg) {
+    $("karaoke-status").textContent = msg;
+    $("karaoke-dot").dataset.state = state;
+    $("karaoke-retry").hidden = state !== "error";
+  }
+  let karaokeFor = null;
+  async function ensureInstrumental() {
+    if (view !== "karaoke") return;
+    if (!audio.loaded) return karaokeStatus("idle", "Cargá una canción: la voz se quita sola.");
+    const key = audio.sourceUrl;
+    const cached = stemCache.get(key + "|instrumental");
+    if (cached) {
+      if (!cached.url) cached.url = URL.createObjectURL(cached);
+      await audio.usePlayback(cached.url);
+      return karaokeStatus("ok", "Pista sin voz lista · el video sale en modo karaoke");
+    }
+    if (karaokeFor === key) return; // already separating this song
+    karaokeFor = key;
+    karaokeStatus("busy", "Quitando la voz con IA…");
+    try {
+      const blob = await (async () => {
+        const buf = await audio.getArrayBuffer();
+        const song = { blob: audio.sourceFile || new Blob([buf], { type: "audio/mpeg" }), name: audio.sourceFile ? audio.sourceFile.name : "cancion.mp3", key };
+        return getStem(song, "instrumental");
+      })();
+      karaokeFor = null;
+      if (audio.sourceUrl !== key) return;
+      blob.url = URL.createObjectURL(blob);
+      if (view === "karaoke") {
+        await audio.usePlayback(blob.url);
+        karaokeStatus("ok", "Pista sin voz lista · el video sale en modo karaoke");
+      }
+    } catch (e) {
+      karaokeFor = null;
+      karaokeStatus("error", e.code === "cancelled" ? "Hace falta el token de la IA para quitar la voz." : e.message);
+    }
+  }
+  $("karaoke-retry").onclick = () => ensureInstrumental();
+
   // ---------- API key (versión de prueba) ----------
   function askKey(error) {
     return new Promise((resolve, reject) => {
@@ -622,7 +804,8 @@
     try {
       exported = await WM.Exporter.exportVideo({
         timeline,
-        audioSrc: audio.sourceUrl,
+        // Karaoke exports the instrumental (same length as the song)
+        audioSrc: audio.playbackUrl || audio.sourceUrl,
         backgroundSrc: WM.ASSETS.background,
         duration: audio.duration,
         withAudio: $("export-audio").checked,
@@ -714,6 +897,7 @@
       $("sp-artist").value = "";
       syncMeta();
       toast("Audio cargado");
+      if (view === "karaoke") ensureInstrumental();
       if (timeline) applyTimeline(T.buildTimeline(parsed.lines, timeline.entries.map((e) => e.start), audio.duration, timeline.source));
     } catch (e) {
       toast(e.message);
@@ -914,6 +1098,7 @@
   $("sp-title").addEventListener("input", syncMeta);
   $("sp-artist").addEventListener("input", syncMeta);
   chooseStyle("whatsapp");
+  route();
 
   // Framing: the mockup is a preview aid; "Video final" is exactly what
   // gets exported (9:16, no device frame).
@@ -947,6 +1132,7 @@
     audio.play();
     document.body.classList.add("has-demo");
     setTimeout(introduceFullscreen, 1200);
+    if (view === "karaoke") ensureInstrumental();
   }
 
   document.addEventListener("keydown", (ev) => {

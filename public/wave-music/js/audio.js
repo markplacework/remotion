@@ -32,6 +32,7 @@
       }
       this.name = name || "Audio";
       this.sourceUrl = src;
+      this.playbackUrl = null;
       this.sourceFile = null;
       return new Promise((resolve, reject) => {
         const ok = () => {
@@ -75,6 +76,30 @@
       }
       const res = await fetch(u);
       return res.arrayBuffer();
+    }
+
+    /**
+     * Play another rendition of the same song (the karaoke instrumental)
+     * while everything else — analysis, AI sync — keeps the original.
+     * Same length, so the time carries over. null goes back to the original.
+     */
+    usePlayback(url) {
+      const target = url || this.sourceUrl;
+      this.playbackUrl = url || null;
+      if (!target || this.el.src === target) return Promise.resolve();
+      const t = this.el.currentTime || 0;
+      const wasPlaying = this.playing;
+      return new Promise((resolve) => {
+        const ok = () => {
+          this.el.removeEventListener("loadedmetadata", ok);
+          this.el.currentTime = Math.min(t, this.el.duration || t);
+          if (wasPlaying) this.el.play().catch(() => {});
+          resolve();
+        };
+        this.el.addEventListener("loadedmetadata", ok);
+        this.el.src = target;
+        this.el.load();
+      });
     }
 
     get loaded() {

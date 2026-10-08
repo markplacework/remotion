@@ -178,11 +178,21 @@ class Pipeline:
         self._wx = whisperx
 
     # 1. vocals
-    def vocals(self, path: str) -> np.ndarray:
+    def separate(self, path: str):
+        """Stereo vocals and instrumental (everything else) at Demucs' rate.
+
+        Cached by file content, so syncing and downloading the stems of the
+        same song run Demucs once."""
+        import hashlib
+
         import torch
-        import torchaudio.functional as AF
         from demucs.apply import apply_model
 
+        with open(path, "rb") as f:
+            key = hashlib.sha1(f.read()).hexdigest()
+        cache = self.__dict__.setdefault("_stems", {})
+        if key in cache:
+            return cache[key]
         sr = self.demucs.samplerate
         wav = torch.from_numpy(load_audio(path, sr, 2))
         ref = wav.mean(0)
@@ -190,8 +200,33 @@ class Pipeline:
         with torch.no_grad():
             src = apply_model(self.demucs, ((wav - mu) / sd)[None], device=self.device, split=True, overlap=0.25,
                               progress=False)[0]
-        voc = (src[self.demucs.sources.index("vocals")] * sd + mu).mean(0)
-        return AF.resample(voc.cpu(), sr, ASR_SR).numpy().astype(np.float32)
+        src = (src * sd + mu).cpu()
+        vi = self.demucs.sources.index("vocals")
+        voc = src[vi]
+        inst = src.sum(0) - voc
+        while len(cache) >= 3:  # a few songs at most: they are big
+            cache.pop(next(iter(cache)))
+        cache[key] = (sr, voc, inst)
+        return cache[key]
+
+    def vocals(self, path: str) -> np.ndarray:
+        import torchaudio.functional as AF
+
+        sr, voc, _ = self.separate(path)
+        return AF.resample(voc.mean(0), sr, ASR_SR).numpy().astype(np.float32)
+
+    def stem_mp3(self, path: str, stem: str, bitrate: str = "192k") -> bytes:
+        """One stem ("vocals" or "instrumental") encoded as an MP3."""
+        sr, voc, inst = self.separate(path)
+        x = voc if stem == "vocals" else inst
+        pcm = np.clip(x.numpy().T, -1, 1).astype(np.float32).tobytes()
+        return subprocess.run(
+            ["ffmpeg", "-nostdin", "-v", "error", "-f", "f32le", "-ar", str(sr), "-ac", "2", "-i", "-",
+             "-c:a", "libmp3lame", "-b:a", bitrate, "-f", "mp3", "-"],
+            input=pcm,
+            capture_output=True,
+            check=True,
+        ).stdout
 
     # 2. rough word times from Whisper
     def transcribe(self, audio: np.ndarray, prompt: str, refine: bool = True) -> list[dict]:
