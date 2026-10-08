@@ -815,6 +815,9 @@
   // ---------- helpers shared by the styles below ----------
   /** wrapWords, cached: line layouts only change with text, font or width. */
   const wrapCache = new Map();
+  // layouts measured before a web font arrived used the fallback's widths:
+  // forget them once fonts finish loading
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", () => wrapCache.clear());
   function wrapCached(g, key, words, fontOf, maxW, spaceW) {
     key += "|" + (lyricFamily || "");
     let v = wrapCache.get(key);
@@ -4756,6 +4759,8 @@
     const draw = p.draw;
     p.draw = function (g, f) {
       lyricFamily = f.font || null;
+      // a canvas shared between styles must not carry one style's tracking into the next
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
       try {
         return draw.call(this, g, f);
       } finally {
