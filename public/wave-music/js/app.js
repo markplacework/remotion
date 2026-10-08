@@ -1102,7 +1102,6 @@
           offset: preview.draggable ? preview.offset : null,
           textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
           font: preview.theme.kind === "motion" ? preview.font : null,
-          colors: preview.theme.kind === "motion" ? preview.colors : null,
         },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
@@ -1442,59 +1441,6 @@
       preview.linesFor = null; // re-time the words
       needsSnap = true;
     };
-    // colour combinations: main colour + highlight
-    const COMBOS = [
-      { id: "", label: "Colores originales del estilo", ink: null, accent: null },
-      { id: "cian", label: "Blanco y cian", ink: "#ffffff", accent: "#22d3f5" },
-      { id: "rosa", label: "Blanco y rosa", ink: "#ffffff", accent: "#ff3d8b" },
-      { id: "amarillo", label: "Blanco y amarillo", ink: "#ffffff", accent: "#ffe600" },
-      { id: "lima", label: "Blanco y verde lima", ink: "#ffffff", accent: "#b8ff3d" },
-      { id: "violeta", label: "Blanco y violeta", ink: "#ffffff", accent: "#a875ff" },
-      { id: "rojo", label: "Blanco y rojo", ink: "#ffffff", accent: "#ff2a2a" },
-      { id: "naranja", label: "Crema y naranja", ink: "#fff3e0", accent: "#ff7a1a" },
-      { id: "dorado", label: "Dorado", ink: "#fff4d6", accent: "#ffc94d" },
-      { id: "pastel", label: "Rosa y celeste", ink: "#ffd6ea", accent: "#7fd8ff" },
-    ];
-    const combos = $("text-colors");
-    COMBOS.forEach((c) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "combo";
-      b.title = c.label;
-      b.setAttribute("aria-label", c.label);
-      b.dataset.combo = c.id;
-      if (c.ink) {
-        // square swatch split corner to corner: main colour / highlight
-        b.style.background = `linear-gradient(135deg, ${c.ink} calc(50% - 1px), rgba(0,0,0,.45) calc(50% - 1px) calc(50% + 1px), ${c.accent} calc(50% + 1px))`;
-      } else {
-        // the style's own colours, marked with a "reset" sign
-        b.id = "combo-original";
-        b.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M4 4v4.5h4.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-      }
-      b.onclick = () => {
-        preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
-        combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-        needsSnap = true;
-      };
-      b.setAttribute("aria-pressed", !c.id);
-      combos.appendChild(b);
-    });
-    // the "Original" swatch shows the current style's own two colours
-    const OWN = {
-      kinetic: ["#ffffff", "#ffe14d"],
-      cinematic: ["#f6efe4", "#ffd9a8"],
-      neon: ["#22e4ff", "#ff2bd6"],
-      minimal: ["#141311", "#ff4a1c"],
-      karaoke: ["#ffffff", "#ff3d8b"],
-      wordpop: ["#ffffff", "#ffe600"],
-      notes: ["#f2f2f7", "#ffd60a"],
-      aurora: ["#ffffff", "#7b5cff"],
-      vhs: ["#fffbe8", "#ff2840"],
-    };
-    WM.paintOriginalCombo = (id) => {
-      const [a, c] = OWN[id] || ["#ffffff", "#8790a3"];
-      $("combo-original").style.background = `linear-gradient(135deg, ${a} calc(50% - 1px), rgba(0,0,0,.45) calc(50% - 1px) calc(50% + 1px), ${c} calc(50% + 1px))`;
-    };
     const size = $("text-size");
     size.oninput = () => {
       preview.textScale = Number(size.value) / 100;
@@ -1518,8 +1464,6 @@
     const th = WM.Themes.get(id);
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
-    $("text-colors-field").hidden = th.colors === false;
-    WM.paintOriginalCombo(id);
     preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred

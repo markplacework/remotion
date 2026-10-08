@@ -2060,47 +2060,6 @@ body[data-view="captions"] #btn-demo {
   color: var(--faint);
   font-size: 12.5px;
 }
-/* text colour combinations */
-.text-colors {
-  margin: 4px 0 14px;
-}
-.color-combos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-.combo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  min-width: 34px;
-  padding: 0;
-  border-radius: 7px;
-  border: 1px solid var(--line-2);
-  background: var(--surface-2);
-  cursor: pointer;
-  overflow: hidden;
-}
-#combo-original svg {
-  padding: 3px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-}
-.combo span {
-  padding: 0 12px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-.combo[aria-pressed="true"] {
-  outline: 2px solid var(--accent-2);
-  outline-offset: 2px;
-}
-.combo[aria-pressed="true"] span {
-  color: var(--text);
-}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;

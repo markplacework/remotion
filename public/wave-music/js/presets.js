@@ -48,12 +48,6 @@
   // draw wrapper at the bottom sets it for the frame being drawn.
   let lyricFamily = null;
   const fam = (d) => lyricFamily || d;
-  // A colour combination picked by the user: the lyric's main colour (ink)
-  // and its highlight (accent); null keeps the style's own.
-  let lyricInk = null;
-  let lyricAcc = null;
-  const ink = (d) => lyricInk || d;
-  const acc = (d) => lyricAcc || d;
   /** Move and scale the lyric layer: where it was dragged, at the chosen size. */
   function place(g, f) {
     g.translate(f.shift.x, f.shift.y);
@@ -87,7 +81,7 @@
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const L = f.lines[f.current];
-      const accent = acc(KINETIC_COLORS[Math.max(0, f.current) % KINETIC_COLORS.length]);
+      const accent = KINETIC_COLORS[Math.max(0, f.current) % KINETIC_COLORS.length];
       const pulse = f.pulse();
 
       // background: near-black with a slow colour bloom that breathes on the beat
@@ -208,10 +202,10 @@
           // alternate rows go hollow: contrast without another colour
           g.shadowBlur = 0;
           g.lineWidth = Math.max(1, u * 3.5);
-          g.strokeStyle = ink("#ffffff");
+          g.strokeStyle = "#ffffff";
           g.strokeText(r.label, 0, 0);
         } else {
-          g.fillStyle = ink("#ffffff");
+          g.fillStyle = "#ffffff";
           g.fillText(r.label, 0, 0);
         }
         g.restore();
@@ -462,7 +456,7 @@
             g.globalAlpha = (out ? alphaMul * alphaMul : sharp * sharp) * 1;
             g.shadowColor = "rgba(255,220,180,0.35)";
             g.shadowBlur = u * 18;
-            g.fillStyle = w.hero ? acc("#ffd9a8") : ink("#f6efe4");
+            g.fillStyle = w.hero ? "#ffd9a8" : "#f6efe4";
             g.fillText(w.label, x, y);
             g.shadowBlur = 0;
             g.globalAlpha = 1;
@@ -617,7 +611,7 @@
         const size = r.size * k;
         const rowY = y + size / 2;
         y += size + gap * k;
-        const col = acc(NEON[(line.index + i) % 2]);
+        const col = NEON[(line.index + i) % 2];
         let alpha = 1;
         let glitch = 0;
         let scale = 1;
@@ -654,7 +648,7 @@
         g.strokeStyle = col;
         g.strokeText(r.label, 0, 0);
         g.shadowBlur = u * 14 * glow;
-        g.fillStyle = ink("#ffffff");
+        g.fillStyle = "#ffffff";
         if (glitch > 0.05) {
           // horizontal slice displacement
           for (let s = 0; s < 4; s++) {
@@ -804,7 +798,7 @@
             dy = lh * 1.4 * (1 - ease.out(a));
           }
           g.font = fontOf(w);
-          g.fillStyle = w.hero ? acc(MIN.accent) : MIN.ink;
+          g.fillStyle = w.hero ? MIN.accent : MIN.ink;
           g.fillText(w.label, x0 + it.x, base + dy);
         });
         g.restore();
@@ -971,9 +965,9 @@
       g.textBaseline = "middle";
       g.textAlign = "left";
       const grad = g.createLinearGradient(-safe.w / 2, 0, safe.w / 2, 0);
-      grad.addColorStop(0, acc("#ff3d8b"));
-      grad.addColorStop(0.5, acc("#ff6a5c"));
-      grad.addColorStop(1, lyricAcc ? ink("#ffffff") : "#ffb43d");
+      grad.addColorStop(0, "#ff3d8b");
+      grad.addColorStop(0.5, "#ff6a5c");
+      grad.addColorStop(1, "#ffb43d");
       for (let i = Math.max(0, Math.floor(pos) - 1); i <= Math.min(lines.length - 1, Math.ceil(pos) + 2); i++) {
         const s = i - pos;
         if (s < -1.6 || s > 2.1) continue;
@@ -1008,7 +1002,7 @@
             g.lineWidth = size * 0.1;
             g.strokeStyle = "rgba(10,4,20,0.55)";
             g.strokeText(it.w.label, 0, 0);
-            g.fillStyle = hexA(ink("#ffffff"), 0.38);
+            g.fillStyle = "rgba(255,255,255,0.38)";
             g.fillText(it.w.label, 0, 0);
             if (p > 0) {
               g.save();
@@ -1021,7 +1015,7 @@
               g.translate(-x, 0);
               g.fillStyle = grad;
               if (i === f.current) {
-                g.shadowColor = hexA(acc("#ff3d8b"), 0.85);
+                g.shadowColor = "rgba(255,61,139,0.85)";
                 g.shadowBlur = size * 0.35;
               }
               g.fillText(it.w.label, x, 0);
@@ -1059,11 +1053,11 @@
       g.globalAlpha = alpha * fade;
       g.translate(x, y + r * (1 - squash));
       g.scale(1 / squash ** 0.5, squash);
-      g.shadowColor = acc("#ff3d8b");
+      g.shadowColor = "#ff3d8b";
       g.shadowBlur = size * 0.4;
       const ball = g.createRadialGradient(-r * 0.35, -r * 0.35, 0, 0, 0, r);
       ball.addColorStop(0, "#ffffff");
-      ball.addColorStop(1, acc("#ffb0cf"));
+      ball.addColorStop(1, "#ffb0cf");
       g.fillStyle = ball;
       g.beginPath();
       g.arc(0, 0, r, 0, Math.PI * 2);
@@ -1139,7 +1133,7 @@
       const u = safe.w / 825;
       const pulse = f.pulse();
       const L = f.lines[f.current];
-      const accent = acc(POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length]);
+      const accent = POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length];
       g.fillStyle = "#0b0b0f";
       g.fillRect(0, 0, W, H);
       const bx = W * (0.5 + 0.22 * Math.sin(t * 0.23));
@@ -1265,7 +1259,7 @@
           g.strokeText(label, 0, 0);
           g.shadowColor = "transparent";
         }
-        g.fillStyle = isAct ? "#0b0b0f" : ink("#ffffff");
+        g.fillStyle = isAct ? "#0b0b0f" : "#ffffff";
         g.fillText(label, 0, 0);
         g.restore();
       });
@@ -1557,7 +1551,7 @@
               txt = txt.slice(0, n);
             }
             x = x0 + it.x;
-            g.fillStyle = ink(NOTE.ink);
+            g.fillStyle = NOTE.ink;
             g.fillText(txt, x, y);
             if (typing) cursor = { x: x + g.measureText(txt).width, y };
           });
@@ -1588,13 +1582,13 @@
       let typing = false;
       if (line && line.words.length) typing = t < line.words[line.words.length - 1].t1 + 0.15;
       if (!typing && Math.floor(t * 1.9) % 2) return;
-      g.fillStyle = acc(NOTE.accent);
+      g.fillStyle = NOTE.accent;
       rrect(g, c.x + u * 3, c.y - body * 0.86, u * 4.5, body * 1.12, u * 2);
       g.fill();
     },
     nav(g, f, u, x0, x1, y) {
       g.save();
-      g.strokeStyle = g.fillStyle = acc(NOTE.accent);
+      g.strokeStyle = g.fillStyle = NOTE.accent;
       g.lineCap = g.lineJoin = "round";
       g.lineWidth = u * 6;
       g.beginPath();
@@ -1639,7 +1633,7 @@
     },
     toolbar(g, u, x0, x1, y) {
       g.save();
-      g.strokeStyle = g.fillStyle = acc(NOTE.accent);
+      g.strokeStyle = g.fillStyle = NOTE.accent;
       g.lineCap = g.lineJoin = "round";
       g.lineWidth = u * 4;
       const n = 5;
@@ -1862,10 +1856,10 @@
             const y = ty + ri * lh + lh / 2 + dy;
             g.globalAlpha = alphaMul * lerp(0.32, 1, ease.out(p));
             if (p > 0 && p < 1) {
-              g.shadowColor = hexA(acc("#ffffff"), 0.8);
+              g.shadowColor = "rgba(255,255,255,0.8)";
               g.shadowBlur = size * 0.4 * Math.sin(Math.PI * p);
             } else g.shadowBlur = 0;
-            g.fillStyle = p > 0 && p < 1 && lyricAcc ? lyricAcc : ink("#ffffff");
+            g.fillStyle = "#ffffff";
             g.fillText(it.w.label, hx + it.x, y - u * 4 * Math.sin(Math.PI * p));
           });
         });
@@ -2242,13 +2236,13 @@
         draw(-split, "rgba(255,40,60,0.75)");
         draw(split, "rgba(40,140,255,0.75)");
         g.globalCompositeOperation = "source-over";
-        draw(0, ink("#fffbe8"));
+        draw(0, "#fffbe8");
         g.restore();
         // blinking block cursor while the line is being sung
         const last = rows[rows.length - 1];
         if (last && t < L.words[L.words.length - 1].t1 + 0.6 && Math.floor(t * 2.4) % 2 === 0) {
           const y = cy + ((rows.length - 1) / 2) * lh;
-          g.fillStyle = acc("#fffbe8");
+          g.fillStyle = "#fffbe8";
           g.fillRect(safe.x + (safe.w - last.width) / 2 + last.width + size * 0.12, y - size * 0.32, size * 0.42, size * 0.6);
         }
         g.restore();
@@ -2664,12 +2658,10 @@
     const draw = p.draw;
     p.draw = function (g, f) {
       lyricFamily = f.font || null;
-      lyricInk = (f.colors && f.colors.ink) || null;
-      lyricAcc = (f.colors && f.colors.accent) || null;
       try {
         return draw.call(this, g, f);
       } finally {
-        lyricFamily = lyricInk = lyricAcc = null;
+        lyricFamily = null;
       }
     };
   });
