@@ -151,6 +151,11 @@
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
     broadcast: { id: "broadcast", label: "Broadcast", kind: "motion", preset: "broadcast", background: { type: "motion" }, meta: true, video: true, sampleVideo: true },
     recorte: { id: "recorte", label: "Recorte", kind: "motion", preset: "recorte", background: { type: "motion" }, video: true, sampleVideo: true },
+    // weather
+    lluvia: { id: "lluvia", label: "Lluvia", kind: "motion", preset: "lluvia", background: { type: "motion" }, video: true },
+    nieve: { id: "nieve", label: "Nieve", kind: "motion", preset: "nieve", background: { type: "motion" }, video: true, sampleVideo: true },
+    tormenta: { id: "tormenta", label: "Tormenta", kind: "motion", preset: "tormenta", background: { type: "motion" }, video: true },
+    otono: { id: "otono", label: "Otoño", kind: "motion", preset: "otono", background: { type: "motion" }, video: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },

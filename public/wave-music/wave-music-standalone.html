@@ -5772,6 +5772,11 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
     broadcast: { id: "broadcast", label: "Broadcast", kind: "motion", preset: "broadcast", background: { type: "motion" }, meta: true, video: true, sampleVideo: true },
     recorte: { id: "recorte", label: "Recorte", kind: "motion", preset: "recorte", background: { type: "motion" }, video: true, sampleVideo: true },
+    // weather
+    lluvia: { id: "lluvia", label: "Lluvia", kind: "motion", preset: "lluvia", background: { type: "motion" }, video: true },
+    nieve: { id: "nieve", label: "Nieve", kind: "motion", preset: "nieve", background: { type: "motion" }, video: true, sampleVideo: true },
+    tormenta: { id: "tormenta", label: "Tormenta", kind: "motion", preset: "tormenta", background: { type: "motion" }, video: true },
+    otono: { id: "otono", label: "Otoño", kind: "motion", preset: "otono", background: { type: "motion" }, video: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
@@ -9743,7 +9748,425 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     },
   };
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, karasing, kararetro, karastage };
+  // ======================================================================
+  // CLIMA — weather over the song (and over the user's footage)
+  // ======================================================================
+  /** A line whose words come out of a soft focus, centred in the safe area. */
+  function softLine(g, f, line, u, o) {
+    const { t, safe } = f;
+    const size = u * o.size;
+    const words = line.words.map((w) => ({ ...w, label: o.upper ? upper(w.text) : w.text }));
+    const fontOf = () => o.font(size);
+    // tracking first, so the wrap measures the words as they will be drawn
+    if ("letterSpacing" in g) g.letterSpacing = o.track ? `${size * o.track}px` : "0px";
+    const rows = wrapCached(g, `${o.key}|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, fontOf, safe.w * (o.width || 0.86), size * (o.space || 0.28));
+    const lh = size * (o.lh || 1.18);
+    const top = safe.y + safe.h * (o.y || 0.45) - (rows.length * lh) / 2;
+    const hero = o.hero ? longestIndex(line.words) : -1;
+    g.font = fontOf();
+    g.textBaseline = "middle";
+    g.textAlign = "left";
+    rows.forEach((row, ri) => {
+      const y = top + ri * lh + lh / 2;
+      const x0 = safe.x + (safe.w - row.width) / 2;
+      row.items.forEach((it, wi) => {
+        const w = it.w;
+        const a = clamp((t - w.t0 - wi * 0.04 + 0.05) / (o.dur || 0.5));
+        if (a <= 0) return;
+        const e = ease.out(a);
+        const x = x0 + it.x;
+        const dy = (o.drop || 0) * u * (1 - e);
+        const col = w.index === hero ? o.heroCol : o.col;
+        if (a < 1 && o.blur) blurText(g, w.label, x, y - dy, u * o.blur * (1 - e), hexA(col, 0.9 * e));
+        g.save();
+        g.globalAlpha = e * e;
+        if (o.glow) {
+          g.shadowColor = o.glow;
+          g.shadowBlur = size * 0.35;
+        }
+        if (o.rot) {
+          g.translate(x + it.width / 2, y - dy);
+          g.rotate(o.rot * (1 - e) * (rand(w.index * 3.7) - 0.5));
+          g.translate(-(x + it.width / 2), -(y - dy));
+        }
+        g.fillStyle = col;
+        g.fillText(w.label, x, y - dy);
+        g.restore();
+      });
+    });
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+  }
+
+  // LLUVIA — a rainy night seen through a wet window
+  const RAIN_FONT = (size) => `600 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
+  const BOKEH = ["255,180,90", "255,90,90", "90,200,255", "255,220,150", "190,120,255"];
+  const lluvia = {
+    id: "lluvia",
+    label: "Lluvia",
+    tag: "Melancolía",
+    fonts: ["600 100px Montserrat"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (videoBg(g, f, "saturate(0.8) blur(2px)")) {
+        g.fillStyle = "rgba(10,18,40,0.45)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#070b18");
+        bg.addColorStop(1, "#1a1230");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // out-of-focus city lights behind the glass
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 26; i++) {
+          const x = rand(i * 2.9) * W + Math.sin(t * 0.2 + i) * u * 8;
+          const y = H * (0.25 + rand(i * 5.3) * 0.7);
+          const r = u * (40 + rand(i * 7.1) * 90);
+          const gr = g.createRadialGradient(x, y, 0, x, y, r);
+          const c = BOKEH[i % BOKEH.length];
+          const a = 0.18 + 0.12 * Math.sin(t * 0.7 + i * 2);
+          gr.addColorStop(0, `rgba(${c},${a})`);
+          gr.addColorStop(0.7, `rgba(${c},${a * 0.6})`);
+          gr.addColorStop(1, `rgba(${c},0)`);
+          g.fillStyle = gr;
+          g.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+        g.restore();
+      }
+      // falling rain behind the glass
+      g.save();
+      g.strokeStyle = "rgba(200,220,255,0.22)";
+      g.lineWidth = Math.max(1, u * 1.6);
+      g.beginPath();
+      for (let i = 0; i < 110; i++) {
+        const sp = 1.4 + rand(i * 1.3) * 0.8;
+        const y = ((rand(i * 4.7) + t * sp) % 1) * (H + u * 80) - u * 80;
+        const x = rand(i * 9.1) * W;
+        g.moveTo(x, y);
+        g.lineTo(x - u * 6, y + u * (40 + rand(i) * 40));
+      }
+      g.stroke();
+      g.restore();
+      this.glass(g, f, u);
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      softLine(g, f, L, u, { key: "ll", font: RAIN_FONT, size: 86, col: "#f2f6ff", heroCol: "#9fd4ff", hero: true, blur: 30, glow: "rgba(150,200,255,0.45)", drop: 14 });
+      g.restore();
+    },
+    /** Drops on the window: still beads, and a few that run down leaving a trail. */
+    glass(g, f, u) {
+      const { W, H, t } = f;
+      g.save();
+      for (let i = 0; i < 90; i++) {
+        const x = rand(i * 3.3) * W;
+        const y = rand(i * 6.6) * H;
+        const r = u * (2 + rand(i * 2.2) * 5);
+        g.fillStyle = "rgba(255,255,255,0.1)";
+        g.beginPath();
+        g.arc(x, y, r, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "rgba(255,255,255,0.35)";
+        g.beginPath();
+        g.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2);
+        g.fill();
+      }
+      for (let i = 0; i < 12; i++) {
+        const sp = 0.08 + rand(i * 7.3) * 0.12;
+        const ph = (rand(i * 1.9) + t * sp) % 1;
+        const x = rand(i * 8.8) * W + Math.sin(ph * 12 + i) * u * 4;
+        const y = ph * H * 1.1;
+        const r = u * (6 + rand(i * 4.1) * 5);
+        const trail = g.createLinearGradient(0, y - u * 260, 0, y);
+        trail.addColorStop(0, "rgba(255,255,255,0)");
+        trail.addColorStop(1, "rgba(255,255,255,0.18)");
+        g.fillStyle = trail;
+        g.fillRect(x - r * 0.35, y - u * 260, r * 0.7, u * 260);
+        g.fillStyle = "rgba(255,255,255,0.16)";
+        g.beginPath();
+        g.ellipse(x, y, r, r * 1.25, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "rgba(255,255,255,0.55)";
+        g.beginPath();
+        g.arc(x - r * 0.35, y - r * 0.4, r * 0.3, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+    },
+  };
+
+  // NIEVE — a quiet snowfall at night, flakes in three depths
+  const SNOW_FONT = (size) => `500 ${size}px ${fam("'Cormorant Garamond', Georgia, serif")}`;
+  const nieve = {
+    id: "nieve",
+    label: "Nieve",
+    tag: "Invierno",
+    fonts: ["500 100px 'Cormorant Garamond'"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (videoBg(g, f, "saturate(0.85) brightness(0.85)")) {
+        g.fillStyle = "rgba(10,22,46,0.5)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#081428");
+        bg.addColorStop(0.6, "#1d3a63");
+        bg.addColorStop(1, "#4d6f99");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // moon glow
+        const mg = g.createRadialGradient(W * 0.78, H * 0.14, 0, W * 0.78, H * 0.14, H * 0.3);
+        mg.addColorStop(0, "rgba(230,240,255,0.5)");
+        mg.addColorStop(0.08, "rgba(230,240,255,0.25)");
+        mg.addColorStop(1, "rgba(230,240,255,0)");
+        g.fillStyle = mg;
+        g.fillRect(0, 0, W, H);
+        // pine forest on a snowy hill
+        g.fillStyle = "#0b1a30";
+        for (let i = 0; i < 14; i++) {
+          const x = (i / 13) * W + (rand(i) - 0.5) * u * 60;
+          const h = H * (0.1 + rand(i * 3.7) * 0.08);
+          const by = H * 0.86 - Math.sin((i / 13) * Math.PI) * H * 0.03;
+          g.beginPath();
+          g.moveTo(x, by - h);
+          g.lineTo(x + h * 0.28, by);
+          g.lineTo(x - h * 0.28, by);
+          g.closePath();
+          g.fill();
+        }
+        g.fillStyle = "#dfe9f5";
+        g.beginPath();
+        g.moveTo(0, H);
+        g.lineTo(0, H * 0.87);
+        g.quadraticCurveTo(W / 2, H * 0.8, W, H * 0.87);
+        g.lineTo(W, H);
+        g.fill();
+      }
+      this.flakes(g, f, u, 0);
+      const L = f.lines[f.current];
+      if (L && L.words.length) {
+        g.save();
+        place(g, f);
+        softLine(g, f, L, u, { key: "nv", font: SNOW_FONT, size: 92, col: "#ffffff", heroCol: "#cfe6ff", upper: true, track: 0.08, space: 0.45, blur: 36, glow: f.video ? "rgba(6,16,36,0.95)" : "rgba(190,220,255,0.6)", drop: -18, dur: 0.7 });
+        g.restore();
+      }
+      this.flakes(g, f, u, 1);
+    },
+    /** Snow in layers: small far flakes behind the lyric, big soft ones in front. */
+    flakes(g, f, u, front) {
+      const { W, H, t } = f;
+      const layers = front ? [[10, 18, 0.9, 0.35]] : [[140, 3, 0.25, 0.75], [60, 6, 0.45, 0.85]];
+      g.save();
+      layers.forEach(([n, size, speed, alpha], li) => {
+        for (let i = 0; i < n; i++) {
+          const seed = i + li * 300 + front * 900;
+          const y = ((rand(seed * 2.1) + t * speed * (0.6 + rand(seed) * 0.6) * 0.18) % 1) * (H + u * 60) - u * 30;
+          const x = ((rand(seed * 5.3) + Math.sin(t * 0.6 + seed) * 0.02) % 1) * W;
+          const r = u * size * (0.6 + rand(seed * 3.1) * 0.8);
+          if (front) {
+            const gr = g.createRadialGradient(x, y, 0, x, y, r);
+            gr.addColorStop(0, `rgba(255,255,255,${alpha})`);
+            gr.addColorStop(1, "rgba(255,255,255,0)");
+            g.fillStyle = gr;
+            g.fillRect(x - r, y - r, r * 2, r * 2);
+          } else {
+            g.fillStyle = `rgba(255,255,255,${alpha * (0.5 + rand(seed * 7.7) * 0.5)})`;
+            g.beginPath();
+            g.arc(x, y, r, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
+      });
+      g.restore();
+    },
+  };
+
+  // TORMENTA — storm clouds, slanted rain and lightning that hits on the beat
+  const STORM_FONT = (size) => `400 ${size}px ${fam("'League Gothic', Impact, sans-serif")}`;
+  const tormenta = {
+    id: "tormenta",
+    label: "Tormenta",
+    tag: "Intenso",
+    fonts: ["400 100px 'League Gothic'"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      const flash = pulse > 0.72 ? (pulse - 0.72) / 0.28 : 0;
+      if (videoBg(g, f, "saturate(0.6) contrast(1.2) brightness(0.7)")) {
+        g.fillStyle = "rgba(8,6,20,0.45)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#0a0814");
+        bg.addColorStop(1, "#1a1626");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // rolling clouds
+        for (let i = 0; i < 9; i++) {
+          const x = ((rand(i * 3.1) + t * 0.01 * (1 + rand(i))) % 1.4) * W * 1.2 - W * 0.2;
+          const y = H * (0.05 + rand(i * 5.7) * 0.35);
+          const r = H * (0.18 + rand(i * 2.2) * 0.15);
+          const gr = g.createRadialGradient(x, y, 0, x, y, r);
+          gr.addColorStop(0, "rgba(70,60,100,0.5)");
+          gr.addColorStop(1, "rgba(70,60,100,0)");
+          g.fillStyle = gr;
+          g.fillRect(0, 0, W, H);
+        }
+      }
+      // lightning: a fresh bolt on every strong beat
+      if (flash > 0.05) {
+        g.save();
+        g.fillStyle = `rgba(200,210,255,${0.35 * flash})`;
+        g.fillRect(0, 0, W, H);
+        const seed = Math.floor(t * 3);
+        let x = W * (0.2 + rand(seed) * 0.6);
+        let y = 0;
+        g.strokeStyle = `rgba(240,245,255,${flash})`;
+        g.shadowColor = "rgba(170,190,255,1)";
+        g.shadowBlur = u * 30;
+        g.lineWidth = u * 4;
+        g.lineJoin = "round";
+        g.beginPath();
+        g.moveTo(x, y);
+        for (let k = 0; k < 12 && y < H * 0.62; k++) {
+          x += (rand(seed * 7 + k) - 0.5) * u * 120;
+          y += H * (0.04 + rand(seed * 3 + k) * 0.03);
+          g.lineTo(x, y);
+        }
+        g.stroke();
+        g.restore();
+      }
+      // heavy slanted rain
+      g.save();
+      g.strokeStyle = "rgba(190,200,230,0.28)";
+      g.lineWidth = Math.max(1, u * 2);
+      g.beginPath();
+      for (let i = 0; i < 160; i++) {
+        const sp = 2 + rand(i * 1.7) * 1.2;
+        const y = ((rand(i * 4.1) + t * sp) % 1) * (H + u * 120) - u * 120;
+        const x = ((rand(i * 8.3) + y / H * 0.12) % 1) * W;
+        g.moveTo(x, y);
+        g.lineTo(x - u * 22, y + u * 70);
+      }
+      g.stroke();
+      g.restore();
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      const sh = flash * u * 8;
+      g.translate((rand(Math.floor(t * 40)) - 0.5) * sh, (rand(Math.floor(t * 40) + 3) - 0.5) * sh);
+      place(g, f);
+      this.drawLine(g, f, L, u, flash);
+      g.restore();
+    },
+    drawLine(g, f, line, u, flash) {
+      const { t, safe } = f;
+      const rows = stackRows(line.words);
+      const spec = rows.map((ws) => {
+        const label = upper(ws.map((w) => w.text).join(" "));
+        return { label, size: fitSize(g, label, STORM_FONT, u * 230, safe.w * 0.9), t0: ws[0].t0 };
+      });
+      let total = spec.reduce((a, r) => a + r.size * 0.88, 0);
+      const k = total > safe.h * 0.75 ? (safe.h * 0.75) / total : 1;
+      total *= k;
+      let y = safe.y + safe.h * 0.46 - total / 2;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      spec.forEach((r) => {
+        const size = r.size * k;
+        const ry = y + (size * 0.88) / 2;
+        y += size * 0.88;
+        const a = (t - r.t0) / 0.12;
+        if (a < 0) return;
+        // each row strikes in like a flash
+        const strike = clamp(1 - (t - r.t0) / 0.35);
+        g.save();
+        g.font = STORM_FONT(size);
+        g.shadowColor = `rgba(170,190,255,${0.5 + 0.5 * Math.max(flash, strike)})`;
+        g.shadowBlur = size * (0.2 + 0.4 * Math.max(flash, strike));
+        g.globalAlpha = clamp(a);
+        g.fillStyle = flash > 0.3 || strike > 0.5 ? "#ffffff" : "#e6e8f2";
+        g.fillText(r.label, safe.x + safe.w / 2, ry);
+        g.restore();
+      });
+    },
+  };
+
+  // OTOÑO — warm dusk and leaves drifting down; the words fall softly into place
+  const AUT_FONT = (size) => `italic 500 ${size}px ${fam("'Cormorant Garamond', Georgia, serif")}`;
+  const LEAF_COLS = ["#e0782c", "#c9492b", "#f2b544", "#a8401f", "#e89a3a"];
+  const otono = {
+    id: "otono",
+    label: "Otoño",
+    tag: "Cálido",
+    fonts: ["italic 500 100px 'Cormorant Garamond'"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (videoBg(g, f, "sepia(0.25) saturate(1.2)")) {
+        g.fillStyle = "rgba(60,20,0,0.28)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#2b1408");
+        bg.addColorStop(0.55, "#7a2e10");
+        bg.addColorStop(1, "#d9772c");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        const sun = g.createRadialGradient(W * 0.5, H * 0.78, 0, W * 0.5, H * 0.78, H * 0.45);
+        sun.addColorStop(0, "rgba(255,210,140,0.55)");
+        sun.addColorStop(1, "rgba(255,210,140,0)");
+        g.fillStyle = sun;
+        g.fillRect(0, 0, W, H);
+      }
+      this.leaves(g, f, u, false);
+      const L = f.lines[f.current];
+      if (L && L.words.length) {
+        g.save();
+        place(g, f);
+        softLine(g, f, L, u, { key: "ot", font: AUT_FONT, size: 120, col: "#fff1dc", heroCol: "#ffc46b", hero: true, blur: 22, glow: "rgba(80,30,0,0.6)", drop: 60, rot: 0.6, dur: 0.6, lh: 1.05 });
+        g.restore();
+      }
+      this.leaves(g, f, u, true);
+    },
+    leaves(g, f, u, front) {
+      const { W, H, t } = f;
+      const n = front ? 6 : 26;
+      for (let i = 0; i < n; i++) {
+        const seed = i + (front ? 500 : 0);
+        const sp = (front ? 0.09 : 0.05) * (0.7 + rand(seed * 1.3) * 0.6);
+        const ph = (rand(seed * 2.7) + t * sp) % 1;
+        const y = ph * (H + u * 200) - u * 100;
+        const x = rand(seed * 5.9) * W + Math.sin(t * 0.9 + seed * 2) * u * 70;
+        const s = u * (front ? 46 : 16 + rand(seed * 3.3) * 18);
+        g.save();
+        g.translate(x, y);
+        g.rotate(t * (0.6 + rand(seed) * 1.2) + seed);
+        g.scale(1, 0.55 + 0.45 * Math.abs(Math.sin(t * 1.5 + seed)));
+        g.globalAlpha = front ? 0.55 : 0.85;
+        g.fillStyle = LEAF_COLS[seed % LEAF_COLS.length];
+        g.beginPath();
+        g.moveTo(0, -s);
+        g.bezierCurveTo(s * 0.8, -s * 0.5, s * 0.6, s * 0.6, 0, s);
+        g.bezierCurveTo(-s * 0.6, s * 0.6, -s * 0.8, -s * 0.5, 0, -s);
+        g.fill();
+        g.strokeStyle = "rgba(80,30,10,0.5)";
+        g.lineWidth = Math.max(1, s * 0.06);
+        g.beginPath();
+        g.moveTo(0, -s * 0.9);
+        g.lineTo(0, s * 1.15);
+        g.stroke();
+        g.restore();
+      }
+    },
+  };
+
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
