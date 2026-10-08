@@ -1289,6 +1289,48 @@
     requestAnimationFrame(thumbLoop);
   })(0);
 
+  // Home: the hero comes in on load, the rest as it scrolls into view.
+  (function homeReveal() {
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (still || !("IntersectionObserver" in window)) return;
+    const groups = [
+      // [selector, stagger in ms, zoom]
+      [".hero-pill, .hero-title, .hero-sub, .hero-ctas, .hero-note", 110],
+      [".hero-phone", 0, true],
+      [".tcard", 90],
+      ["#rev-title, #rev-title ~ .sec-sub, .sample-note", 80],
+      [".review", 90],
+      ["#faq-title", 0],
+      [".faq-item", 55],
+      [".foot-top > *", 90],
+      [".foot-bottom", 0],
+    ];
+    const io = new IntersectionObserver(
+      (list) =>
+        list.forEach((en) => {
+          if (!en.isIntersecting) return;
+          en.target.classList.add("in");
+          io.unobserve(en.target);
+        }),
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+    );
+    groups.forEach(([sel, step, zoom]) => {
+      document.querySelectorAll("#studio " + sel.split(", ").join(", #studio ")).forEach((el, i) => {
+        el.classList.add("reveal");
+        if (zoom) el.classList.add("reveal-zoom");
+        el.style.setProperty("--d", (sel.startsWith(".hero") ? 150 : 0) + Math.min(i, 6) * step + "ms");
+        // once in, hand the element back to its own transitions (hover etc.)
+        el.addEventListener("transitionend", function done(ev) {
+          if (ev.propertyName !== "opacity" || !el.classList.contains("in")) return;
+          el.classList.remove("reveal", "reveal-zoom", "in");
+          el.style.removeProperty("--d");
+          el.removeEventListener("transitionend", done);
+        });
+        io.observe(el);
+      });
+    });
+  })();
+
   // Home hero: a real lyric video playing inside the phone mockup, cycling styles.
   (function heroScreen() {
     const c = $("hero-screen");
