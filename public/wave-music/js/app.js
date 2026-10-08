@@ -1286,6 +1286,7 @@
       $("sticky-cta").classList.toggle("on", seen.size === 0);
     });
     [document.querySelector(".hero-ctas"), document.querySelector(".foot-cta")].forEach((el) => el && io.observe(el));
+    $("more-reviews").onclick = () => $("reviews").classList.add("all");
     document.querySelectorAll("[data-scroll]").forEach((a) => {
       a.onclick = (e) => {
         e.preventDefault();

@@ -2216,8 +2216,18 @@ body[data-view="captions"] #btn-demo {
   .reviews {
     grid-template-columns: 1fr;
   }
-  .review:nth-child(n + 4) {
+  .reviews:not(.all) .review:nth-child(n + 4) {
     display: none;
+  }
+  .home-sec .reviews.all + .more-reviews {
+    display: none;
+  }
+  .home-sec .more-reviews {
+    display: flex;
+    margin: 20px auto 0;
+    height: 44px;
+    padding: 0 22px;
+    font-size: 14px;
   }
   .home-sec {
     margin-top: 64px;
@@ -2229,6 +2239,9 @@ body[data-view="captions"] #btn-demo {
   .faq-item p {
     padding: 0 16px 16px;
   }
+}
+.more-reviews {
+  display: none;
 }
 /* home footer */
 .site-foot {
