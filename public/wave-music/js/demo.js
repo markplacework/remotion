@@ -38,6 +38,9 @@
   // Sample background for the styles that take a video (a ski run filmed
   // by the project owner, shrunk to 540x960 for the app).
   WM.DEMO_BG = { src: "assets/demo-bg.mp4", name: "video-de-ejemplo.mp4" };
+  // Each style's own sample, picked from Pixabay and served (cropped to
+  // 540x960) by our media service: GET <media>/sample/<style>.mp4.
+  WM.STYLE_SAMPLES = {"kinetic": {"user": "doktorkleinmusic", "id": 316702}, "cinematic": {"user": "ZT_OSCAR", "id": 283523}, "karaoke": {"user": "Coverr-Free-Footage", "id": 1630}, "aurora": {"user": "redzy", "id": 186969}, "couture": {"user": "LiskaRed", "id": 336847}, "vhs": {"user": "AmbientSoul", "id": 297271}, "adrenalina": {"user": "spaceX55", "id": 31517}, "street": {"user": "PascalBeckmann", "id": 37845}, "broadcast": {"user": "emilianofls", "id": 45830}, "recorte": {"user": "tommyvideo", "id": 121793}, "lluvia": {"user": "Protocultura", "id": 17902}, "nieve": {"user": "BlenderTimer", "id": 320115}, "tormenta": {"user": "Nick_the_Photographer", "id": 145582}, "otono": {"user": "Mylene2401", "id": 238032}};
   // Captions demo: a 51 s podcast clip (synthetic voices, no third-party
   // rights) and the words our transcription service returned for it, with
   // three slips of the synthetic voice corrected by hand.

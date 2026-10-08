@@ -30,15 +30,33 @@
     loadSample() {
       return api.load(null, WM.DEMO_BG);
     },
-    // true while the bundled sample is loaded (only some styles offer it)
-    sample: false,
+    // the style whose sample is loaded ("" when it is the user's own)
+    sample: "",
     /** Whether a style shows the current background. */
     showsIn(theme) {
-      return !!theme.video && (!api.sample || !!theme.sampleVideo);
+      return !!theme.video;
+    },
+    /** A style's own sample clip (from the media service), the bundled one if offline. */
+    async loadStyleSample(style) {
+      const info = WM.STYLE_SAMPLES && WM.STYLE_SAMPLES[style];
+      if (info) {
+        try {
+          const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/${style}.mp4`);
+          if (!res.ok) throw new Error();
+          const blob = await res.blob();
+          await api.load(new File([blob], `ejemplo-${style}.mp4`, { type: "video/mp4" }));
+          api.sample = style;
+          api.name = `ejemplo de ${info.user} (Pixabay)`;
+          return;
+        } catch {
+          /* offline: fall back to the bundled clip */
+        }
+      }
+      await api.load(null, WM.DEMO_BG);
+      api.sample = style;
     },
     async load(file, sample) {
       api.clear();
-      api.sample = !file;
       url = file ? URL.createObjectURL(file) : null;
       api.name = file ? file.name : sample.name;
       api.kind = file && /^image\//.test(file.type) ? "image" : "video";
@@ -61,7 +79,7 @@
     },
     clear() {
       api.enabled = false;
-      api.sample = false;
+      api.sample = "";
       api.name = "";
       el.pause();
       el.removeAttribute("src");

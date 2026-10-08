@@ -28,6 +28,9 @@ Free stock media (Pixabay), on a small CPU container of its own
 GET /search?q=...&kind=video|photo&page=1
     answers { items: [{ id, kind, thumb, src, w, h, duration, user, page }],
     total }. Results are cached for 24 h, as Pixabay asks.
+GET /sample/<style>.mp4
+    the sample background picked for each style (Pixabay clips, cropped
+    to 540x960, in the "wave-samples" volume). No token: they are public.
 GET /file?url=...
     streams a Pixabay file back with CORS headers, so the app can use it as
     a background (and record it) like an uploaded file.
@@ -214,6 +217,7 @@ class Syncer:
 # ---------------------------------------------------------------------------
 media_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi[standard]==0.115.6", "httpx==0.28.1")
 media_cache = modal.Dict.from_name("wave-pixabay-cache", create_if_missing=True)
+samples = modal.Volume.from_name("wave-samples", create_if_missing=True)
 CACHE_SECONDS = 24 * 3600
 PIXABAY_HOSTS = ("pixabay.com", "cdn.pixabay.com")
 
@@ -251,7 +255,7 @@ def _items(kind: str, hits: list) -> list:
     return out
 
 
-@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY")], scaledown_window=60, timeout=120)
+@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY")], volumes={"/samples": samples}, scaledown_window=60, timeout=120)
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def media():
@@ -273,6 +277,18 @@ def media():
     @api.get("/")
     def health():
         return {"ok": True, "service": "wave-media"}
+
+    @api.get("/sample/{name}")
+    def sample(name: str):
+        import re
+
+        from fastapi.responses import FileResponse
+
+        m = re.fullmatch(r"([a-z]{2,20})\.mp4", name)
+        path = f"/samples/{m.group(1)}.mp4" if m else ""
+        if not path or not os.path.exists(path):
+            raise HTTPException(404, "No hay video de ejemplo para ese estilo")
+        return FileResponse(path, media_type="video/mp4", headers={"Cache-Control": "public, max-age=86400"})
 
     @api.get("/search")
     def search(q: str = Query("", max_length=100), kind: str = "video", page: int = 1, authorization: str = Header("")):

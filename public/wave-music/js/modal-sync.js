@@ -33,6 +33,8 @@
   }
 
   const getUrl = () => read(URL_STORE) || DEFAULT_URL;
+  /** The media service (stock search, samples) sits next to the sync one. */
+  const mediaUrl = () => getUrl().replace(/-syncer-web(\.modal\.run)/, "-media$1").replace(/\/+$/, "");
   const getToken = () => read(TOKEN_STORE);
   // ready to call without asking: our service needs a token, other URLs may not
   const isConfigured = () => !!getUrl() && (!!getToken() || getUrl() !== DEFAULT_URL);
@@ -114,5 +116,5 @@
     return res.blob();
   }
 
-  WM.ModalSync = { getUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync, stems };
+  WM.ModalSync = { getUrl, mediaUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync, stems };
 })((window.WaveMusic = window.WaveMusic || {}));

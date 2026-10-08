@@ -1380,22 +1380,39 @@
     };
     const LOOP = 5.8;
     const lines = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
-    const order = ["kinetic", "aurora", "karaoke", "couture", "neon", "wordpop"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    // styles shown over their own sample footage, the way users will use them
+    const order = ["tormenta", "aurora", "broadcast", "recorte", "otono", "cinematic"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
-    const heroVid = document.createElement("video");
-    heroVid.muted = true;
-    heroVid.loop = true;
-    heroVid.playsInline = true;
-    heroVid.preload = "auto";
-    heroVid.src = WM.DEMO_BG.src;
+    // one muted, looping clip per style, loaded when it is about to show
+    const heroVids = {};
+    const vidFor = (id) => {
+      let v = heroVids[id];
+      if (!v) {
+        v = heroVids[id] = document.createElement("video");
+        v.muted = true;
+        v.loop = true;
+        v.playsInline = true;
+        v.preload = "auto";
+        v.crossOrigin = "anonymous";
+        v.src = `${WM.ModalSync.mediaUrl()}/sample/${id}.mp4`;
+        // offline: the bundled clip instead
+        v.onerror = () => {
+          v.onerror = null;
+          v.removeAttribute("crossorigin");
+          v.src = WM.DEMO_BG.src;
+        };
+      }
+      return v;
+    };
+    const pauseAll = () => Object.values(heroVids).forEach((v) => !v.paused && v.pause());
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let shown = -1;
     let last = 0;
     (function loop(now) {
       requestAnimationFrame(loop);
       if (view !== "home" || document.hidden) {
-        if (!heroVid.paused) heroVid.pause();
+        pauseAll();
         return;
       }
       if (now - last < 33) return;
@@ -1422,10 +1439,11 @@
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       // keep the lyric clear of TikTok's side icons and caption
       const safe = { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
-      const withVid = preset.id === "aurora";
-      if (withVid && heroVid.paused) heroVid.play().catch(() => {});
-      if (!withVid && !heroVid.paused) heroVid.pause();
-      const video = withVid && heroVid.readyState >= 2 ? heroVid : null;
+      const hv = vidFor(preset.id);
+      vidFor(order[(k + 1) % order.length].id); // warm up the next one
+      Object.entries(heroVids).forEach(([id, v]) => id !== preset.id && !v.paused && v.pause());
+      if (hv.paused) hv.play().catch(() => {});
+      const video = hv.readyState >= 2 ? hv : null;
       preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Artista" } }));
       // TikTok's own shade so its white UI reads over light styles
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
@@ -1453,11 +1471,11 @@
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
-    // the sample clip is offered (and shown) only in the styles it suits
-    const shown = on && WM.BgVideo.showsIn(th);
-    $("btn-bgs").hidden = on || !th.sampleVideo;
-    $("bgv-filters").hidden = !shown;
-    if (on && !shown) $("bgv-name").textContent = "El video de ejemplo no está disponible en este estilo";
+    // every video style has its own sample: offered when nothing (or another style's sample) is loaded
+    const mine = WM.BgVideo.sample === th.id;
+    $("btn-bgs").hidden = !th.video || (on && (!WM.BgVideo.sample || mine));
+    $("btn-bgs").textContent = on ? "Usar el video de ejemplo de este estilo" : "Probar con un video de ejemplo";
+    $("bgv-filters").hidden = !on;
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
@@ -1476,7 +1494,7 @@
   $("btn-bgs").onclick = async () => {
     $("bgv-name").textContent = "Cargando…";
     try {
-      await WM.BgVideo.loadSample();
+      await WM.BgVideo.loadStyleSample(preview.theme.id);
     } catch (err) {
       WM.BgVideo.clear();
       $("bgv-name").textContent = err.message;
