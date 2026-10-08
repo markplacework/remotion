@@ -1912,23 +1912,25 @@ body[data-view="captions"] #btn-demo {
   .hero-phone {
     width: min(240px, 62vw);
   }
-  /* mobile order: title, phone, then description and buttons */
+  /* mobile order: title, phone, tools tag, then description and buttons */
   .hero {
     gap: 0;
   }
   .hero-copy {
     display: contents;
   }
-  .hero-pill {
-    order: 1;
-  }
   .hero-title {
-    order: 2;
+    order: 1;
+    margin-top: 0;
     margin-bottom: 28px;
   }
   .hero-phone {
+    order: 2;
+    margin-bottom: 60px;
+  }
+  .hero-pill {
     order: 3;
-    margin-bottom: 64px;
+    margin-bottom: 18px;
   }
   .hero-sub {
     order: 4;
