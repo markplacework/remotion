@@ -2045,7 +2045,64 @@ body[data-view="captions"] #btn-demo {
     justify-content: center;
   }
   .hero-phone {
-    width: min(270px, 72vw);
+    width: min(240px, 62vw);
+  }
+  /* mobile order: title, phone, then description and buttons */
+  .hero {
+    gap: 0;
+  }
+  .hero-copy {
+    display: contents;
+  }
+  .hero-pill {
+    order: 1;
+  }
+  .hero-title {
+    order: 2;
+    margin-bottom: 28px;
+  }
+  .hero-phone {
+    order: 3;
+    margin-bottom: 64px;
+  }
+  .hero-sub {
+    order: 4;
+  }
+  .hero-ctas {
+    order: 5;
+  }
+  .hero-note {
+    order: 6;
+  }
+}
+/* mobile: the main button stays at hand once the hero's is out of view */
+.sticky-cta {
+  display: none;
+}
+@media (max-width: 860px) {
+  body[data-view="home"] .sticky-cta {
+    display: flex;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    height: 50px;
+    font-size: 16px;
+    text-decoration: none;
+    box-shadow: 0 12px 32px -6px rgba(0, 0, 0, 0.7), 0 6px 24px -8px rgba(var(--accent-rgb), 0.8);
+    transform: translateY(140%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  body[data-view="home"] .sticky-cta.on {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .site-foot {
+    padding-bottom: 80px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -3154,6 +3211,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             </details>
           </div>
         </section>
+        <a class="btn btn-primary sticky-cta" id="sticky-cta" href="#lyrics">Crear un lyric video</a>
         <footer class="site-foot">
           <div class="foot-top">
             <div class="foot-brand">
@@ -10932,6 +10990,13 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     const c = $("hero-screen");
     if (!c) return;
     $("hero-tools").onclick = () => $("tools").scrollIntoView({ behavior: "smooth", block: "start" });
+    // mobile sticky button: shown while neither the hero's nor the footer's button is on screen
+    const seen = new Set();
+    const io = new IntersectionObserver((list) => {
+      list.forEach((en) => (en.isIntersecting ? seen.add(en.target) : seen.delete(en.target)));
+      $("sticky-cta").classList.toggle("on", seen.size === 0);
+    });
+    [document.querySelector(".hero-ctas"), document.querySelector(".foot-cta")].forEach((el) => el && io.observe(el));
     document.querySelectorAll("[data-scroll]").forEach((a) => {
       a.onclick = (e) => {
         e.preventDefault();

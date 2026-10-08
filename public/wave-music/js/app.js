@@ -1279,6 +1279,13 @@
     const c = $("hero-screen");
     if (!c) return;
     $("hero-tools").onclick = () => $("tools").scrollIntoView({ behavior: "smooth", block: "start" });
+    // mobile sticky button: shown while neither the hero's nor the footer's button is on screen
+    const seen = new Set();
+    const io = new IntersectionObserver((list) => {
+      list.forEach((en) => (en.isIntersecting ? seen.add(en.target) : seen.delete(en.target)));
+      $("sticky-cta").classList.toggle("on", seen.size === 0);
+    });
+    [document.querySelector(".hero-ctas"), document.querySelector(".foot-cta")].forEach((el) => el && io.observe(el));
     document.querySelectorAll("[data-scroll]").forEach((a) => {
       a.onclick = (e) => {
         e.preventDefault();
