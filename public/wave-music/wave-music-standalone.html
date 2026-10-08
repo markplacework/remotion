@@ -2371,6 +2371,20 @@ body[data-view="karaoke"] .style-cats {
 body:not([data-view="karaoke"]) #styles button.cat-off {
   display: none;
 }
+/* phones: 8 styles first, then four more per tap */
+.styles-more {
+  display: none;
+}
+@media (max-width: 640px) {
+  body:not([data-view="karaoke"]) #styles button.more-off {
+    display: none;
+  }
+  body:not([data-view="karaoke"]) .styles-more:not([hidden]) {
+    display: flex;
+    width: 100%;
+    margin: 12px 0 4px;
+  }
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;
@@ -3716,6 +3730,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
             <div id="style-cats" class="chips style-cats" role="group" aria-label="Categorías de estilos"></div>
             <p class="karaoke-only">Estilos de karaoke · la letra se pinta mientras se canta</p>
             <div id="styles-pro" class="styles"></div>
+            <button type="button" id="styles-more" class="btn btn-ghost styles-more" hidden>Ver más estilos</button>
             <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
             <div id="styles-classic" class="styles"></div>
           </div>
@@ -13969,11 +13984,33 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
     ["redes", "Redes", ["wordpop", "notes", "recorte", "karaoke"]],
   ];
+  // on phones "Todos" opens with 8 styles and grows four (one row) per tap
+  var shownCount = 8; // var: chooseStyle may run before this line
+  var currentCat = "todos";
+  function applyMore() {
+    const all = [...document.querySelectorAll("#styles-pro button:not(.kara-only)")];
+    const listed = all.filter((b) => !b.classList.contains("cat-off"));
+    let hidden = 0;
+    listed.forEach((b, i) => {
+      const off = currentCat === "todos" && i >= shownCount && b.getAttribute("aria-pressed") !== "true";
+      b.classList.toggle("more-off", off);
+      if (off) hidden++;
+    });
+    all.filter((b) => b.classList.contains("cat-off")).forEach((b) => b.classList.remove("more-off"));
+    $("styles-more").hidden = !hidden;
+    $("styles-more").textContent = `Ver más estilos (${hidden})`;
+  }
   function showCat(key) {
+    currentCat = key;
     const ids = (STYLE_CATS.find((c) => c[0] === key) || STYLE_CATS[0])[2];
     document.querySelectorAll("#styles-pro button").forEach((b) => b.classList.toggle("cat-off", !!ids && !ids.includes(b.dataset.style)));
     document.querySelectorAll("#style-cats .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.cat === key));
+    applyMore();
   }
+  $("styles-more").onclick = () => {
+    shownCount += 4;
+    applyMore();
+  };
   STYLE_CATS.forEach(([key, label]) => {
     const c = document.createElement("button");
     c.type = "button";
@@ -13986,6 +14023,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
 
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
+    applyMore();
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;

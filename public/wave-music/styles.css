@@ -2236,6 +2236,20 @@ body[data-view="karaoke"] .style-cats {
 body:not([data-view="karaoke"]) #styles button.cat-off {
   display: none;
 }
+/* phones: 8 styles first, then four more per tap */
+.styles-more {
+  display: none;
+}
+@media (max-width: 640px) {
+  body:not([data-view="karaoke"]) #styles button.more-off {
+    display: none;
+  }
+  body:not([data-view="karaoke"]) .styles-more:not([hidden]) {
+    display: flex;
+    width: 100%;
+    margin: 12px 0 4px;
+  }
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;

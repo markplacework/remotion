@@ -1704,11 +1704,33 @@
     ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
     ["redes", "Redes", ["wordpop", "notes", "recorte", "karaoke"]],
   ];
+  // on phones "Todos" opens with 8 styles and grows four (one row) per tap
+  var shownCount = 8; // var: chooseStyle may run before this line
+  var currentCat = "todos";
+  function applyMore() {
+    const all = [...document.querySelectorAll("#styles-pro button:not(.kara-only)")];
+    const listed = all.filter((b) => !b.classList.contains("cat-off"));
+    let hidden = 0;
+    listed.forEach((b, i) => {
+      const off = currentCat === "todos" && i >= shownCount && b.getAttribute("aria-pressed") !== "true";
+      b.classList.toggle("more-off", off);
+      if (off) hidden++;
+    });
+    all.filter((b) => b.classList.contains("cat-off")).forEach((b) => b.classList.remove("more-off"));
+    $("styles-more").hidden = !hidden;
+    $("styles-more").textContent = `Ver más estilos (${hidden})`;
+  }
   function showCat(key) {
+    currentCat = key;
     const ids = (STYLE_CATS.find((c) => c[0] === key) || STYLE_CATS[0])[2];
     document.querySelectorAll("#styles-pro button").forEach((b) => b.classList.toggle("cat-off", !!ids && !ids.includes(b.dataset.style)));
     document.querySelectorAll("#style-cats .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.cat === key));
+    applyMore();
   }
+  $("styles-more").onclick = () => {
+    shownCount += 4;
+    applyMore();
+  };
   STYLE_CATS.forEach(([key, label]) => {
     const c = document.createElement("button");
     c.type = "button";
@@ -1721,6 +1743,7 @@
 
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
+    applyMore();
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;
