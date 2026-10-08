@@ -1466,7 +1466,11 @@
       if (c.ink) {
         // square swatch split corner to corner: main colour / highlight
         b.style.background = `linear-gradient(135deg, ${c.ink} calc(50% - 1px), rgba(0,0,0,.45) calc(50% - 1px) calc(50% + 1px), ${c.accent} calc(50% + 1px))`;
-      } else b.innerHTML = `<span>Original</span>`;
+      } else {
+        // the style's own colours, marked with a "reset" sign
+        b.id = "combo-original";
+        b.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M4 4v4.5h4.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
       b.onclick = () => {
         preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
         combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
@@ -1475,6 +1479,22 @@
       b.setAttribute("aria-pressed", !c.id);
       combos.appendChild(b);
     });
+    // the "Original" swatch shows the current style's own two colours
+    const OWN = {
+      kinetic: ["#ffffff", "#ffe14d"],
+      cinematic: ["#f6efe4", "#ffd9a8"],
+      neon: ["#22e4ff", "#ff2bd6"],
+      minimal: ["#141311", "#ff4a1c"],
+      karaoke: ["#ffffff", "#ff3d8b"],
+      wordpop: ["#ffffff", "#ffe600"],
+      notes: ["#f2f2f7", "#ffd60a"],
+      aurora: ["#ffffff", "#7b5cff"],
+      vhs: ["#fffbe8", "#ff2840"],
+    };
+    WM.paintOriginalCombo = (id) => {
+      const [a, c] = OWN[id] || ["#ffffff", "#8790a3"];
+      $("combo-original").style.background = `linear-gradient(135deg, ${a} calc(50% - 1px), rgba(0,0,0,.45) calc(50% - 1px) calc(50% + 1px), ${c} calc(50% + 1px))`;
+    };
     const size = $("text-size");
     size.oninput = () => {
       preview.textScale = Number(size.value) / 100;
@@ -1499,6 +1519,7 @@
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     $("text-colors-field").hidden = th.colors === false;
+    WM.paintOriginalCombo(id);
     preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred

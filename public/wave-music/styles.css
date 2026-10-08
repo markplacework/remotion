@@ -2083,6 +2083,11 @@ body[data-view="captions"] #btn-demo {
   cursor: pointer;
   overflow: hidden;
 }
+#combo-original svg {
+  padding: 3px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+}
 .combo span {
   padding: 0 12px;
   color: var(--muted);
