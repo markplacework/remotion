@@ -30,8 +30,15 @@
     loadSample() {
       return api.load(null, WM.DEMO_BG);
     },
+    // true while the bundled sample is loaded (only some styles offer it)
+    sample: false,
+    /** Whether a style shows the current background. */
+    showsIn(theme) {
+      return !!theme.video && (!api.sample || !!theme.sampleVideo);
+    },
     async load(file, sample) {
       api.clear();
+      api.sample = !file;
       url = file ? URL.createObjectURL(file) : null;
       api.name = file ? file.name : sample.name;
       api.kind = file && /^image\//.test(file.type) ? "image" : "video";
@@ -54,6 +61,7 @@
     },
     clear() {
       api.enabled = false;
+      api.sample = false;
       api.name = "";
       el.pause();
       el.removeAttribute("src");

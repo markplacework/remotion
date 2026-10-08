@@ -426,7 +426,7 @@
       this.offset = style.offset || null;
       this.textScale = style.textScale || 1;
       this.font = style.font || null;
-      this.video = !!theme.video && WM.BgVideo.enabled;
+      this.video = WM.BgVideo.showsIn(theme) && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;

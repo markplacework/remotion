@@ -5527,7 +5527,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
     // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
-    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", background: { type: "motion" }, video: true },
+    kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", background: { type: "motion" }, video: true, sampleVideo: true },
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true },
@@ -5535,10 +5535,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
-    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },
-    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true },
+    aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true, sampleVideo: true },
+    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true, sampleVideo: true },
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } },
-    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", background: { type: "motion" }, video: true },
+    vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", background: { type: "motion" }, video: true, sampleVideo: true },
     vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true },
   };
 
@@ -8587,8 +8587,15 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     loadSample() {
       return api.load(null, WM.DEMO_BG);
     },
+    // true while the bundled sample is loaded (only some styles offer it)
+    sample: false,
+    /** Whether a style shows the current background. */
+    showsIn(theme) {
+      return !!theme.video && (!api.sample || !!theme.sampleVideo);
+    },
     async load(file, sample) {
       api.clear();
+      api.sample = !file;
       url = file ? URL.createObjectURL(file) : null;
       api.name = file ? file.name : sample.name;
       api.kind = file && /^image\//.test(file.type) ? "image" : "video";
@@ -8611,6 +8618,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     },
     clear() {
       api.enabled = false;
+      api.sample = false;
       api.name = "";
       el.pause();
       el.removeAttribute("src");
@@ -9015,7 +9023,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       }
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: WM.BgVideo.showsIn(this.theme) ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }
 
@@ -9631,7 +9639,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       this.offset = style.offset || null;
       this.textScale = style.textScale || 1;
       this.font = style.font || null;
-      this.video = !!theme.video && WM.BgVideo.enabled;
+      this.video = WM.BgVideo.showsIn(theme) && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
@@ -11186,8 +11194,12 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     const on = WM.BgVideo.enabled;
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
-    $("btn-bgs").hidden = on;
-    $("bgv-filters").hidden = !on;
+    const th = WM.Themes.get(preview.theme.id);
+    // the sample clip is offered (and shown) only in the styles it suits
+    const shown = on && WM.BgVideo.showsIn(th);
+    $("btn-bgs").hidden = on || !th.sampleVideo;
+    $("bgv-filters").hidden = !shown;
+    if (on && !shown) $("bgv-name").textContent = "El video de ejemplo no está disponible en este estilo";
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
@@ -11278,6 +11290,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);
+    updateBgv();
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
     updateCenterBtn();

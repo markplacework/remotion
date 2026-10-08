@@ -1374,8 +1374,12 @@
     const on = WM.BgVideo.enabled;
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
-    $("btn-bgs").hidden = on;
-    $("bgv-filters").hidden = !on;
+    const th = WM.Themes.get(preview.theme.id);
+    // the sample clip is offered (and shown) only in the styles it suits
+    const shown = on && WM.BgVideo.showsIn(th);
+    $("btn-bgs").hidden = on || !th.sampleVideo;
+    $("bgv-filters").hidden = !shown;
+    if (on && !shown) $("bgv-name").textContent = "El video de ejemplo no está disponible en este estilo";
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
@@ -1466,6 +1470,7 @@
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);
+    updateBgv();
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
     updateCenterBtn();
