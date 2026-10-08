@@ -3133,106 +3133,112 @@
     g.globalAlpha = 1;
   }
 
-  // KARAOKE BAR — the karaoke machine: two lines that take turns, blue wipe
-  const BAR_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
-  const karabar = {
-    id: "karabar",
+  // SING — modern karaoke: lines scroll, the one being sung lights up word by word
+  const SING_FONT = (size) => `800 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
+  const SING_BLOBS = [
+    ["#ff3d6e", 0.25, 0.3],
+    ["#ff9a3c", 0.75, 0.25],
+    ["#7b3dff", 0.3, 0.75],
+    ["#d12fd9", 0.8, 0.7],
+  ];
+  const karasing = {
+    id: "karasing",
     wordBased: "spread",
-    label: "Karaoke Bar",
-    tag: "Clásico",
-    fonts: ["800 100px Montserrat", "400 100px Shrikhand"],
+    label: "Sing",
+    tag: "Moderno",
+    fonts: ["800 100px Poppins"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
-      const pulse = f.pulse();
-      g.fillStyle = "#120d14";
+      const en = f.energy();
+      g.fillStyle = "#0c0710";
       g.fillRect(0, 0, W, H);
-      // brick wall, dimly lit
-      const bh = u * 56;
-      const bw = u * 150;
-      for (let r = 0; r * bh < H; r++) {
-        for (let c = -1; c * bw < W; c++) {
-          const x = c * bw + (r % 2 ? bw / 2 : 0);
-          const v = 40 + rand(r * 31 + c * 7) * 22;
-          g.fillStyle = `rgb(${v + 22},${v * 0.55},${v * 0.5})`;
-          g.fillRect(x + u * 3, r * bh + u * 3, bw - u * 6, bh - u * 6);
-        }
-      }
-      const light = g.createRadialGradient(W / 2, H * 0.2, 0, W / 2, H * 0.2, H * 0.75);
-      light.addColorStop(0, "rgba(255,60,170,0.12)");
-      light.addColorStop(1, "rgba(0,0,0,0.82)");
-      g.fillStyle = light;
-      g.fillRect(0, 0, W, H);
-      // neon sign, with the odd flicker
-      const flick = rand(Math.floor(t * 12)) > 0.94 ? 0.35 : 1;
+      // slow colour blobs, like light through a blurred album cover
       g.save();
-      g.textAlign = "center";
-      g.textBaseline = "middle";
-      g.font = `400 ${u * 120}px Shrikhand, serif`;
-      g.globalAlpha = flick;
-      g.shadowColor = "#ff2bd6";
-      g.shadowBlur = u * (40 + 30 * pulse);
-      g.lineWidth = u * 5;
-      g.strokeStyle = "#ff6be6";
-      g.strokeText("Karaoke", W / 2, safe.y + u * 120);
-      g.fillStyle = "#ffe3fb";
-      g.fillText("Karaoke", W / 2, safe.y + u * 120);
+      g.globalCompositeOperation = "lighter";
+      SING_BLOBS.forEach(([col, bx, by], i) => {
+        const x = W * (bx + 0.12 * Math.sin(t * (0.11 + i * 0.03) + i * 2));
+        const y = H * (by + 0.08 * Math.cos(t * (0.09 + i * 0.02) + i));
+        const r = H * (0.42 + 0.06 * en);
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, hexA(col, 0.42));
+        gr.addColorStop(1, hexA(col, 0));
+        g.fillStyle = gr;
+        g.fillRect(0, 0, W, H);
+      });
       g.restore();
-      // the lyric band
-      const band = g.createLinearGradient(0, safe.y + safe.h * 0.38, 0, safe.y + safe.h * 0.92);
-      band.addColorStop(0, "rgba(10,20,60,0)");
-      band.addColorStop(0.2, "rgba(10,20,60,0.75)");
-      band.addColorStop(0.8, "rgba(10,20,60,0.75)");
-      band.addColorStop(1, "rgba(10,20,60,0)");
-      g.fillStyle = band;
-      g.fillRect(0, safe.y + safe.h * 0.38, W, safe.h * 0.54);
+      g.fillStyle = "rgba(8,4,12,0.28)";
+      g.fillRect(0, 0, W, H);
+      grainOver(g, W, H, t, 0.05);
       g.save();
       place(g, f);
       this.drawLyrics(g, f, u);
       g.restore();
     },
+    layout(g, line, u, safe) {
+      const size = u * 74;
+      const words = line.words.map((w) => ({ ...w, label: w.text }));
+      const rows = wrapCached(g, `sg|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => SING_FONT(size), safe.w * 0.9, size * 0.27);
+      const lh = size * 1.14;
+      return { size, lh, rows, h: rows.length * lh };
+    },
     drawLyrics(g, f, u) {
       const { t, safe, lines } = f;
       if (!lines.length) return;
-      const c = Math.max(0, f.current);
-      // slot 0 sits high and left, slot 1 low and right, taking turns
-      const show = [c, c + 1].filter((i) => lines[i] && lines[i].words.length);
-      const look = {
-        unsung(g, s, x, y) {
-          g.lineWidth = u * 14;
-          g.strokeStyle = "#0a1f66";
-          g.strokeText(s, x, y);
-          g.fillStyle = "#ffffff";
-          g.fillText(s, x, y);
-        },
-        sung(g, s, x, y) {
-          g.lineWidth = u * 14;
-          g.strokeStyle = "#ffffff";
-          g.strokeText(s, x, y);
-          g.fillStyle = "#2a63ff";
-          g.fillText(s, x, y);
-        },
+      const cur = f.current;
+      const L = lines[cur];
+      const k = L ? ease.inOut(clamp((t - L.start + 0.15) / 0.5)) : 0;
+      const pos = cur < 0 ? -0.6 : cur - 1 + k;
+      const gap = u * 54;
+      const hs = lines.map((l) => (l.words.length ? this.layout(g, l, u, safe).h : 0));
+      const off = [0];
+      hs.forEach((h, i) => off.push(off[i] + h + (h ? gap : 0)));
+      const at = (p) => {
+        const a = Math.max(0, Math.floor(p));
+        const fr = p < 0 ? p : p - a;
+        return lerp(off[a] || 0, off[a + 1] || off[a] || 0, fr);
       };
-      g.textBaseline = "middle";
+      const baseY = safe.y + safe.h * 0.36;
+      const left = safe.x + safe.w * 0.05;
+      g.textBaseline = "top";
       g.textAlign = "left";
-      g.lineJoin = "round";
-      show.forEach((i) => {
+      for (let i = Math.max(0, Math.floor(pos) - 2); i < Math.min(lines.length, Math.floor(pos) + 6); i++) {
         const line = lines[i];
-        const slot = i % 2;
-        const words = line.words.map((w) => ({ ...w, label: w.text }));
-        const size = u * 70;
-        const rows = wrapCached(g, `kb|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => BAR_FONT(size), safe.w * 0.92, size * 0.28);
-        const lh = size * 1.25;
-        const y0 = slot ? safe.y + safe.h * 0.7 : safe.y + safe.h * 0.56 - (rows.length - 1) * lh;
-        const appear = i === c + 1 ? clamp((t - (lines[c] ? lines[c].start : 0)) / 0.3) : 1;
-        if (f.current < 0 && i === c) {
-          karaCount(g, f, line, safe.x + safe.w * 0.04, y0 - lh * 0.9, u, "#ffe600");
-        }
-        g.font = BAR_FONT(size);
-        g.globalAlpha = f.current < 0 ? 1 : appear;
-        wipeLine(g, rows, lh, t, (row) => (slot ? safe.x + safe.w * 0.96 - row.width : safe.x + safe.w * 0.04), y0, look);
-        g.globalAlpha = 1;
-      });
+        if (!line.words.length) continue;
+        const { size, lh, rows } = this.layout(g, line, u, safe);
+        const y = baseY + off[i] - at(pos);
+        if (y > safe.y + safe.h + size || y + hs[i] < safe.y - size) continue;
+        // fade towards the top and bottom of the screen
+        const edge = clamp((y - safe.y + size) / (safe.h * 0.25)) * clamp((safe.y + safe.h - y) / (safe.h * 0.3));
+        const active = i === cur;
+        g.font = SING_FONT(size);
+        rows.forEach((row, ri) => {
+          const ry = y + ri * lh;
+          row.items.forEach((it) => {
+            const x = left + it.x;
+            const p = active ? wipe(it.w, t) : i < cur ? 1 : 0;
+            const lift = active && p > 0 && p < 1 ? Math.sin(Math.PI * p) * u * 6 : 0;
+            g.globalAlpha = edge * (active ? 0.42 : i < cur ? 0.32 : 0.28);
+            g.fillStyle = "#ffffff";
+            g.fillText(it.w.label, x, ry - lift);
+            if (active && p > 0) {
+              g.save();
+              g.globalAlpha = edge;
+              g.beginPath();
+              g.rect(x - size, ry - size, size + it.width * p, size * 3);
+              g.clip();
+              g.shadowColor = "rgba(255,255,255,0.7)";
+              g.shadowBlur = size * 0.3 * (p < 1 ? 1 : 0.4);
+              g.fillText(it.w.label, x, ry - lift);
+              g.restore();
+            }
+          });
+        });
+      }
+      g.globalAlpha = 1;
+      // the dots before the first line, where the first line will be
+      const first = lines[0];
+      if (cur < 0 && first) karaCount(g, f, first, left + u * 10, baseY - u * 40, u, "#ffffff");
     },
   };
 
@@ -3315,28 +3321,45 @@
       const c = Math.max(0, f.current);
       const look = {
         unsung(g, s, x, y) {
-          g.fillStyle = "#1418a0";
-          g.fillText(s, x + u * 5, y + u * 5);
+          g.lineWidth = u * 10;
+          g.strokeStyle = "#10125e";
+          g.strokeText(s, x + u * 5, y + u * 6);
+          g.fillStyle = "#10125e";
+          g.fillText(s, x + u * 5, y + u * 6);
+          g.strokeText(s, x, y);
           g.fillStyle = "#ffffff";
           g.fillText(s, x, y);
         },
         sung(g, s, x, y) {
-          g.fillStyle = "#1418a0";
-          g.fillText(s, x + u * 5, y + u * 5);
-          g.fillStyle = "#ffe14d";
+          g.lineWidth = u * 10;
+          g.strokeStyle = "#10125e";
+          g.strokeText(s, x, y);
+          const gr = g.createLinearGradient(0, y - u * 40, 0, y + u * 40);
+          gr.addColorStop(0, "#fff6a0");
+          gr.addColorStop(1, "#ffb21e");
+          g.fillStyle = gr;
           g.fillText(s, x, y);
         },
       };
+      // a dark band so the lyric always reads over the footage
+      const band = g.createLinearGradient(0, safe.y + safe.h * 0.6, 0, safe.y + safe.h * 0.98);
+      band.addColorStop(0, "rgba(16,10,40,0)");
+      band.addColorStop(0.25, "rgba(16,10,40,0.55)");
+      band.addColorStop(0.8, "rgba(16,10,40,0.55)");
+      band.addColorStop(1, "rgba(16,10,40,0)");
+      g.fillStyle = band;
+      g.fillRect(safe.x - safe.w, safe.y + safe.h * 0.6, safe.w * 3, safe.h * 0.38);
+      g.lineJoin = "round";
       g.textBaseline = "middle";
       g.textAlign = "left";
       [c, c + 1].forEach((i, k) => {
         const line = lines[i];
         if (!line || !line.words.length) return;
-        const size = u * (k ? 64 : 82);
+        const size = u * (k ? 66 : 88);
         const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
         const rows = wrapCached(g, `kr|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => RETRO_FONT(size), safe.w * 0.94, size * 0.28);
         const lh = size * 1.1;
-        const y0 = safe.y + safe.h * (k ? 0.86 : 0.72) - ((rows.length - 1) * lh) / 2;
+        const y0 = k ? safe.y + safe.h * 0.86 : safe.y + safe.h * 0.75 - (rows.length - 1) * lh;
         g.font = RETRO_FONT(size);
         g.globalAlpha = k ? 0.75 : 1;
         if (k === 0 && f.current < 0) karaCount(g, f, line, safe.x + safe.w / 2 - u * 51, y0 - lh, u, "#ffe14d");
@@ -3346,8 +3369,7 @@
     },
   };
 
-  // ESCENARIO — on stage: a spotlight follows the word being sung, crowd below
-  const stageSpot = new WeakMap();
+  // ESCENARIO — on stage: fixed spotlights, a mic, the crowd with phones up
   const STAGE_FONT = (size) => `900 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
   const karastage = {
     id: "karastage",
@@ -3359,137 +3381,295 @@
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      g.fillStyle = "#05040a";
+      const bg = g.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#07050d");
+      bg.addColorStop(0.7, "#120a1c");
+      bg.addColorStop(1, "#05040a");
+      g.fillStyle = bg;
       g.fillRect(0, 0, W, H);
-      // where the spotlight points: the word being sung (found last frame)
-      const sf = stageSpot.get(g.canvas);
-      const spot = sf != null ? sf * W : W / 2;
+      const floorY = H * 0.8;
       g.save();
       g.globalCompositeOperation = "lighter";
-      const len = H * 0.95;
-      const cone = g.createLinearGradient(0, 0, 0, len);
-      cone.addColorStop(0, `rgba(255,236,190,${0.32 + 0.12 * pulse})`);
-      cone.addColorStop(1, "rgba(255,236,190,0.02)");
-      g.fillStyle = cone;
-      g.beginPath();
-      g.moveTo(W / 2 - u * 20, 0);
-      g.lineTo(W / 2 + u * 20, 0);
-      g.lineTo(spot + W * 0.28, len);
-      g.lineTo(spot - W * 0.28, len);
-      g.closePath();
-      g.fill();
-      // coloured side washes on the beat
-      [["255,61,139", 0], ["80,120,255", 1]].forEach(([col, k]) => {
-        const gr = g.createRadialGradient(k ? W : 0, H * 0.3, 0, k ? W : 0, H * 0.3, H * 0.5);
-        gr.addColorStop(0, `rgba(${col},${0.16 + 0.2 * pulse})`);
+      // two coloured beams from the corners, fixed, breathing a little on the beat
+      [["255,61,139", 0.05, 0.62], ["90,120,255", 0.95, 0.38]].forEach(([col, sx, ex]) => {
+        const gr = g.createLinearGradient(W * sx, 0, W * ex, floorY);
+        gr.addColorStop(0, `rgba(${col},${0.3 + 0.1 * pulse})`);
         gr.addColorStop(1, `rgba(${col},0)`);
         g.fillStyle = gr;
-        g.fillRect(0, 0, W, H);
+        g.beginPath();
+        g.moveTo(W * sx - u * 16, -u * 10);
+        g.lineTo(W * sx + u * 16, -u * 10);
+        g.lineTo(W * ex + W * 0.16, floorY);
+        g.lineTo(W * ex - W * 0.16, floorY);
+        g.closePath();
+        g.fill();
       });
-      // haze specks in the beam
-      for (let i = 0; i < 40; i++) {
-        const y = ((rand(i * 2.3) + t * 0.03) % 1) * len;
-        const x = spot + (rand(i * 5.1) - 0.5) * W * 0.4 * (y / len);
-        g.fillStyle = `rgba(255,240,210,${0.25 * rand(i * 9.1)})`;
+      // the main follow-spot, fixed on the singer's place
+      const cone = g.createLinearGradient(0, 0, 0, floorY);
+      cone.addColorStop(0, "rgba(255,238,200,0.42)");
+      cone.addColorStop(1, "rgba(255,238,200,0.08)");
+      g.fillStyle = cone;
+      g.beginPath();
+      g.moveTo(W / 2 - u * 26, 0);
+      g.lineTo(W / 2 + u * 26, 0);
+      g.lineTo(W / 2 + W * 0.3, floorY);
+      g.lineTo(W / 2 - W * 0.3, floorY);
+      g.closePath();
+      g.fill();
+      // pool of light on the floor
+      g.save();
+      g.translate(W / 2, floorY);
+      g.scale(1, 0.18);
+      const pool = g.createRadialGradient(0, 0, 0, 0, 0, W * 0.34);
+      pool.addColorStop(0, "rgba(255,236,190,0.55)");
+      pool.addColorStop(1, "rgba(255,236,190,0)");
+      g.fillStyle = pool;
+      g.beginPath();
+      g.arc(0, 0, W * 0.34, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+      // haze drifting through the light
+      for (let i = 0; i < 46; i++) {
+        const y = ((rand(i * 2.3) + t * 0.02) % 1) * floorY;
+        const x = W / 2 + (rand(i * 5.1) - 0.5) * W * 0.55 * (y / floorY + 0.1);
+        g.fillStyle = `rgba(255,240,210,${0.22 * rand(i * 9.1) * (0.6 + 0.4 * Math.sin(t + i))})`;
         g.fillRect(x, y, u * 3, u * 3);
       }
       g.restore();
-      // the crowd: heads and raised hands bobbing, a few phone lights
+      // the microphone on its stand, in the spot
       g.save();
-      g.fillStyle = "#000000";
-      const base = H * 0.9;
-      for (let i = 0; i < 16; i++) {
-        const x = (i + 0.5) * (W / 16) + (rand(i * 3.3) - 0.5) * u * 30;
-        const bob = Math.abs(Math.sin(t * 3.2 + i * 1.7)) * u * 14 * (0.5 + pulse);
-        const r = u * (34 + rand(i) * 12);
-        g.beginPath();
-        g.arc(x, base - r - bob, r, 0, Math.PI * 2);
-        g.fill();
-        g.fillRect(x - r * 1.5, base - bob, r * 3, H);
-        if (rand(i * 7.7) > 0.55) {
-          const hx = x + r * 1.1;
-          g.save();
-          g.translate(hx, base - r * 2 - bob);
-          g.rotate(Math.sin(t * 2 + i) * 0.25);
-          g.fillRect(-u * 7, -r * 2.4, u * 14, r * 2.4);
-          if (rand(i * 1.9) > 0.5) {
-            g.fillStyle = `rgba(255,255,255,${0.6 + 0.4 * Math.sin(t * 5 + i)})`;
-            g.fillRect(-u * 9, -r * 2.9, u * 18, u * 28);
-            g.fillStyle = "#000";
-          }
-          g.restore();
-        }
-      }
+      g.strokeStyle = "#0a0a0f";
+      g.fillStyle = "#0a0a0f";
+      g.lineWidth = u * 7;
+      g.lineCap = "round";
+      g.beginPath();
+      g.moveTo(W / 2, floorY);
+      g.lineTo(W / 2, floorY - H * 0.15);
+      g.lineTo(W / 2 + u * 34, floorY - H * 0.15 - u * 34);
+      g.stroke();
+      g.beginPath();
+      g.ellipse(W / 2 + u * 44, floorY - H * 0.15 - u * 46, u * 14, u * 22, -0.8, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = "rgba(255,230,190,0.35)";
+      g.lineWidth = u * 2;
+      g.stroke();
       g.restore();
+      this.crowd(g, f, u);
       g.save();
       place(g, f);
       this.drawLyrics(g, f, u);
       g.restore();
+    },
+    crowd(g, f, u) {
+      const { W, H, t } = f;
+      const pulse = f.pulse();
+      [
+        [0.88, 13, 0.75, "#0d0a14"],
+        [0.95, 9, 1, "#000000"],
+      ].forEach(([base, n, k, col], row) => {
+        const by = H * base;
+        for (let i = 0; i < n; i++) {
+          const seed = i + row * 40;
+          const x = ((i + 0.5 + (rand(seed * 3.3) - 0.5) * 0.5) / n) * W;
+          const bob = Math.abs(Math.sin(t * 3 + seed * 1.7)) * u * 10 * (0.4 + pulse) * k;
+          const r = u * (30 + rand(seed) * 10) * k;
+          const sh = r * 2.6;
+          g.fillStyle = col;
+          // shoulders and head
+          rrect(g, x - sh / 2, by - bob, sh, H, r * 0.9);
+          g.fill();
+          g.beginPath();
+          g.arc(x, by - r * 0.9 - bob, r, 0, Math.PI * 2);
+          g.fill();
+          // warm rim light from the stage
+          g.strokeStyle = `rgba(255,200,150,${0.22 * k})`;
+          g.lineWidth = u * 2;
+          g.beginPath();
+          g.arc(x, by - r * 0.9 - bob, r, Math.PI * 1.1, Math.PI * 1.9);
+          g.stroke();
+          if (rand(seed * 7.7) > 0.5) {
+            // a raised arm, some holding a phone
+            const side = rand(seed * 4.4) > 0.5 ? 1 : -1;
+            g.save();
+            g.translate(x + side * r * 0.9, by - bob);
+            g.rotate(side * (0.18 + 0.12 * Math.sin(t * 2 + seed)));
+            g.fillStyle = col;
+            rrect(g, -u * 9 * k, -r * 3.2, u * 18 * k, r * 3.2, u * 9 * k);
+            g.fill();
+            if (rand(seed * 1.9) > 0.45) {
+              const ph = r * 0.9;
+              g.fillStyle = "#1a1a22";
+              rrect(g, -ph * 0.32, -r * 3.2 - ph, ph * 0.64, ph, u * 4);
+              g.fill();
+              const glow = 0.55 + 0.45 * Math.sin(t * 1.5 + seed);
+              g.fillStyle = `rgba(230,240,255,${0.85 * glow})`;
+              rrect(g, -ph * 0.26, -r * 3.2 - ph * 0.92, ph * 0.52, ph * 0.84, u * 3);
+              g.fill();
+              const halo = g.createRadialGradient(0, -r * 3.2 - ph / 2, 0, 0, -r * 3.2 - ph / 2, ph * 1.6);
+              halo.addColorStop(0, `rgba(220,235,255,${0.35 * glow})`);
+              halo.addColorStop(1, "rgba(220,235,255,0)");
+              g.fillStyle = halo;
+              g.fillRect(-ph * 1.6, -r * 3.2 - ph * 2.1, ph * 3.2, ph * 3.2);
+            }
+            g.restore();
+          }
+        }
+      });
     },
     drawLyrics(g, f, u) {
       const { t, safe, lines } = f;
       const c = Math.max(0, f.current);
       const L = lines[c];
       if (!L || !L.words.length) return;
-      const size = u * 92;
+      const size = u * 96;
       const words = L.words.map((w) => ({ ...w, label: w.text }));
-      const rows = wrapCached(g, `ks|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => STAGE_FONT(size), safe.w * 0.9, size * 0.28);
-      const lh = size * 1.18;
-      const y0 = safe.y + safe.h * 0.38 - ((rows.length - 1) * lh) / 2;
+      const rows = wrapCached(g, `ks|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => STAGE_FONT(size), safe.w * 0.92, size * 0.27);
+      const lh = size * 1.16;
+      const y0 = safe.y + safe.h * 0.3 - ((rows.length - 1) * lh) / 2;
       const intro = ease.out(clamp((t - L.start + 0.3) / 0.4));
       const gold = g.createLinearGradient(0, -size / 2, 0, size / 2);
-      gold.addColorStop(0, "#fff1b8");
-      gold.addColorStop(0.5, "#ffc94d");
-      gold.addColorStop(1, "#ff8a2a");
-      // aim the spotlight at the word being sung
-      const j = activeWord(L, t);
-      stageSpot.delete(g.canvas);
+      gold.addColorStop(0, "#fff4c8");
+      gold.addColorStop(0.5, "#ffcf5a");
+      gold.addColorStop(1, "#ff8f2e");
       g.font = STAGE_FONT(size);
       g.textBaseline = "middle";
       g.textAlign = "left";
       g.globalAlpha = intro;
       rows.forEach((row, ri) => {
-        const y = y0 + ri * lh;
+        const y = y0 + ri * lh + (1 - intro) * u * 30;
         const x0 = safe.x + (safe.w - row.width) / 2;
         row.items.forEach((it) => {
           const x = x0 + it.x;
           const p = wipe(it.w, t);
-          const lift = it.w.index === j && p < 1 ? Math.sin(Math.PI * p) * size * 0.08 : 0;
-          if (it.w.index === j) stageSpot.set(g.canvas, (x + it.width / 2 + f.shift.x) / f.W);
           g.save();
-          g.translate(0, -lift);
-          g.fillStyle = "rgba(255,255,255,0.55)";
+          g.shadowColor = "rgba(0,0,0,0.6)";
+          g.shadowBlur = size * 0.2;
+          g.fillStyle = "rgba(255,255,255,0.62)";
           g.fillText(it.w.label, x, y);
+          g.restore();
           if (p > 0) {
+            g.save();
             g.beginPath();
             g.rect(x - size, y - lh, size + it.width * p, lh * 2);
             g.clip();
-            g.save();
             g.translate(0, y);
-            g.shadowColor = "rgba(255,170,60,0.75)";
-            g.shadowBlur = size * 0.35;
+            g.shadowColor = "rgba(255,170,60,0.8)";
+            g.shadowBlur = size * 0.32;
             g.fillStyle = gold;
             g.fillText(it.w.label, x, 0);
             g.restore();
           }
-          g.restore();
         });
       });
       g.globalAlpha = 1;
-      // the next line, small and dim
+      // the next line, smaller, so the singer is ready for it
       const N = lines[c + 1];
       if (N && N.words.length) {
-        const ns = fitSize(g, N.text, STAGE_FONT, u * 48, safe.w * 0.9);
+        const ns = u * 48;
+        const nw = N.words.map((w) => ({ ...w, label: w.text }));
+        const nrows = wrapCached(g, `ksn|${N.index}|${N.text}|${Math.round(ns * 10)}|${Math.round(safe.w)}`, nw, () => STAGE_FONT(ns), safe.w * 0.86, ns * 0.27);
         g.font = STAGE_FONT(ns);
         g.textAlign = "center";
-        g.fillStyle = "rgba(255,255,255,0.4)";
-        g.fillText(N.text, safe.x + safe.w / 2, y0 + rows.length * lh + u * 40);
+        g.fillStyle = "rgba(255,255,255,0.42)";
+        nrows.forEach((r, ri) => g.fillText(r.items.map((it) => it.w.label).join(" "), safe.x + safe.w / 2, y0 + rows.length * lh + u * 40 + ri * ns * 1.2));
       }
-      if (f.current < 0) karaCount(g, f, L, safe.x + safe.w / 2 - u * 51, y0 - lh, u, "#ffc94d");
+      if (f.current < 0) karaCount(g, f, L, safe.x + safe.w / 2 - u * 51, y0 - lh, u, "#ffcf5a");
     },
   };
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, summit, karabar, kararetro, karastage };
+  // GROOVY — 70s: sunburst, chunky extruded type that bounces in
+  const GROOVY_FONT = (size) => `400 ${size}px ${fam("Shrikhand, Georgia, serif")}`;
+  const GROOVY_RAYS = ["#f3a33c", "#e2702c", "#f6c453", "#c9492b"];
+  const groovy = {
+    id: "groovy",
+    label: "Groovy",
+    tag: "70s",
+    fonts: ["400 100px Shrikhand"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      const cx = W / 2;
+      const cy = H * 1.05;
+      g.fillStyle = "#f6e3c3";
+      g.fillRect(0, 0, W, H);
+      // sunburst turning slowly from below the frame
+      const n = 28;
+      const R = H * 1.4;
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(t * 0.05);
+      for (let i = 0; i < n; i++) {
+        g.fillStyle = GROOVY_RAYS[i % GROOVY_RAYS.length];
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.arc(0, 0, R, (i / n) * Math.PI * 2, ((i + 0.5) / n) * Math.PI * 2);
+        g.closePath();
+        g.fill();
+      }
+      g.restore();
+      // a big sun behind the lyric: rings, then a cream disc
+      const sy = safe.y + safe.h * 0.42;
+      const sr = safe.w * 0.47 * (1 + 0.015 * pulse);
+      ["#5a2e1c", "#c9492b", "#e2702c", "#f6c453"].forEach((col, i) => {
+        g.fillStyle = col;
+        g.beginPath();
+        g.arc(cx, sy, sr + (4 - i) * u * 26, 0, Math.PI * 2);
+        g.fill();
+      });
+      g.fillStyle = "#f6e3c3";
+      g.beginPath();
+      g.arc(cx, sy, sr, 0, Math.PI * 2);
+      g.fill();
+      grainOver(g, W, H, t, 0.08);
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      this.drawLine(g, f, L, u);
+      g.restore();
+    },
+    drawLine(g, f, line, u) {
+      const { t, safe } = f;
+      const size = u * 106;
+      const hero = longestIndex(line.words);
+      const words = line.words.map((w) => ({ ...w, label: w.text.toLocaleLowerCase("es") }));
+      const rows = wrapCached(g, `gr|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => GROOVY_FONT(size), safe.w * 0.8, size * 0.25);
+      const lh = size * 1.08;
+      const top = safe.y + safe.h * 0.42 - (rows.length * lh) / 2;
+      const depth = Math.round(size * 0.1);
+      g.font = GROOVY_FONT(size);
+      g.textBaseline = "middle";
+      g.textAlign = "center";
+      g.lineJoin = "round";
+      rows.forEach((row, ri) => {
+        const y = top + ri * lh + lh / 2;
+        row.items.forEach((it, wi) => {
+          const w = it.w;
+          const a = (t - w.t0 - wi * 0.06) / 0.4;
+          if (a < 0) return;
+          const e = ease.back(clamp(a));
+          const x = safe.x + (safe.w - row.width) / 2 + it.x + it.width / 2;
+          const wob = Math.sin(t * 2.4 + w.index * 1.3) * 0.035;
+          g.save();
+          g.translate(x, y + (1 - e) * size * 0.8 + Math.sin(t * 2.4 + w.index) * u * 4);
+          g.rotate(wob + (1 - clamp(a)) * 0.3);
+          g.scale(e, e);
+          // extrusion: stacked copies down-right in deep brown
+          g.fillStyle = "#5a2e1c";
+          for (let d = depth; d > 0; d -= 1) g.fillText(w.label, d * 0.9, d);
+          g.lineWidth = size * 0.07;
+          g.strokeStyle = "#5a2e1c";
+          g.strokeText(w.label, 0, 0);
+          g.fillStyle = w.index === hero ? "#e2702c" : "#fff3dc";
+          g.fillText(w.label, 0, 0);
+          g.restore();
+        });
+      });
+    },
+  };
+
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, summit, groovy, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;

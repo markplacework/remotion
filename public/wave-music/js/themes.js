@@ -150,8 +150,9 @@
     adrenalina: { id: "adrenalina", label: "Adrenalina", kind: "motion", preset: "adrenalina", background: { type: "motion" }, video: true, sampleVideo: true },
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
     summit: { id: "summit", label: "Summit", kind: "motion", preset: "summit", background: { type: "motion" }, video: true, sampleVideo: true },
+    groovy: { id: "groovy", label: "Groovy", kind: "motion", preset: "groovy", background: { type: "motion" } },
     // only in the Karaoke tool
-    karabar: { id: "karabar", label: "Karaoke Bar", kind: "motion", preset: "karabar", background: { type: "motion" }, karaokeOnly: true },
+    karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
     karastage: { id: "karastage", label: "Escenario", kind: "motion", preset: "karastage", background: { type: "motion" }, karaokeOnly: true },
   };
