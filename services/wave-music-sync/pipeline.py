@@ -128,6 +128,20 @@ def _fill(values: list[float | None], lo: float, hi: float) -> list[float]:
 
 
 # ---------- pipeline ----------
+class _WholeText:
+    """Sentence splitter that keeps each segment whole. We align one lyric
+    line per segment, so WhisperX's NLTK Punkt split (which would also cut
+    lines at "...") is not wanted, and its data download is not needed."""
+
+    def span_tokenize(self, text):
+        yield 0, len(text)
+
+
+def _no_punkt(whisperx_alignment):
+    whisperx_alignment.nltk_load = lambda *a, **k: _WholeText()
+
+
+
 @dataclasses.dataclass
 class Options:
     language: str = "es"
@@ -141,7 +155,10 @@ class Pipeline:
                  language: str = "es", compute_type: str | None = None):
         import torch
         import whisperx
+        import whisperx.alignment
         from demucs.pretrained import get_model
+
+        _no_punkt(whisperx.alignment)
 
         self.device = device
         self.language = language
