@@ -2216,6 +2216,9 @@ body[data-view="captions"] #btn-demo {
   .reviews {
     grid-template-columns: 1fr;
   }
+  .review:nth-child(n + 4) {
+    display: none;
+  }
   .home-sec {
     margin-top: 64px;
   }
