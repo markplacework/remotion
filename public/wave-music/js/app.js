@@ -1743,7 +1743,7 @@
   });
 
   function chooseStyle(id) {
-    document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
+    document.querySelectorAll("#styles button[data-style]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     applyMore();
     $("spotify-opts").hidden = id !== "spotify";
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
