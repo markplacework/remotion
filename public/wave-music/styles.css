@@ -2665,7 +2665,7 @@ body[data-view="captions"] #btn-demo {
   }
 }
 
-/* Karaoke: only its own style for now */
+/* Karaoke: its own styles only; they are hidden in Lyrics */
 .karaoke-only {
   display: none;
   margin: 2px 0 10px;
@@ -2677,7 +2677,8 @@ body[data-view="karaoke"] .karaoke-only {
 }
 body[data-view="karaoke"] #styles .style-group-head,
 body[data-view="karaoke"] #styles-classic,
-body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
+body[data-view="karaoke"] #styles button:not([data-style="karaoke"]):not(.kara-only),
+body:not([data-view="karaoke"]) #styles button.kara-only {
   display: none;
 }
 

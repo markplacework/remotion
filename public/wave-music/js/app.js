@@ -195,6 +195,7 @@
     $("tool-crumb").textContent = VIEWS[view];
     $("tool-crumb").hidden = !VIEWS[view];
     $("karaoke-row").hidden = view !== "karaoke";
+    if (view === "lyrics" && WM.Themes.get(preview.theme.id).karaokeOnly) chooseStyle("kinetic");
     if (view === "karaoke") {
       if (enteringKaraoke) chooseStyle("karaoke");
       ensureInstrumental();
@@ -1671,6 +1672,7 @@
   WM.Themes.list.forEach((t) => {
     const b = document.createElement("button");
     b.dataset.style = t.id;
+    if (t.karaokeOnly) b.classList.add("kara-only");
     const thumb = t.kind === "motion" ? `<canvas class="th th-pro" aria-hidden="true"></canvas>` : THUMB[t.id];
     const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
     b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;

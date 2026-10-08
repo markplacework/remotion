@@ -146,6 +146,14 @@
     blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } },
     vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", background: { type: "motion" }, video: true, sampleVideo: true },
     vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true },
+    // extreme sports (they suit action footage: the sample clip included)
+    adrenalina: { id: "adrenalina", label: "Adrenalina", kind: "motion", preset: "adrenalina", background: { type: "motion" }, video: true, sampleVideo: true },
+    street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
+    summit: { id: "summit", label: "Summit", kind: "motion", preset: "summit", background: { type: "motion" }, video: true, sampleVideo: true },
+    // only in the Karaoke tool
+    karabar: { id: "karabar", label: "Karaoke Bar", kind: "motion", preset: "karabar", background: { type: "motion" }, karaokeOnly: true },
+    kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
+    karastage: { id: "karastage", label: "Escenario", kind: "motion", preset: "karastage", background: { type: "motion" }, karaokeOnly: true },
   };
 
   WM.Themes = {

@@ -2652,7 +2652,844 @@
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo };
+  // ======================================================================
+  // EXTREMOS — styles for action footage (ski, skate, surf, bike…)
+  // ======================================================================
+  const ACT_FONT = (size) => `700 ${size}px ${fam("'Barlow Condensed', Impact, sans-serif")}`;
+  /** Shrink a font size until the label fits maxW. */
+  function fitSize(g, label, fontOf, size, maxW) {
+    g.font = fontOf(size);
+    const w = g.measureText(label).width;
+    return w > maxW ? (size * maxW) / w : size;
+  }
+  /** Action-cam overlay: REC dot, resolution, a speed readout. */
+  function actionHud(g, f, u) {
+    const { safe, t } = f;
+    g.save();
+    g.textBaseline = "top";
+    g.font = ACT_FONT(u * 34);
+    if ("letterSpacing" in g) g.letterSpacing = `${u * 3}px`;
+    g.fillStyle = "rgba(255,255,255,0.9)";
+    g.shadowColor = "rgba(0,0,0,0.6)";
+    g.shadowBlur = u * 8;
+    if (Math.floor(t * 1.6) % 2 === 0) {
+      g.fillStyle = "#ff2b2b";
+      g.beginPath();
+      g.arc(safe.x + u * 12, safe.y + u * 17, u * 10, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = "rgba(255,255,255,0.9)";
+    g.textAlign = "left";
+    g.fillText("REC", safe.x + u * 32, safe.y);
+    g.textAlign = "right";
+    g.fillText("4K · 60", safe.x + safe.w, safe.y);
+    // speed: loud parts go faster (a pure function of time)
+    const kmh = Math.round(38 + 70 * f.energy() + 8 * f.pulse() + 4 * Math.sin(t * 1.3));
+    g.textBaseline = "alphabetic";
+    g.font = ACT_FONT(u * 92);
+    g.fillText(String(kmh), safe.x + safe.w - u * 70, safe.y + safe.h);
+    g.font = ACT_FONT(u * 30);
+    g.fillStyle = "#ff6b1a";
+    g.fillText("KM/H", safe.x + safe.w, safe.y + safe.h);
+    g.textAlign = "left";
+    g.fillStyle = "rgba(255,255,255,0.75)";
+    const s = Math.floor(t);
+    g.fillText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`, safe.x, safe.y + safe.h);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    g.restore();
+  }
+
+  // ADRENALINA — action cam: speed lines, camera shake, lines that slam in
+  const adrenalina = {
+    id: "adrenalina",
+    label: "Adrenalina",
+    tag: "Extremo",
+    fonts: ["700 100px 'Barlow Condensed'"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      const shake = pulse > 0.55 ? (pulse - 0.55) * 2.2 : 0;
+      const sx = (rand(Math.floor(t * 30)) - 0.5) * u * 22 * shake;
+      const sy = (rand(Math.floor(t * 30) + 7) - 0.5) * u * 22 * shake;
+      g.save();
+      g.translate(sx, sy);
+      if (videoBg(g, f, "saturate(1.15) contrast(1.12)")) {
+        g.fillStyle = "rgba(6,8,12,0.32)";
+        g.fillRect(-u * 40, -u * 40, W + u * 80, H + u * 80);
+      } else {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#07090d");
+        bg.addColorStop(0.6, "#12100c");
+        bg.addColorStop(1, "#2a1405");
+        g.fillStyle = bg;
+        g.fillRect(-u * 40, -u * 40, W + u * 80, H + u * 80);
+      }
+      g.restore();
+      // speed lines rushing out of the vanishing point, faster on the beat
+      const cx = safe.x + safe.w / 2;
+      const cy = safe.y + safe.h * 0.46;
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      g.lineCap = "round";
+      for (let i = 0; i < 70; i++) {
+        const a = rand(i * 1.7) * Math.PI * 2;
+        const ph = (t * (0.55 + rand(i * 3.1) * 0.7) * (1 + 0.6 * pulse) + rand(i * 5.3)) % 1;
+        const r0 = H * 0.08 + ph * ph * H * 0.95;
+        const len = u * (40 + 260 * ph);
+        g.strokeStyle = i % 9 === 0 ? `rgba(255,107,26,${0.5 * ph})` : `rgba(255,255,255,${0.32 * ph})`;
+        g.lineWidth = u * (1.5 + 3 * ph);
+        g.beginPath();
+        g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+        g.lineTo(cx + Math.cos(a) * (r0 + len), cy + Math.sin(a) * (r0 + len));
+        g.stroke();
+      }
+      g.restore();
+      // vignette
+      const vg = g.createRadialGradient(cx, cy, H * 0.2, cx, cy, H * 0.75);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0,0.6)");
+      g.fillStyle = vg;
+      g.fillRect(0, 0, W, H);
+      actionHud(g, f, u);
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      g.translate(sx, sy);
+      place(g, f);
+      this.drawLine(g, f, L, u);
+      g.restore();
+    },
+    drawLine(g, f, line, u) {
+      const { t, safe } = f;
+      const rows = stackRows(line.words);
+      const hero = rows.reduce((b, r, i) => (r.map((w) => w.text).join(" ").length > rows[b].map((w) => w.text).join(" ").length ? i : b), 0);
+      const spec = rows.map((ws, i) => {
+        const label = upper(ws.map((w) => w.text).join(" "));
+        const size = fitSize(g, label, ACT_FONT, u * (i === hero ? 210 : 150), safe.w * 0.86);
+        return { label, size, t0: ws[0].t0, hero: i === hero };
+      });
+      const gap = u * 6;
+      let total = spec.reduce((a, r) => a + r.size * 0.92 + gap, -gap);
+      const k = total > safe.h * 0.72 ? (safe.h * 0.72) / total : 1;
+      total *= k;
+      let y = safe.y + safe.h * 0.46 - total / 2;
+      const cx = safe.x + safe.w / 2;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      spec.forEach((r, i) => {
+        const size = r.size * k;
+        const rowY = y + (size * 0.92) / 2;
+        y += size * 0.92 + gap * k;
+        const a = (t - r.t0 - i * 0.04) / 0.22;
+        if (a < 0) return;
+        const e = ease.out(clamp(a));
+        g.save();
+        g.translate(cx, rowY);
+        g.transform(1, 0, -0.16, 1, 0, 0); // forward lean
+        g.font = ACT_FONT(size);
+        // zoom-blur trail while it slams in
+        if (a < 1) {
+          for (let s = 3; s >= 1; s--) {
+            const sc = lerp(2.4, 1, e) + s * 0.12 * (1 - e);
+            g.save();
+            g.scale(sc, sc);
+            g.globalAlpha = 0.18 * (1 - e);
+            g.fillStyle = r.hero ? "#ff6b1a" : "#ffffff";
+            g.fillText(r.label, 0, 0);
+            g.restore();
+          }
+        }
+        const sc = lerp(2.4, 1, e);
+        g.scale(sc, sc);
+        g.globalAlpha = clamp(a * 3);
+        g.lineJoin = "round";
+        g.lineWidth = size * 0.07;
+        g.strokeStyle = "rgba(0,0,0,0.85)";
+        g.strokeText(r.label, 0, 0);
+        g.fillStyle = r.hero ? "#ff6b1a" : "#ffffff";
+        g.fillText(r.label, 0, 0);
+        if (r.hero) {
+          // hazard slash under the key row
+          const w = g.measureText(r.label).width;
+          g.fillStyle = "#ffffff";
+          g.globalAlpha *= 0.9;
+          g.fillRect(-w / 2, size * 0.44, w * e, size * 0.06);
+        }
+        g.restore();
+      });
+    },
+  };
+
+  // STREET — skate zine: every word is a strip of tape slapped on concrete
+  const STREET_TAPES = ["#ffe600", "#ffffff", "#ff3d7f", "#b8ff3d", "#4fd8ff"];
+  const STREET_FONT = (size) => `900 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
+  const street = {
+    id: "street",
+    label: "Street",
+    tag: "Skate",
+    fonts: ["900 100px Poppins"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (videoBg(g, f, "contrast(1.2) saturate(0.9)")) {
+        g.fillStyle = "rgba(10,10,12,0.3)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, "#3a3a3d");
+        bg.addColorStop(1, "#1d1d20");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // spray paint clouds
+        for (let i = 0; i < 6; i++) {
+          const x = rand(i * 4.1) * W;
+          const y = rand(i * 2.7) * H;
+          const r = H * (0.12 + rand(i * 6.3) * 0.18);
+          const col = ["255,61,127", "184,255,61", "79,216,255"][i % 3];
+          const gr = g.createRadialGradient(x, y, 0, x, y, r);
+          gr.addColorStop(0, `rgba(${col},0.16)`);
+          gr.addColorStop(1, `rgba(${col},0)`);
+          g.fillStyle = gr;
+          g.fillRect(0, 0, W, H);
+        }
+        // concrete slab seams
+        g.strokeStyle = "rgba(0,0,0,0.35)";
+        g.lineWidth = u * 3;
+        for (let i = 1; i < 4; i++) {
+          g.beginPath();
+          g.moveTo(0, (H * i) / 4 + u * 30 * Math.sin(i));
+          g.lineTo(W, (H * i) / 4 - u * 30 * Math.sin(i));
+          g.stroke();
+        }
+      }
+      grainOver(g, W, H, t, 0.1);
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      this.drawLine(g, f, L, u);
+      g.restore();
+    },
+    drawLine(g, f, line, u) {
+      const { t, safe } = f;
+      const size = u * 92;
+      const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
+      const rows = wrapCached(g, `st|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => STREET_FONT(size), safe.w * 0.8, size * 0.55);
+      const lh = size * 1.42;
+      const top = safe.y + safe.h * 0.46 - (rows.length * lh) / 2;
+      const off = wordOffset(f.lines, line.index);
+      g.font = STREET_FONT(size);
+      g.textBaseline = "middle";
+      g.textAlign = "center";
+      rows.forEach((row, ri) => {
+        const y = top + ri * lh + lh / 2;
+        row.items.forEach((it, wi) => {
+          const w = it.w;
+          const n = off + w.index;
+          const a = (t - w.t0 - wi * 0.05) / 0.2;
+          if (a < 0) return;
+          const e = ease.back(clamp(a));
+          const x = safe.x + (safe.w - row.width) / 2 + it.x + it.width / 2;
+          const rot = (rand(n * 3.7) - 0.5) * 0.16 + (1 - clamp(a)) * 0.2;
+          const col = STREET_TAPES[n % STREET_TAPES.length];
+          const pw = it.width + size * 0.5;
+          const ph = size * 1.16;
+          g.save();
+          g.translate(x + (rand(n * 1.3) - 0.5) * u * 14, y + (rand(n * 2.9) - 0.5) * u * 12);
+          g.rotate(rot);
+          g.scale(lerp(1.5, 1, e), lerp(1.5, 1, e));
+          // drop shadow, then the tape with torn (zig-zag) ends
+          g.fillStyle = "rgba(0,0,0,0.45)";
+          this.tape(g, -pw / 2 + u * 7, -ph / 2 + u * 9, pw, ph, u, n);
+          g.fill();
+          g.fillStyle = col;
+          this.tape(g, -pw / 2, -ph / 2, pw, ph, u, n);
+          g.fill();
+          // a little shine across the tape
+          g.fillStyle = "rgba(255,255,255,0.18)";
+          g.fillRect(-pw / 2, -ph / 2 + ph * 0.08, pw, ph * 0.16);
+          g.fillStyle = "#0b0b0d";
+          g.fillText(w.label, 0, size * 0.04);
+          g.restore();
+        });
+      });
+    },
+    tape(g, x, y, w, h, u, seed) {
+      const teeth = 6;
+      const d = u * 9;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + w, y);
+      for (let i = 1; i <= teeth; i++) g.lineTo(x + w + (i % 2 ? d : 0) * (0.6 + rand(seed + i) * 0.6), y + (h * i) / teeth);
+      g.lineTo(x, y + h);
+      for (let i = teeth - 1; i >= 0; i--) g.lineTo(x - (i % 2 ? d : 0) * (0.6 + rand(seed * 2 + i) * 0.6), y + (h * i) / teeth);
+      g.closePath();
+    },
+  };
+
+  // SUMMIT — mountain expedition: outdoor-brand type, altitude HUD, wind & snow
+  const SUM_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
+  const SUM_DIRS = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+  const summit = {
+    id: "summit",
+    label: "Summit",
+    tag: "Montaña",
+    fonts: ["800 100px Montserrat", "700 100px 'Barlow Condensed'"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (videoBg(g, f, "saturate(1.05) contrast(1.06)")) {
+        const sh = g.createLinearGradient(0, 0, 0, H);
+        sh.addColorStop(0, "rgba(4,16,32,0.55)");
+        sh.addColorStop(0.35, "rgba(4,16,32,0.12)");
+        sh.addColorStop(1, "rgba(4,16,32,0.45)");
+        g.fillStyle = sh;
+        g.fillRect(0, 0, W, H);
+      } else {
+        const sky = g.createLinearGradient(0, 0, 0, H);
+        sky.addColorStop(0, "#0b2340");
+        sky.addColorStop(0.5, "#3f78ad");
+        sky.addColorStop(1, "#cfe2f2");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, W, H);
+        // three ranges of big peaks, the near ones drifting faster
+        [["#8fb0cf", 0.66, 0.012, 5], ["#4f7aa3", 0.76, 0.02, 4], ["#eef5fb", 0.9, 0.035, 3]].forEach(([col, base, sp, n], k) => {
+          const step = W / n;
+          const shift = (t * sp * W) % step;
+          const first = Math.floor((t * sp * W) / step);
+          g.fillStyle = col;
+          g.beginPath();
+          g.moveTo(-step, H);
+          for (let i = -1; i <= n + 1; i++) {
+            const id = i + first + k * 50;
+            const x = i * step - shift;
+            g.lineTo(x, H * (base - 0.03 + rand(id * 1.9) * 0.05));
+            g.lineTo(x + step * (0.35 + rand(id * 2.7) * 0.3), H * (base - 0.1 - rand(id * 3.1) * 0.12));
+          }
+          g.lineTo(W + step, H);
+          g.closePath();
+          g.fill();
+          if (k === 2) {
+            const fog = g.createLinearGradient(0, H * (base - 0.2), 0, H);
+            fog.addColorStop(0, "rgba(255,255,255,0)");
+            fog.addColorStop(1, "rgba(220,234,246,0.6)");
+            g.fillStyle = fog;
+            g.fillRect(0, H * (base - 0.2), W, H);
+          }
+        });
+      }
+      // wind-blown snow
+      g.save();
+      for (let i = 0; i < 120; i++) {
+        const sp = 0.25 + rand(i * 2.1) * 0.5;
+        const y = ((rand(i * 3.3) + t * sp) % 1) * H;
+        const x = ((rand(i * 7.7) - t * sp * 0.6) % 1 + 1) % 1 * W;
+        const r = u * (1.5 + rand(i * 5.1) * 3.5);
+        g.fillStyle = `rgba(255,255,255,${0.35 + rand(i) * 0.5})`;
+        g.fillRect(x, y, r * 2.2, r);
+      }
+      g.restore();
+      this.hud(g, f, u);
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      this.drawLine(g, f, L, u);
+      g.restore();
+    },
+    hud(g, f, u) {
+      const { safe, t } = f;
+      g.save();
+      g.strokeStyle = g.fillStyle = "rgba(255,255,255,0.92)";
+      g.shadowColor = "rgba(0,25,50,0.7)";
+      g.shadowBlur = u * 12;
+      g.lineWidth = Math.max(1, u * 2);
+      g.textAlign = "center";
+      g.textBaseline = "top";
+      // compass strip
+      const heading = (t * 6) % 360;
+      const cx = safe.x + safe.w / 2;
+      const half = safe.w * 0.36;
+      g.save();
+      g.beginPath();
+      g.rect(cx - half, safe.y, half * 2, u * 70);
+      g.clip();
+      for (let d = Math.floor((heading - 60) / 5) * 5; d <= heading + 60; d += 5) {
+        const x = cx + ((d - heading) / 60) * half;
+        const big = d % 45 === 0;
+        g.globalAlpha = 1 - Math.abs(d - heading) / 62;
+        g.fillRect(x, safe.y, Math.max(1, u * 2), u * (big ? 22 : 10));
+        if (big) {
+          g.font = `700 ${u * 26}px 'Barlow Condensed', sans-serif`;
+          g.fillText(SUM_DIRS[(((d / 45) % 8) + 8) % 8], x, safe.y + u * 28);
+        }
+      }
+      g.restore();
+      g.beginPath();
+      g.moveTo(cx, safe.y + u * 58);
+      g.lineTo(cx - u * 8, safe.y + u * 70);
+      g.lineTo(cx + u * 8, safe.y + u * 70);
+      g.fill();
+      // altitude and temperature
+      g.font = `700 ${u * 30}px 'Barlow Condensed', sans-serif`;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "left";
+      g.fillText("ALT", safe.x, safe.y + safe.h - u * 44);
+      g.font = `700 ${u * 58}px 'Barlow Condensed', sans-serif`;
+      g.fillText(`${(3200 + Math.floor(t * 4)).toLocaleString("es")} m`, safe.x, safe.y + safe.h);
+      g.textAlign = "right";
+      g.font = `700 ${u * 30}px 'Barlow Condensed', sans-serif`;
+      g.fillText("TEMP", safe.x + safe.w, safe.y + safe.h - u * 44);
+      g.font = `700 ${u * 58}px 'Barlow Condensed', sans-serif`;
+      g.fillText(`-${8 + Math.floor(f.energy() * 6)}°C`, safe.x + safe.w, safe.y + safe.h);
+      g.restore();
+    },
+    drawLine(g, f, line, u) {
+      const { t, safe } = f;
+      const size = u * 86;
+      const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
+      const rows = wrapCached(g, `su|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => SUM_FONT(size), safe.w * 0.88, size * 0.3);
+      const lh = size * 1.08;
+      const blockH = rows.length * lh;
+      const top = safe.y + safe.h * 0.45 - blockH / 2;
+      const left = safe.x + safe.w * 0.06;
+      const intro = ease.out(clamp((t - line.start) / 0.6));
+      g.save();
+      g.shadowColor = "rgba(0,20,40,0.45)";
+      g.shadowBlur = u * 18;
+      // stage label + rule that draws itself
+      g.fillStyle = "rgba(255,255,255,0.9)";
+      g.font = `700 ${u * 28}px 'Barlow Condensed', sans-serif`;
+      if ("letterSpacing" in g) g.letterSpacing = `${u * 6}px`;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "left";
+      g.globalAlpha = intro;
+      g.fillText(`TRAMO ${String(line.index + 1).padStart(2, "0")}`, left, top - u * 26);
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      g.fillRect(left + u * 170, top - u * 38, safe.w * 0.5 * intro, Math.max(1, u * 2));
+      g.globalAlpha = 1;
+      g.font = SUM_FONT(size);
+      g.textBaseline = "top";
+      rows.forEach((row, ri) => {
+        const y = top + ri * lh;
+        row.items.forEach((it) => {
+          const p = clamp((t - it.w.t0 + 0.04) / 0.32);
+          if (p <= 0) return;
+          const x = left + it.x;
+          // each word wipes in from the left
+          g.save();
+          g.beginPath();
+          g.rect(x - u * 4, y - size * 0.2, (it.width + u * 8) * ease.out(p), size * 1.4);
+          g.clip();
+          g.fillStyle = "#ffffff";
+          g.fillText(it.w.label, x + u * 18 * (1 - ease.out(p)), y);
+          g.restore();
+        });
+      });
+      g.restore();
+    },
+  };
+
+  // ======================================================================
+  // KARAOKE (only in the Karaoke tool) — classic wipe styles
+  // ======================================================================
+  /** Wipe progress of a word: follows how long it is actually sung. */
+  const wipe = (w, t) => clamp((t - w.t0) / Math.max(0.12, w.t1 - w.t0));
+  /** One line with the karaoke wipe: unsung look, then the sung look clipped. */
+  function wipeLine(g, rows, lh, t, x0Of, y0, look) {
+    rows.forEach((row, ri) => {
+      const y = y0 + ri * lh;
+      const x0 = x0Of(row);
+      row.items.forEach((it) => {
+        const x = x0 + it.x;
+        const p = wipe(it.w, t);
+        look.unsung(g, it.w.label, x, y);
+        if (p > 0) {
+          g.save();
+          g.beginPath();
+          g.rect(x - lh, y - lh, lh + it.width * p, lh * 2);
+          g.clip();
+          look.sung(g, it.w.label, x, y);
+          g.restore();
+        }
+      });
+    });
+  }
+  /** Dots counting down to a line after a long instrumental gap. */
+  function karaCount(g, f, line, x, y, u, col) {
+    const prev = f.lines[line.index - 1];
+    const lastEnd = prev && prev.words.length ? prev.words[prev.words.length - 1].t1 : 0;
+    const left = line.start - f.t;
+    if (line.start - lastEnd < 3.4 || left > 4 || left <= 0) return;
+    const on = Math.ceil(left);
+    for (let i = 0; i < 4; i++) {
+      g.globalAlpha = i < on ? 1 : 0.2;
+      g.fillStyle = col;
+      g.beginPath();
+      g.arc(x + i * u * 34, y, u * 10, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+
+  // KARAOKE BAR — the karaoke machine: two lines that take turns, blue wipe
+  const BAR_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
+  const karabar = {
+    id: "karabar",
+    wordBased: "spread",
+    label: "Karaoke Bar",
+    tag: "Clásico",
+    fonts: ["800 100px Montserrat", "400 100px Shrikhand"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      g.fillStyle = "#120d14";
+      g.fillRect(0, 0, W, H);
+      // brick wall, dimly lit
+      const bh = u * 56;
+      const bw = u * 150;
+      for (let r = 0; r * bh < H; r++) {
+        for (let c = -1; c * bw < W; c++) {
+          const x = c * bw + (r % 2 ? bw / 2 : 0);
+          const v = 40 + rand(r * 31 + c * 7) * 22;
+          g.fillStyle = `rgb(${v + 22},${v * 0.55},${v * 0.5})`;
+          g.fillRect(x + u * 3, r * bh + u * 3, bw - u * 6, bh - u * 6);
+        }
+      }
+      const light = g.createRadialGradient(W / 2, H * 0.2, 0, W / 2, H * 0.2, H * 0.75);
+      light.addColorStop(0, "rgba(255,60,170,0.12)");
+      light.addColorStop(1, "rgba(0,0,0,0.82)");
+      g.fillStyle = light;
+      g.fillRect(0, 0, W, H);
+      // neon sign, with the odd flicker
+      const flick = rand(Math.floor(t * 12)) > 0.94 ? 0.35 : 1;
+      g.save();
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.font = `400 ${u * 120}px Shrikhand, serif`;
+      g.globalAlpha = flick;
+      g.shadowColor = "#ff2bd6";
+      g.shadowBlur = u * (40 + 30 * pulse);
+      g.lineWidth = u * 5;
+      g.strokeStyle = "#ff6be6";
+      g.strokeText("Karaoke", W / 2, safe.y + u * 120);
+      g.fillStyle = "#ffe3fb";
+      g.fillText("Karaoke", W / 2, safe.y + u * 120);
+      g.restore();
+      // the lyric band
+      const band = g.createLinearGradient(0, safe.y + safe.h * 0.38, 0, safe.y + safe.h * 0.92);
+      band.addColorStop(0, "rgba(10,20,60,0)");
+      band.addColorStop(0.2, "rgba(10,20,60,0.75)");
+      band.addColorStop(0.8, "rgba(10,20,60,0.75)");
+      band.addColorStop(1, "rgba(10,20,60,0)");
+      g.fillStyle = band;
+      g.fillRect(0, safe.y + safe.h * 0.38, W, safe.h * 0.54);
+      g.save();
+      place(g, f);
+      this.drawLyrics(g, f, u);
+      g.restore();
+    },
+    drawLyrics(g, f, u) {
+      const { t, safe, lines } = f;
+      if (!lines.length) return;
+      const c = Math.max(0, f.current);
+      // slot 0 sits high and left, slot 1 low and right, taking turns
+      const show = [c, c + 1].filter((i) => lines[i] && lines[i].words.length);
+      const look = {
+        unsung(g, s, x, y) {
+          g.lineWidth = u * 14;
+          g.strokeStyle = "#0a1f66";
+          g.strokeText(s, x, y);
+          g.fillStyle = "#ffffff";
+          g.fillText(s, x, y);
+        },
+        sung(g, s, x, y) {
+          g.lineWidth = u * 14;
+          g.strokeStyle = "#ffffff";
+          g.strokeText(s, x, y);
+          g.fillStyle = "#2a63ff";
+          g.fillText(s, x, y);
+        },
+      };
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.lineJoin = "round";
+      show.forEach((i) => {
+        const line = lines[i];
+        const slot = i % 2;
+        const words = line.words.map((w) => ({ ...w, label: w.text }));
+        const size = u * 70;
+        const rows = wrapCached(g, `kb|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => BAR_FONT(size), safe.w * 0.92, size * 0.28);
+        const lh = size * 1.25;
+        const y0 = slot ? safe.y + safe.h * 0.7 : safe.y + safe.h * 0.56 - (rows.length - 1) * lh;
+        const appear = i === c + 1 ? clamp((t - (lines[c] ? lines[c].start : 0)) / 0.3) : 1;
+        if (f.current < 0 && i === c) {
+          karaCount(g, f, line, safe.x + safe.w * 0.04, y0 - lh * 0.9, u, "#ffe600");
+        }
+        g.font = BAR_FONT(size);
+        g.globalAlpha = f.current < 0 ? 1 : appear;
+        wipeLine(g, rows, lh, t, (row) => (slot ? safe.x + safe.w * 0.96 - row.width : safe.x + safe.w * 0.04), y0, look);
+        g.globalAlpha = 1;
+      });
+    },
+  };
+
+  // KARAOKE 80s — the VHS karaoke tape: dreamy footage, yellow wipe, title card
+  const RETRO_FONT = (size) => `700 ${size}px ${fam("'Barlow Condensed', Impact, sans-serif")}`;
+  const kararetro = {
+    id: "kararetro",
+    wordBased: "spread",
+    label: "Karaoke 80s",
+    tag: "Retro",
+    fonts: ["700 100px 'Barlow Condensed'", "400 100px VT323"],
+    draw(g, f) {
+      const { W, H, t, safe, meta } = f;
+      const u = safe.w / 825;
+      // soft "stock footage": drifting sunset clouds
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "#1b2a6b");
+      sky.addColorStop(0.45, "#c2508a");
+      sky.addColorStop(0.7, "#ff9a5a");
+      sky.addColorStop(1, "#2a1238");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, W, H);
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 9; i++) {
+        const x = ((rand(i * 2.2) + t * (0.01 + rand(i) * 0.02)) % 1.3) * W * 1.1 - W * 0.15;
+        const y = H * (0.12 + rand(i * 4.4) * 0.5);
+        const r = H * (0.1 + rand(i * 8.8) * 0.12);
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, "rgba(255,220,240,0.14)");
+        gr.addColorStop(1, "rgba(255,220,240,0)");
+        g.fillStyle = gr;
+        g.fillRect(0, 0, W, H);
+      }
+      g.restore();
+      // sun
+      const sunY = H * 0.6;
+      const sun = g.createRadialGradient(W / 2, sunY, 0, W / 2, sunY, H * 0.14);
+      sun.addColorStop(0, "rgba(255,240,200,0.95)");
+      sun.addColorStop(1, "rgba(255,170,90,0)");
+      g.fillStyle = sun;
+      g.fillRect(0, 0, W, H);
+      // title card before the first line
+      const first = f.lines[0];
+      if (first && t < first.start) {
+        const a = clamp(t / 0.6) * clamp((first.start - t) / 0.6);
+        g.save();
+        g.globalAlpha = a;
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillStyle = "#fff6c8";
+        g.shadowColor = "#1a1aa8";
+        g.shadowOffsetX = g.shadowOffsetY = u * 5;
+        g.font = RETRO_FONT(u * 96);
+        g.fillText(upper(meta.title || "Karaoke"), W / 2, safe.y + safe.h * 0.32);
+        g.font = RETRO_FONT(u * 52);
+        g.fillText(upper(meta.artist || ""), W / 2, safe.y + safe.h * 0.32 + u * 90);
+        g.restore();
+      }
+      g.save();
+      place(g, f);
+      this.drawLyrics(g, f, u);
+      g.restore();
+      // scanlines and a tracking line
+      g.fillStyle = "rgba(0,0,0,0.16)";
+      for (let y = 0; y < H; y += Math.max(2, u * 5)) g.fillRect(0, y, W, Math.max(1, u * 2));
+      const ty = ((t * 0.21) % 1.2) * H - H * 0.1;
+      g.fillStyle = "rgba(255,255,255,0.06)";
+      g.fillRect(0, ty, W, u * 26);
+      g.save();
+      g.font = `400 ${u * 50}px VT323, monospace`;
+      g.fillStyle = "rgba(255,255,255,0.85)";
+      g.textBaseline = "top";
+      g.fillText("CH 03", safe.x, safe.y);
+      g.restore();
+      grainOver(g, W, H, t, 0.07);
+    },
+    drawLyrics(g, f, u) {
+      const { t, safe, lines } = f;
+      const c = Math.max(0, f.current);
+      const look = {
+        unsung(g, s, x, y) {
+          g.fillStyle = "#1418a0";
+          g.fillText(s, x + u * 5, y + u * 5);
+          g.fillStyle = "#ffffff";
+          g.fillText(s, x, y);
+        },
+        sung(g, s, x, y) {
+          g.fillStyle = "#1418a0";
+          g.fillText(s, x + u * 5, y + u * 5);
+          g.fillStyle = "#ffe14d";
+          g.fillText(s, x, y);
+        },
+      };
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      [c, c + 1].forEach((i, k) => {
+        const line = lines[i];
+        if (!line || !line.words.length) return;
+        const size = u * (k ? 64 : 82);
+        const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
+        const rows = wrapCached(g, `kr|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => RETRO_FONT(size), safe.w * 0.94, size * 0.28);
+        const lh = size * 1.1;
+        const y0 = safe.y + safe.h * (k ? 0.86 : 0.72) - ((rows.length - 1) * lh) / 2;
+        g.font = RETRO_FONT(size);
+        g.globalAlpha = k ? 0.75 : 1;
+        if (k === 0 && f.current < 0) karaCount(g, f, line, safe.x + safe.w / 2 - u * 51, y0 - lh, u, "#ffe14d");
+        wipeLine(g, rows, lh, k ? -1 : t, (row) => safe.x + (safe.w - row.width) / 2, y0, look);
+        g.globalAlpha = 1;
+      });
+    },
+  };
+
+  // ESCENARIO — on stage: a spotlight follows the word being sung, crowd below
+  const stageSpot = new WeakMap();
+  const STAGE_FONT = (size) => `900 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
+  const karastage = {
+    id: "karastage",
+    wordBased: "spread",
+    label: "Escenario",
+    tag: "Show",
+    fonts: ["900 100px Poppins"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      g.fillStyle = "#05040a";
+      g.fillRect(0, 0, W, H);
+      // where the spotlight points: the word being sung (found last frame)
+      const sf = stageSpot.get(g.canvas);
+      const spot = sf != null ? sf * W : W / 2;
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      const len = H * 0.95;
+      const cone = g.createLinearGradient(0, 0, 0, len);
+      cone.addColorStop(0, `rgba(255,236,190,${0.32 + 0.12 * pulse})`);
+      cone.addColorStop(1, "rgba(255,236,190,0.02)");
+      g.fillStyle = cone;
+      g.beginPath();
+      g.moveTo(W / 2 - u * 20, 0);
+      g.lineTo(W / 2 + u * 20, 0);
+      g.lineTo(spot + W * 0.28, len);
+      g.lineTo(spot - W * 0.28, len);
+      g.closePath();
+      g.fill();
+      // coloured side washes on the beat
+      [["255,61,139", 0], ["80,120,255", 1]].forEach(([col, k]) => {
+        const gr = g.createRadialGradient(k ? W : 0, H * 0.3, 0, k ? W : 0, H * 0.3, H * 0.5);
+        gr.addColorStop(0, `rgba(${col},${0.16 + 0.2 * pulse})`);
+        gr.addColorStop(1, `rgba(${col},0)`);
+        g.fillStyle = gr;
+        g.fillRect(0, 0, W, H);
+      });
+      // haze specks in the beam
+      for (let i = 0; i < 40; i++) {
+        const y = ((rand(i * 2.3) + t * 0.03) % 1) * len;
+        const x = spot + (rand(i * 5.1) - 0.5) * W * 0.4 * (y / len);
+        g.fillStyle = `rgba(255,240,210,${0.25 * rand(i * 9.1)})`;
+        g.fillRect(x, y, u * 3, u * 3);
+      }
+      g.restore();
+      // the crowd: heads and raised hands bobbing, a few phone lights
+      g.save();
+      g.fillStyle = "#000000";
+      const base = H * 0.9;
+      for (let i = 0; i < 16; i++) {
+        const x = (i + 0.5) * (W / 16) + (rand(i * 3.3) - 0.5) * u * 30;
+        const bob = Math.abs(Math.sin(t * 3.2 + i * 1.7)) * u * 14 * (0.5 + pulse);
+        const r = u * (34 + rand(i) * 12);
+        g.beginPath();
+        g.arc(x, base - r - bob, r, 0, Math.PI * 2);
+        g.fill();
+        g.fillRect(x - r * 1.5, base - bob, r * 3, H);
+        if (rand(i * 7.7) > 0.55) {
+          const hx = x + r * 1.1;
+          g.save();
+          g.translate(hx, base - r * 2 - bob);
+          g.rotate(Math.sin(t * 2 + i) * 0.25);
+          g.fillRect(-u * 7, -r * 2.4, u * 14, r * 2.4);
+          if (rand(i * 1.9) > 0.5) {
+            g.fillStyle = `rgba(255,255,255,${0.6 + 0.4 * Math.sin(t * 5 + i)})`;
+            g.fillRect(-u * 9, -r * 2.9, u * 18, u * 28);
+            g.fillStyle = "#000";
+          }
+          g.restore();
+        }
+      }
+      g.restore();
+      g.save();
+      place(g, f);
+      this.drawLyrics(g, f, u);
+      g.restore();
+    },
+    drawLyrics(g, f, u) {
+      const { t, safe, lines } = f;
+      const c = Math.max(0, f.current);
+      const L = lines[c];
+      if (!L || !L.words.length) return;
+      const size = u * 92;
+      const words = L.words.map((w) => ({ ...w, label: w.text }));
+      const rows = wrapCached(g, `ks|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => STAGE_FONT(size), safe.w * 0.9, size * 0.28);
+      const lh = size * 1.18;
+      const y0 = safe.y + safe.h * 0.38 - ((rows.length - 1) * lh) / 2;
+      const intro = ease.out(clamp((t - L.start + 0.3) / 0.4));
+      const gold = g.createLinearGradient(0, -size / 2, 0, size / 2);
+      gold.addColorStop(0, "#fff1b8");
+      gold.addColorStop(0.5, "#ffc94d");
+      gold.addColorStop(1, "#ff8a2a");
+      // aim the spotlight at the word being sung
+      const j = activeWord(L, t);
+      stageSpot.delete(g.canvas);
+      g.font = STAGE_FONT(size);
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.globalAlpha = intro;
+      rows.forEach((row, ri) => {
+        const y = y0 + ri * lh;
+        const x0 = safe.x + (safe.w - row.width) / 2;
+        row.items.forEach((it) => {
+          const x = x0 + it.x;
+          const p = wipe(it.w, t);
+          const lift = it.w.index === j && p < 1 ? Math.sin(Math.PI * p) * size * 0.08 : 0;
+          if (it.w.index === j) stageSpot.set(g.canvas, (x + it.width / 2 + f.shift.x) / f.W);
+          g.save();
+          g.translate(0, -lift);
+          g.fillStyle = "rgba(255,255,255,0.55)";
+          g.fillText(it.w.label, x, y);
+          if (p > 0) {
+            g.beginPath();
+            g.rect(x - size, y - lh, size + it.width * p, lh * 2);
+            g.clip();
+            g.save();
+            g.translate(0, y);
+            g.shadowColor = "rgba(255,170,60,0.75)";
+            g.shadowBlur = size * 0.35;
+            g.fillStyle = gold;
+            g.fillText(it.w.label, x, 0);
+            g.restore();
+          }
+          g.restore();
+        });
+      });
+      g.globalAlpha = 1;
+      // the next line, small and dim
+      const N = lines[c + 1];
+      if (N && N.words.length) {
+        const ns = fitSize(g, N.text, STAGE_FONT, u * 48, safe.w * 0.9);
+        g.font = STAGE_FONT(ns);
+        g.textAlign = "center";
+        g.fillStyle = "rgba(255,255,255,0.4)";
+        g.fillText(N.text, safe.x + safe.w / 2, y0 + rows.length * lh + u * 40);
+      }
+      if (f.current < 0) karaCount(g, f, L, safe.x + safe.w / 2 - u * 51, y0 - lh, u, "#ffc94d");
+    },
+  };
+
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, summit, karabar, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
