@@ -1722,6 +1722,8 @@
     $("styles-more").textContent = `Ver más estilos (${hidden})`;
   }
   function showCat(key) {
+    // changing category folds "Todos" back to its first 8
+    if (key !== currentCat) shownCount = 8;
     currentCat = key;
     const ids = (STYLE_CATS.find((c) => c[0] === key) || STYLE_CATS[0])[2];
     document.querySelectorAll("#styles-pro button").forEach((b) => b.classList.toggle("cat-off", !!ids && !ids.includes(b.dataset.style)));
