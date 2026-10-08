@@ -1853,7 +1853,7 @@ body[data-view="captions"] #btn-demo {
 }
 .hero-phone {
   position: relative;
-  width: 300px;
+  width: 250px;
   aspect-ratio: 640 / 1430;
   filter: drop-shadow(0 40px 60px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 80px rgba(var(--accent-rgb), 0.18));
   animation: hero-float 7s ease-in-out infinite;
@@ -1910,7 +1910,7 @@ body[data-view="captions"] #btn-demo {
     justify-content: center;
   }
   .hero-phone {
-    width: min(240px, 62vw);
+    width: min(205px, 52vw);
   }
   /* mobile order: title, phone, tools tag, then description and buttons */
   .hero {
