@@ -812,17 +812,27 @@
       const activeRow = document.querySelector(".ts-row.active");
       // Keep the active row in view inside the editor panel only —
       // never scroll the page itself (on mobile the preview is on top).
+      // Only while the user is looking at the timings list: if they
+      // scrolled to the styles or text options, leave them there.
       const editor = document.querySelector(".editor");
-      if (activeRow && audio.playing && editor.scrollHeight > editor.clientHeight + 1) {
+      if (activeRow && audio.playing && editor.scrollHeight > editor.clientHeight + 1 && performance.now() - editorTouched > 4000) {
         const r = activeRow.getBoundingClientRect();
         const box = editor.getBoundingClientRect();
-        if (r.top < box.top || r.bottom > box.bottom) {
+        const list = activeRow.parentElement.getBoundingClientRect();
+        const looking = list.bottom > box.top + 40 && list.top < box.bottom - 40;
+        if (looking && (r.top < box.top || r.bottom > box.bottom)) {
           editor.scrollBy({ top: r.top - box.top - box.height / 2, behavior: "smooth" });
         }
       }
     }
     requestAnimationFrame(frame);
   }
+
+  // the user scrolling the editor themselves pauses the auto-follow
+  let editorTouched = -1e9;
+  ["wheel", "touchmove", "keydown"].forEach((ev) =>
+    document.querySelector("#lyrics-view .editor").addEventListener(ev, () => (editorTouched = performance.now()), { passive: true }),
+  );
 
   // ---------- ajuste manual ----------
   function currentLine(state) {
