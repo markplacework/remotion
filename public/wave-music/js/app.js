@@ -103,7 +103,7 @@
 
   function sourceLabel(id) {
     return (
-      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Editado a mano" }[
+      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Editado a mano", ai: "IA · OpenAI", modal: "IA precisa · Modal" }[
         id
       ] || id
     );
@@ -121,14 +121,15 @@
         duration: audio.duration,
         audio,
         askKey,
+        askModal,
         onStatus: (s) => (btn.textContent = s),
         options: { interval: $("sync-interval").value, offset: $("sync-offset").value },
       });
       // word timings only stay valid for the AI sync that produced them
-      if (providerId !== "ai") WM.AiWords = {};
+      if (!isAi(providerId)) WM.AiWords = {};
       applyTimeline(tl);
       audio.seek(0);
-      const extra = providerId === "ai" && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
+      const extra = isAi(providerId) && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
       toast("Sincronización generada · " + tl.entries.length + " líneas" + extra);
     } catch (e) {
       if (e.code !== "cancelled") toast(e.message);
@@ -137,6 +138,47 @@
       refreshReadiness();
       updateAiRow();
     }
+  }
+
+  const isAi = (mode) => mode === "ai" || mode === "modal";
+
+  // ---------- servicio de Modal (versión de prueba) ----------
+  function askModal(error) {
+    return new Promise((resolve, reject) => {
+      const m = $("modalcfg");
+      const url = $("modalcfg-url");
+      const token = $("modalcfg-token");
+      const err = $("modalcfg-error");
+      const showErr = (msg) => {
+        err.textContent = msg || "";
+        err.hidden = !msg;
+      };
+      url.value = WM.ModalSync.getUrl();
+      token.value = WM.ModalSync.getToken();
+      showErr(error);
+      m.hidden = false;
+      setTimeout(() => url.focus(), 30);
+      const close = () => {
+        m.hidden = true;
+        $("modalcfg-ok").onclick = $("modalcfg-cancel").onclick = m.onkeydown = null;
+      };
+      $("modalcfg-ok").onclick = () => {
+        const u = url.value.trim();
+        const bad = WM.ModalSync.checkUrl(u);
+        if (bad) return showErr(bad);
+        WM.ModalSync.setConfig(u, token.value.trim());
+        close();
+        resolve({ url: WM.ModalSync.getUrl(), token: WM.ModalSync.getToken() });
+      };
+      $("modalcfg-cancel").onclick = () => {
+        close();
+        reject(Object.assign(new Error("Sincronización cancelada"), { code: "cancelled" }));
+      };
+      m.onkeydown = (e) => {
+        if (e.key === "Enter") $("modalcfg-ok").click();
+        if (e.key === "Escape") $("modalcfg-cancel").click();
+      };
+    });
   }
 
   // ---------- API key (versión de prueba) ----------
@@ -177,13 +219,22 @@
     });
   }
   function updateAiRow() {
-    const ai = $("sync-mode").value === "ai";
-    $("ai-row").hidden = !ai;
-    $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
-    $("ai-key-change").hidden = !WM.AiSync.getKey();
+    const mode = $("sync-mode").value;
+    $("ai-row").hidden = !isAi(mode);
+    if (mode === "modal") {
+      const has = !!WM.ModalSync.getUrl();
+      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir la URL del servicio de Modal";
+      $("ai-key-change").textContent = "Cambiar servicio";
+      $("ai-key-change").hidden = !has;
+    } else {
+      $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
+      $("ai-key-change").textContent = "Cambiar clave";
+      $("ai-key-change").hidden = !WM.AiSync.getKey();
+    }
   }
   $("ai-key-change").onclick = () => {
-    WM.AiSync.clearKey();
+    if ($("sync-mode").value === "modal") WM.ModalSync.clearConfig();
+    else WM.AiSync.clearKey();
     updateAiRow();
   };
 
@@ -685,7 +736,7 @@
     const mode = $("sync-mode").value;
     $("field-interval").style.display = mode === "interval" ? "" : "none";
     $("field-offset").style.display = mode === "interval" || mode === "spread" ? "" : "none";
-    $("btn-generate").textContent = mode === "ai" ? "Sincronizar con IA" : "Generar sincronización de prueba";
+    $("btn-generate").textContent = isAi(mode) ? "Sincronizar con IA" : "Generar sincronización de prueba";
     updateAiRow();
   }
   $("sync-mode").onchange = onModeChange;

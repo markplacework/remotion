@@ -2144,6 +2144,32 @@ canvas.th-pro {
       </div>
     </div>
 
+    <div id="modalcfg" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="modalcfg-title">
+        <div class="export-head">
+          <h3 id="modalcfg-title">IA precisa (Modal)</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá la URL que dio <code>modal deploy</code>.</p>
+          <label class="field aikey-field">
+            <span>URL del servicio</span>
+            <input id="modalcfg-url" type="url" placeholder="https://…--wave-music-sync-syncer-web.modal.run" autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="field aikey-field">
+            <span>Token (si el servicio lo pide)</span>
+            <input id="modalcfg-token" type="password" placeholder="opcional" autocomplete="off" spellcheck="false" />
+          </label>
+          <p id="modalcfg-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">Se guarda solo en este navegador. La primera canción tarda más (el servicio arranca la GPU); después, unos segundos por canción.</p>
+          <div class="export-actions">
+            <button id="modalcfg-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="modalcfg-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Export dialog: setup -> recording -> ready -->
     <div id="aikey" class="export" hidden>
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="aikey-title">
@@ -2642,6 +2668,93 @@ canvas.th-pro {
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
+// Wave Music · SINCRONIZACIÓN PRECISA (Modal)
+// Sends the song and the lyrics to our own GPU service on Modal
+// (services/wave-music-sync): Demucs isolates the voice and WhisperX
+// force-aligns the known lyrics on it. It answers in the same shape
+// ai-sync.js produces ({ starts, words }), so the rest of the app doesn't
+// care which provider ran.
+//
+// The endpoint URL (and an optional token, if the service was deployed
+// with WAVE_SYNC_TOKEN) are typed once and kept in this browser.
+(function (WM) {
+  // Set this after `modal deploy` to skip the URL prompt.
+  const DEFAULT_URL = "";
+  const URL_STORE = "wm-modal-url";
+  const TOKEN_STORE = "wm-modal-token";
+  const MAX_BYTES = 60 * 1024 * 1024;
+
+  const mem = {};
+  function read(k) {
+    try {
+      return localStorage.getItem(k) || "";
+    } catch {
+      return mem[k] || "";
+    }
+  }
+  function write(k, v) {
+    mem[k] = v;
+    try {
+      if (v) localStorage.setItem(k, v);
+      else localStorage.removeItem(k);
+    } catch {
+      /* storage blocked: keep it in memory */
+    }
+  }
+
+  const getUrl = () => read(URL_STORE) || DEFAULT_URL;
+  const getToken = () => read(TOKEN_STORE);
+  function setConfig(url, token) {
+    write(URL_STORE, url.replace(/\/+$/, ""));
+    write(TOKEN_STORE, token);
+  }
+  function clearConfig() {
+    write(URL_STORE, "");
+    write(TOKEN_STORE, "");
+  }
+  function checkUrl(url) {
+    if (!url) return "Pegá la URL del servicio.";
+    if (!/^https:\/\/[\w.-]+(\/.*)?$/.test(url)) return "La URL tiene que empezar con https://";
+    return "";
+  }
+
+  async function sync({ blob, filename, lines, url, token, signal }) {
+    if (blob.size > MAX_BYTES) throw Object.assign(new Error("El audio pesa más de 60 MB. Probá con un mp3 más liviano."), { code: "size" });
+    const fd = new FormData();
+    fd.append("audio", blob, filename);
+    fd.append("lyrics", lines.map((l) => l.text).join("\n"));
+    fd.append("language", "es");
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: token ? { Authorization: "Bearer " + token } : {},
+        body: fd,
+        signal,
+      });
+    } catch {
+      throw Object.assign(new Error("No se pudo conectar con el servicio de Modal. Revisá la URL."), { code: "network" });
+    }
+    if (res.status === 401) throw Object.assign(new Error("El token del servicio no es válido."), { code: "auth" });
+    if (res.status === 404) throw Object.assign(new Error("No hay ningún servicio en esa URL."), { code: "auth" });
+    if (!res.ok) {
+      let msg = "";
+      try {
+        msg = (await res.json()).detail;
+      } catch {
+        /* ignore */
+      }
+      throw new Error("El servicio respondió con un error" + (msg ? ": " + msg : " (" + res.status + ")"));
+    }
+    const data = await res.json();
+    if (!Array.isArray(data.starts) || data.starts.length !== lines.length) throw new Error("El servicio devolvió tiempos que no coinciden con la letra");
+    return data;
+  }
+
+  WM.ModalSync = { getUrl, getToken, setConfig, clearConfig, checkUrl, sync };
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
 // Wave Music · TIMESTAMPS
 // The timeline is the contract between "where do times come from" and
 // "how are they shown":
@@ -2650,9 +2763,9 @@ canvas.th-pro {
 //
 // Times come from a *provider*. Every provider has the same signature,
 //   provider.sync({ lines, duration, audio, options }) -> Promise<number[]>
-// returning one start time (seconds) per line. Today we only have local
-// test providers; the real AI provider plugs in here without touching
-// sync, bubbles or preview.
+// returning one start time (seconds) per line. The AI providers (OpenAI,
+// Modal) also fill WM.AiWords with per-word times; neither sync, bubbles
+// nor preview know which provider ran.
 (function (WM) {
   function round2(n) {
     return Math.round(n * 100) / 100;
@@ -2744,6 +2857,39 @@ canvas.th-pro {
         if (!sung.length) throw new Error("La IA no encontró voz en el audio");
         if (onStatus) onStatus("Ubicando la letra…");
         const r = AI.align(lines, sung, duration);
+        WM.AiWords = {};
+        lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
+        WM.AiSync.last = { matched: r.matched, total: r.total };
+        return r.starts;
+      },
+    },
+
+    /** AI, precise: our Modal GPU service (modal-sync.js) isolates the
+     * voice with Demucs and force-aligns the lyrics with WhisperX. */
+    modal: {
+      id: "modal",
+      label: "IA precisa (Modal)",
+      async sync({ lines, audio, askModal, onStatus }) {
+        const M = WM.ModalSync;
+        if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
+        let url = M.getUrl();
+        let token = M.getToken();
+        if (!url) ({ url, token } = await askModal());
+        const buf = await audio.getArrayBuffer();
+        const file = audio.sourceFile;
+        const blob = file || new Blob([buf], { type: "audio/mpeg" });
+        const filename = file ? file.name : "cancion.mp3";
+        let r;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            if (onStatus) onStatus("Separando la voz y ubicando la letra…");
+            r = await M.sync({ blob, filename, lines, url, token });
+            break;
+          } catch (e) {
+            if ((e.code !== "auth" && e.code !== "network") || attempt) throw e;
+            ({ url, token } = await askModal(e.message));
+          }
+        }
         WM.AiWords = {};
         lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
         WM.AiSync.last = { matched: r.matched, total: r.total };
@@ -7809,7 +7955,7 @@ canvas.th-pro {
 
   function sourceLabel(id) {
     return (
-      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Editado a mano" }[
+      { interval: "Prueba · intervalo", spread: "Prueba · repartido", lrc: "LRC", demo: "Demo", manual: "Editado a mano", ai: "IA · OpenAI", modal: "IA precisa · Modal" }[
         id
       ] || id
     );
@@ -7827,14 +7973,15 @@ canvas.th-pro {
         duration: audio.duration,
         audio,
         askKey,
+        askModal,
         onStatus: (s) => (btn.textContent = s),
         options: { interval: $("sync-interval").value, offset: $("sync-offset").value },
       });
       // word timings only stay valid for the AI sync that produced them
-      if (providerId !== "ai") WM.AiWords = {};
+      if (!isAi(providerId)) WM.AiWords = {};
       applyTimeline(tl);
       audio.seek(0);
-      const extra = providerId === "ai" && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
+      const extra = isAi(providerId) && WM.AiSync.last ? ` · ${WM.AiSync.last.matched}/${WM.AiSync.last.total} palabras encontradas` : "";
       toast("Sincronización generada · " + tl.entries.length + " líneas" + extra);
     } catch (e) {
       if (e.code !== "cancelled") toast(e.message);
@@ -7843,6 +7990,47 @@ canvas.th-pro {
       refreshReadiness();
       updateAiRow();
     }
+  }
+
+  const isAi = (mode) => mode === "ai" || mode === "modal";
+
+  // ---------- servicio de Modal (versión de prueba) ----------
+  function askModal(error) {
+    return new Promise((resolve, reject) => {
+      const m = $("modalcfg");
+      const url = $("modalcfg-url");
+      const token = $("modalcfg-token");
+      const err = $("modalcfg-error");
+      const showErr = (msg) => {
+        err.textContent = msg || "";
+        err.hidden = !msg;
+      };
+      url.value = WM.ModalSync.getUrl();
+      token.value = WM.ModalSync.getToken();
+      showErr(error);
+      m.hidden = false;
+      setTimeout(() => url.focus(), 30);
+      const close = () => {
+        m.hidden = true;
+        $("modalcfg-ok").onclick = $("modalcfg-cancel").onclick = m.onkeydown = null;
+      };
+      $("modalcfg-ok").onclick = () => {
+        const u = url.value.trim();
+        const bad = WM.ModalSync.checkUrl(u);
+        if (bad) return showErr(bad);
+        WM.ModalSync.setConfig(u, token.value.trim());
+        close();
+        resolve({ url: WM.ModalSync.getUrl(), token: WM.ModalSync.getToken() });
+      };
+      $("modalcfg-cancel").onclick = () => {
+        close();
+        reject(Object.assign(new Error("Sincronización cancelada"), { code: "cancelled" }));
+      };
+      m.onkeydown = (e) => {
+        if (e.key === "Enter") $("modalcfg-ok").click();
+        if (e.key === "Escape") $("modalcfg-cancel").click();
+      };
+    });
   }
 
   // ---------- API key (versión de prueba) ----------
@@ -7883,13 +8071,22 @@ canvas.th-pro {
     });
   }
   function updateAiRow() {
-    const ai = $("sync-mode").value === "ai";
-    $("ai-row").hidden = !ai;
-    $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
-    $("ai-key-change").hidden = !WM.AiSync.getKey();
+    const mode = $("sync-mode").value;
+    $("ai-row").hidden = !isAi(mode);
+    if (mode === "modal") {
+      const has = !!WM.ModalSync.getUrl();
+      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir la URL del servicio de Modal";
+      $("ai-key-change").textContent = "Cambiar servicio";
+      $("ai-key-change").hidden = !has;
+    } else {
+      $("ai-key-state").textContent = WM.AiSync.getKey() ? "API key de OpenAI cargada" : "Te va a pedir tu API key de OpenAI";
+      $("ai-key-change").textContent = "Cambiar clave";
+      $("ai-key-change").hidden = !WM.AiSync.getKey();
+    }
   }
   $("ai-key-change").onclick = () => {
-    WM.AiSync.clearKey();
+    if ($("sync-mode").value === "modal") WM.ModalSync.clearConfig();
+    else WM.AiSync.clearKey();
     updateAiRow();
   };
 
@@ -8391,7 +8588,7 @@ canvas.th-pro {
     const mode = $("sync-mode").value;
     $("field-interval").style.display = mode === "interval" ? "" : "none";
     $("field-offset").style.display = mode === "interval" || mode === "spread" ? "" : "none";
-    $("btn-generate").textContent = mode === "ai" ? "Sincronizar con IA" : "Generar sincronización de prueba";
+    $("btn-generate").textContent = isAi(mode) ? "Sincronizar con IA" : "Generar sincronización de prueba";
     updateAiRow();
   }
   $("sync-mode").onchange = onModeChange;

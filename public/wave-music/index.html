@@ -290,6 +290,32 @@
       </div>
     </div>
 
+    <div id="modalcfg" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="modalcfg-title">
+        <div class="export-head">
+          <h3 id="modalcfg-title">IA precisa (Modal)</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá la URL que dio <code>modal deploy</code>.</p>
+          <label class="field aikey-field">
+            <span>URL del servicio</span>
+            <input id="modalcfg-url" type="url" placeholder="https://…--wave-music-sync-syncer-web.modal.run" autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="field aikey-field">
+            <span>Token (si el servicio lo pide)</span>
+            <input id="modalcfg-token" type="password" placeholder="opcional" autocomplete="off" spellcheck="false" />
+          </label>
+          <p id="modalcfg-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">Se guarda solo en este navegador. La primera canción tarda más (el servicio arranca la GPU); después, unos segundos por canción.</p>
+          <div class="export-actions">
+            <button id="modalcfg-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="modalcfg-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Export dialog: setup -> recording -> ready -->
     <div id="aikey" class="export" hidden>
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="aikey-title">
@@ -369,6 +395,7 @@
     <script src="js/audio.js"></script>
     <script src="js/lyrics.js"></script>
     <script src="js/ai-sync.js"></script>
+    <script src="js/modal-sync.js"></script>
     <script src="js/timestamps.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/adjust.js"></script>

@@ -6,9 +6,9 @@
 //
 // Times come from a *provider*. Every provider has the same signature,
 //   provider.sync({ lines, duration, audio, options }) -> Promise<number[]>
-// returning one start time (seconds) per line. Today we only have local
-// test providers; the real AI provider plugs in here without touching
-// sync, bubbles or preview.
+// returning one start time (seconds) per line. The AI providers (OpenAI,
+// Modal) also fill WM.AiWords with per-word times; neither sync, bubbles
+// nor preview know which provider ran.
 (function (WM) {
   function round2(n) {
     return Math.round(n * 100) / 100;
@@ -100,6 +100,39 @@
         if (!sung.length) throw new Error("La IA no encontró voz en el audio");
         if (onStatus) onStatus("Ubicando la letra…");
         const r = AI.align(lines, sung, duration);
+        WM.AiWords = {};
+        lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
+        WM.AiSync.last = { matched: r.matched, total: r.total };
+        return r.starts;
+      },
+    },
+
+    /** AI, precise: our Modal GPU service (modal-sync.js) isolates the
+     * voice with Demucs and force-aligns the lyrics with WhisperX. */
+    modal: {
+      id: "modal",
+      label: "IA precisa (Modal)",
+      async sync({ lines, audio, askModal, onStatus }) {
+        const M = WM.ModalSync;
+        if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
+        let url = M.getUrl();
+        let token = M.getToken();
+        if (!url) ({ url, token } = await askModal());
+        const buf = await audio.getArrayBuffer();
+        const file = audio.sourceFile;
+        const blob = file || new Blob([buf], { type: "audio/mpeg" });
+        const filename = file ? file.name : "cancion.mp3";
+        let r;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            if (onStatus) onStatus("Separando la voz y ubicando la letra…");
+            r = await M.sync({ blob, filename, lines, url, token });
+            break;
+          } catch (e) {
+            if ((e.code !== "auth" && e.code !== "network") || attempt) throw e;
+            ({ url, token } = await askModal(e.message));
+          }
+        }
         WM.AiWords = {};
         lines.forEach((l, i) => (WM.AiWords[l.id] = r.words[i]));
         WM.AiSync.last = { matched: r.matched, total: r.total };
