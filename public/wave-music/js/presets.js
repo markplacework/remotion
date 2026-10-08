@@ -4174,7 +4174,583 @@
     },
   };
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, karasing, kararetro, karastage };
+  // ======================================================================
+  // EN VIVO — live-broadcast looks: social live, news, radio, game stream
+  // ======================================================================
+  const LIVE_UI = (w, size) => `${w} ${size}px Inter, 'Segoe UI', sans-serif`;
+  const LIVE_NAMES = ["sofi.music", "juanpi_22", "lu.martinez", "tomas.rk", "cami_fan", "nico.beats", "valen.ok", "agus_m", "flor.canta", "mateo.lp", "rocio_x", "lean.dj"];
+  const LIVE_MSGS = ["¡temazo!", "otra vez!!", "la amo", "subí el volumen", "desde Córdoba", "qué voz", "esta es mía", "ufff", "lloro", "me la sé toda", "saludos!!", "la mejor"];
+  const LIVE_COLS = ["#ff5c8a", "#5cc8ff", "#ffd25c", "#8aff5c", "#c58aff", "#ff9a5c"];
+  /** Live comments: one new every `every` seconds, the last n shown (pure function of t). */
+  function liveComments(t, n, every) {
+    const k = Math.floor(t / every);
+    const out = [];
+    for (let i = Math.max(0, k - n + 1); i <= k; i++) out.push({ i, name: LIVE_NAMES[(i * 7) % LIVE_NAMES.length], msg: LIVE_MSGS[(i * 5 + 3) % LIVE_MSGS.length], age: t - i * every, col: LIVE_COLS[i % LIVE_COLS.length] });
+    return out;
+  }
+  function heartPath(g, x, y, s) {
+    g.beginPath();
+    g.moveTo(x, y + s * 0.3);
+    g.bezierCurveTo(x, y - s * 0.2, x - s * 0.6, y - s * 0.2, x - s * 0.6, y + s * 0.15);
+    g.bezierCurveTo(x - s * 0.6, y + s * 0.5, x, y + s * 0.75, x, y + s);
+    g.bezierCurveTo(x, y + s * 0.75, x + s * 0.6, y + s * 0.5, x + s * 0.6, y + s * 0.15);
+    g.bezierCurveTo(x + s * 0.6, y - s * 0.2, x, y - s * 0.2, x, y + s * 0.3);
+    g.closePath();
+  }
+  /** A line's words, wrapped, revealed as sung; returns the block height. */
+  function liveWords(g, f, line, u, o) {
+    const { t } = f;
+    const size = u * o.size;
+    const words = line.words.map((w) => ({ ...w, label: o.upper ? upper(w.text) : w.text }));
+    const rows = wrapCached(g, `${o.key}|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(o.maxW)}`, words, () => o.font(size), o.maxW, size * 0.28);
+    const lh = size * (o.lh || 1.15);
+    if (o.measure) return rows.length * lh;
+    g.font = o.font(size);
+    g.textBaseline = "middle";
+    g.textAlign = "left";
+    rows.forEach((row, ri) => {
+      const y = o.y + ri * lh + lh / 2;
+      const x0 = o.center ? o.x + (o.maxW - row.width) / 2 : o.x;
+      row.items.forEach((it) => {
+        const p = clamp((t - it.w.t0 + 0.05) / 0.22);
+        if (p <= 0) return;
+        g.globalAlpha = p;
+        g.fillStyle = o.col;
+        g.fillText(it.w.label, x0 + it.x, y + (1 - p) * u * 10);
+      });
+    });
+    g.globalAlpha = 1;
+    return rows.length * lh;
+  }
+  const liveCount = (t) => (12.4 + Math.floor(t * 3) * 0.1).toFixed(1).replace(".", ",") + " mil";
+
+  // LIVE — social live video: host pill, viewers, hearts, comments, the lyric pinned
+  const live = {
+    id: "live",
+    label: "Live",
+    tag: "En vivo",
+    fonts: ["700 100px Montserrat"],
+    draw(g, f) {
+      const { W, H, t, safe, meta } = f;
+      const u = safe.w / 825;
+      if (!videoBg(g, f, "saturate(1.1)")) {
+        const bg = g.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, "#2a0f3d");
+        bg.addColorStop(1, "#0b1530");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        const sp = g.createRadialGradient(W / 2, H * 0.35, 0, W / 2, H * 0.35, H * 0.5);
+        sp.addColorStop(0, "rgba(255,90,160,0.35)");
+        sp.addColorStop(1, "rgba(255,90,160,0)");
+        g.fillStyle = sp;
+        g.fillRect(0, 0, W, H);
+      }
+      // shades top and bottom so the UI reads
+      const top = g.createLinearGradient(0, 0, 0, H * 0.22);
+      top.addColorStop(0, "rgba(0,0,0,0.5)");
+      top.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = top;
+      g.fillRect(0, 0, W, H * 0.22);
+      const bot = g.createLinearGradient(0, H * 0.55, 0, H);
+      bot.addColorStop(0, "rgba(0,0,0,0)");
+      bot.addColorStop(1, "rgba(0,0,0,0.65)");
+      g.fillStyle = bot;
+      g.fillRect(0, H * 0.55, W, H * 0.45);
+      g.save();
+      g.textBaseline = "middle";
+      // host pill: avatar, name, likes, follow
+      const px = safe.x;
+      const py = safe.y;
+      const ph = u * 70;
+      g.fillStyle = "rgba(0,0,0,0.38)";
+      rrect(g, px, py, u * 380, ph, ph / 2);
+      g.fill();
+      const av = g.createLinearGradient(px, py, px + ph, py + ph);
+      av.addColorStop(0, "#ff4f8b");
+      av.addColorStop(1, "#ffb347");
+      g.fillStyle = av;
+      g.beginPath();
+      g.arc(px + ph / 2, py + ph / 2, ph * 0.4, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.font = LIVE_UI(700, u * 26);
+      g.textAlign = "center";
+      g.fillText(upper((meta.artist || "A").slice(0, 1)), px + ph / 2, py + ph / 2);
+      g.textAlign = "left";
+      g.font = LIVE_UI(700, u * 25);
+      g.fillText(fitText(g, meta.artist || "Artista", u * 170), px + ph + u * 6, py + ph * 0.36);
+      g.font = LIVE_UI(500, u * 20);
+      g.fillStyle = "rgba(255,255,255,0.8)";
+      g.fillText(`${(48.2 + Math.floor(t * 5) * 0.1).toFixed(1).replace(".", ",")} mil Me gusta`, px + ph + u * 6, py + ph * 0.7);
+      g.fillStyle = "#fe2c55";
+      rrect(g, px + u * 266, py + u * 13, u * 100, ph - u * 26, u * 10);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.font = LIVE_UI(700, u * 22);
+      g.textAlign = "center";
+      g.fillText("Seguir", px + u * 316, py + ph / 2);
+      // LIVE badge + viewers
+      const rx = safe.x + safe.w;
+      g.font = LIVE_UI(700, u * 24);
+      const vc = liveCount(t);
+      const vw = g.measureText(vc).width + u * 56;
+      g.fillStyle = "rgba(0,0,0,0.38)";
+      rrect(g, rx - vw, py + u * 12, vw, u * 46, u * 23);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.textAlign = "right";
+      g.fillText(vc, rx - u * 16, py + u * 35);
+      g.beginPath();
+      g.arc(rx - vw + u * 22, py + u * 35, u * 7, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fe2c55";
+      rrect(g, rx - vw - u * 96, py + u * 12, u * 86, u * 46, u * 10);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.textAlign = "center";
+      g.fillText("LIVE", rx - vw - u * 53, py + u * 35);
+      // floating hearts up the right side
+      for (let i = 0; i < 14; i++) {
+        const ph2 = (t * 0.5 + rand(i * 3.3)) % 1;
+        const hx = rx - u * 40 + Math.sin(ph2 * 7 + i) * u * 26;
+        const hy = safe.y + safe.h * (0.95 - ph2 * 0.55);
+        g.globalAlpha = Math.sin(ph2 * Math.PI) * 0.9;
+        g.fillStyle = LIVE_COLS[i % LIVE_COLS.length];
+        heartPath(g, hx, hy, u * (26 + rand(i) * 14) * (0.6 + 0.4 * ph2));
+        g.fill();
+      }
+      g.globalAlpha = 1;
+      // comments, newest at the bottom
+      const cs = liveComments(t, 5, 1.1);
+      g.textAlign = "left";
+      let cy = safe.y + safe.h - u * 20;
+      for (let k = cs.length - 1; k >= 0; k--) {
+        const c = cs[k];
+        const a = clamp(c.age / 0.25) * (k === 0 ? 0.5 : 1);
+        g.globalAlpha = a;
+        g.font = LIVE_UI(700, u * 24);
+        const nw = g.measureText(c.name).width;
+        g.font = LIVE_UI(500, u * 24);
+        const mw = g.measureText(c.msg).width;
+        const bw = u * 60 + nw + mw + u * 30;
+        g.fillStyle = "rgba(0,0,0,0.3)";
+        rrect(g, safe.x, cy - u * 44, bw, u * 44, u * 22);
+        g.fill();
+        g.fillStyle = c.col;
+        g.beginPath();
+        g.arc(safe.x + u * 24, cy - u * 22, u * 13, 0, Math.PI * 2);
+        g.fill();
+        g.font = LIVE_UI(700, u * 24);
+        g.fillStyle = "rgba(255,255,255,0.75)";
+        g.fillText(c.name, safe.x + u * 46, cy - u * 22);
+        g.font = LIVE_UI(500, u * 24);
+        g.fillStyle = "#fff";
+        g.fillText(c.msg, safe.x + u * 58 + nw, cy - u * 22);
+        cy -= u * 54 * clamp(c.age / 0.25);
+      }
+      g.globalAlpha = 1;
+      g.restore();
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      // the lyric as the pinned comment, big
+      const maxW = safe.w * 0.8;
+      const opt = { key: "lv", font: (s) => `800 ${s}px ${fam("Montserrat, sans-serif")}`, size: 56, maxW, col: "#ffffff", lh: 1.2 };
+      const h = liveWords(g, f, L, u, { ...opt, measure: true });
+      const bh = h + u * 86;
+      const bx = safe.x;
+      const by = safe.y + safe.h * 0.44 - bh / 2;
+      const inn = ease.back(clamp((f.t - L.start + 0.25) / 0.35));
+      g.translate(bx, by + bh / 2);
+      g.scale(lerp(0.85, 1, inn), lerp(0.85, 1, inn));
+      g.translate(-bx, -(by + bh / 2));
+      g.globalAlpha = clamp(inn * 2);
+      g.fillStyle = "rgba(20,20,28,0.62)";
+      rrect(g, bx, by, maxW + u * 60, bh, u * 26);
+      g.fill();
+      g.fillStyle = "#fe2c55";
+      g.font = LIVE_UI(700, u * 22);
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.fillText("📌 Fijado", bx + u * 30, by + u * 32);
+      g.globalAlpha = 1;
+      liveWords(g, f, L, u, { ...opt, x: bx + u * 30, y: by + u * 58 });
+      g.restore();
+    },
+  };
+  /** Truncate a label to a width. */
+  function fitText(g, s, w) {
+    if (g.measureText(s).width <= w) return s;
+    while (s.length > 1 && g.measureText(s + "…").width > w) s = s.slice(0, -1);
+    return s + "…";
+  }
+
+  // NOTICIERO — breaking news: channel bug, ÚLTIMO MOMENTO, headline bar, crawl
+  const NEWS_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
+  const noticiero = {
+    id: "noticiero",
+    label: "Noticiero",
+    tag: "En vivo",
+    fonts: ["800 100px Montserrat", "700 100px 'Barlow Condensed'"],
+    draw(g, f) {
+      const { W, H, t, safe, meta } = f;
+      const u = safe.w / 825;
+      if (!videoBg(g, f, "saturate(1.05) contrast(1.05)")) {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#04122e");
+        bg.addColorStop(1, "#0a2f6b");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // studio: a turning globe of lines
+        g.save();
+        g.strokeStyle = "rgba(120,180,255,0.18)";
+        g.lineWidth = u * 2;
+        const gx = W / 2;
+        const gy = H * 0.36;
+        const gr = W * 0.42;
+        g.beginPath();
+        g.arc(gx, gy, gr, 0, Math.PI * 2);
+        g.stroke();
+        for (let i = 0; i < 8; i++) {
+          const a = ((i / 8 + t * 0.03) % 1) * Math.PI;
+          g.beginPath();
+          g.ellipse(gx, gy, Math.abs(Math.cos(a)) * gr, gr, 0, 0, Math.PI * 2);
+          g.stroke();
+        }
+        for (let i = 1; i < 6; i++) {
+          const yy = gy - gr + (i * gr * 2) / 6;
+          const ww = Math.sqrt(gr * gr - (yy - gy) ** 2);
+          g.beginPath();
+          g.moveTo(gx - ww, yy);
+          g.lineTo(gx + ww, yy);
+          g.stroke();
+        }
+        g.restore();
+      }
+      const sh = g.createLinearGradient(0, H * 0.6, 0, H);
+      sh.addColorStop(0, "rgba(0,0,0,0)");
+      sh.addColorStop(1, "rgba(0,0,0,0.5)");
+      g.fillStyle = sh;
+      g.fillRect(0, 0, W, H);
+      // channel bug top right
+      g.save();
+      g.textBaseline = "middle";
+      const bx = safe.x + safe.w;
+      const by = safe.y;
+      g.fillStyle = "rgba(255,255,255,0.92)";
+      rrect(g, bx - u * 190, by, u * 190, u * 74, u * 8);
+      g.fill();
+      g.fillStyle = "#c8102e";
+      g.font = `700 ${u * 44}px 'Barlow Condensed', sans-serif`;
+      g.textAlign = "center";
+      g.fillText("WS", bx - u * 145, by + u * 37);
+      g.fillStyle = "#0a1d4a";
+      g.font = `700 ${u * 26}px 'Barlow Condensed', sans-serif`;
+      g.fillText("NOTICIAS", bx - u * 62, by + u * 28);
+      g.fillStyle = "#c8102e";
+      g.fillText("● EN VIVO", bx - u * 62, by + u * 52);
+      // lower third
+      const L = f.lines[f.current];
+      const crawlY = safe.y + safe.h - u * 52;
+      // clock + crawl
+      g.fillStyle = "#0a1d4a";
+      g.fillRect(0, crawlY, W, u * 52);
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, crawlY, safe.x + u * 120, u * 52);
+      g.fillStyle = "#0a1d4a";
+      g.font = `700 ${u * 30}px 'Barlow Condensed', sans-serif`;
+      const s = Math.floor(t);
+      g.fillText(`${String(20 + Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}`, safe.x + u * 60, crawlY + u * 26);
+      g.save();
+      g.beginPath();
+      g.rect(safe.x + u * 120, crawlY, W, u * 52);
+      g.clip();
+      const msg = `${upper(meta.title || "Tu canción")} · ${upper(meta.artist || "Artista")} · EL TEMA QUE TODOS ESCUCHAN · WAVE STUDIO · `;
+      g.fillStyle = "#ffffff";
+      g.textAlign = "left";
+      const mw = g.measureText(msg).width;
+      for (let x = safe.x + u * 130 - ((t * u * 110) % mw); x < W; x += mw) g.fillText(msg, x, crawlY + u * 26);
+      g.restore();
+      g.restore();
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      const maxW = safe.w * 0.92;
+      const opt = { key: "nw", font: NEWS_FONT, size: 58, maxW, col: "#0a1d4a", upper: true, lh: 1.12 };
+      const h = liveWords(g, f, L, u, { ...opt, maxW: maxW - u * 10, measure: true });
+      const barH = h + u * 36;
+      const y0 = crawlY - u * 12 - barH;
+      const inn = ease.out(clamp((t - L.start + 0.2) / 0.35));
+      // red label
+      g.fillStyle = "#c8102e";
+      g.fillRect(safe.x, y0 - u * 54, u * 330 * inn, u * 54);
+      g.fillStyle = "#ffffff";
+      g.font = `700 ${u * 34}px 'Barlow Condensed', sans-serif`;
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      if ("letterSpacing" in g) g.letterSpacing = `${u * 3}px`;
+      if (inn > 0.7) g.fillText("ÚLTIMO MOMENTO", safe.x + u * 18, y0 - u * 26);
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      // white headline bar
+      g.fillStyle = "rgba(255,255,255,0.97)";
+      g.fillRect(safe.x, y0, (maxW + u * 40) * inn, barH);
+      g.fillStyle = "#c8102e";
+      g.fillRect(safe.x, y0, u * 10, barH);
+      g.save();
+      g.beginPath();
+      g.rect(safe.x, y0, (maxW + u * 40) * inn, barH);
+      g.clip();
+      liveWords(g, f, L, u, { ...opt, x: safe.x + u * 28, y: y0 + u * 18, maxW: maxW - u * 10 });
+      g.restore();
+      g.restore();
+    },
+  };
+
+  // RADIO — on air: ON AIR light, the dial, a VU waveform that follows the song
+  const RADIO_FONT = (size) => `700 ${size}px ${fam("Montserrat, sans-serif")}`;
+  const radio = {
+    id: "radio",
+    label: "Radio",
+    tag: "Al aire",
+    fonts: ["700 100px Montserrat", "700 100px 'Barlow Condensed'"],
+    draw(g, f) {
+      const { W, H, t, safe, meta } = f;
+      const u = safe.w / 825;
+      const pulse = f.pulse();
+      if (videoBg(g, f, "saturate(0.9) brightness(0.8)")) {
+        g.fillStyle = "rgba(20,10,4,0.45)";
+        g.fillRect(0, 0, W, H);
+      } else {
+        const bg = g.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, H * 0.8);
+        bg.addColorStop(0, "#3a2214");
+        bg.addColorStop(1, "#0d0705");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // acoustic foam wall
+        g.fillStyle = "rgba(0,0,0,0.25)";
+        const cs = u * 60;
+        for (let y = 0; y < H; y += cs) for (let x = (y / cs) % 2 ? 0 : cs / 2; x < W; x += cs) {
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x + cs / 2, y + cs / 2);
+          g.lineTo(x, y + cs);
+          g.lineTo(x - cs / 2, y + cs / 2);
+          g.closePath();
+          g.fill();
+        }
+      }
+      g.save();
+      // ON AIR light
+      const lx = safe.x + safe.w / 2;
+      const ly = safe.y + u * 50;
+      g.shadowColor = `rgba(255,40,40,${0.7 + 0.3 * pulse})`;
+      g.shadowBlur = u * 50;
+      g.fillStyle = "#e01b1b";
+      rrect(g, lx - u * 170, ly - u * 46, u * 340, u * 92, u * 14);
+      g.fill();
+      g.shadowBlur = 0;
+      g.strokeStyle = "rgba(255,200,200,0.7)";
+      g.lineWidth = u * 3;
+      rrect(g, lx - u * 160, ly - u * 36, u * 320, u * 72, u * 10);
+      g.stroke();
+      g.fillStyle = "#fff";
+      g.font = `700 ${u * 54}px 'Barlow Condensed', sans-serif`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      if ("letterSpacing" in g) g.letterSpacing = `${u * 8}px`;
+      g.fillText("AL AIRE", lx + u * 4, ly + u * 2);
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      // the dial
+      const dy = safe.y + safe.h - u * 120;
+      g.fillStyle = "rgba(0,0,0,0.45)";
+      rrect(g, safe.x, dy, safe.w, u * 120, u * 18);
+      g.fill();
+      g.strokeStyle = "rgba(255,200,140,0.6)";
+      g.lineWidth = Math.max(1, u * 2);
+      for (let i = 0; i <= 40; i++) {
+        const x = safe.x + u * 30 + (i / 40) * (safe.w - u * 60);
+        g.beginPath();
+        g.moveTo(x, dy + u * 70);
+        g.lineTo(x, dy + u * (i % 5 ? 84 : 92));
+        g.stroke();
+      }
+      g.fillStyle = "rgba(255,210,150,0.8)";
+      g.font = `700 ${u * 22}px 'Barlow Condensed', sans-serif`;
+      [88, 92, 96, 100, 104, 108].forEach((v, i) => g.fillText(String(v), safe.x + u * 30 + (i / 5) * (safe.w - u * 60), dy + u * 108));
+      const nx = safe.x + u * 30 + ((98.7 - 88) / 20) * (safe.w - u * 60);
+      g.fillStyle = "#ff3b2f";
+      g.fillRect(nx - u * 2, dy + u * 56, u * 4, u * 44);
+      g.fillStyle = "#ffd9a0";
+      g.font = `700 ${u * 46}px 'Barlow Condensed', sans-serif`;
+      g.textAlign = "left";
+      g.fillText("FM 98.7", safe.x + u * 26, dy + u * 32);
+      g.textAlign = "right";
+      g.font = `700 ${u * 26}px 'Barlow Condensed', sans-serif`;
+      g.fillText(fitText(g, upper(`${meta.title || "Tu canción"} · ${meta.artist || "Artista"}`), safe.w * 0.55), safe.x + safe.w - u * 26, dy + u * 32);
+      // waveform bars driven by the song
+      const wy = dy - u * 90;
+      const n = 46;
+      for (let i = 0; i < n; i++) {
+        const x = safe.x + (i + 0.5) * (safe.w / n);
+        const e = f.energy(f.t - 0.08 - Math.abs(i - n / 2) * 0.012);
+        const h = u * (8 + 120 * e * (0.5 + 0.5 * Math.abs(Math.sin(i * 1.7 + t * 6))));
+        const gr = g.createLinearGradient(0, wy - h, 0, wy + h);
+        gr.addColorStop(0, "#ffcf7a");
+        gr.addColorStop(1, "#ff6a3a");
+        g.fillStyle = gr;
+        rrect(g, x - u * 5, wy - h / 2, u * 10, h, u * 5);
+        g.fill();
+      }
+      g.restore();
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      g.shadowColor = "rgba(0,0,0,0.7)";
+      g.shadowBlur = u * 20;
+      const opt = { key: "rd", font: RADIO_FONT, size: 76, maxW: safe.w * 0.92, col: "#fff4e4", center: true, lh: 1.18 };
+      const h = liveWords(g, f, L, u, { ...opt, measure: true });
+      liveWords(g, f, L, u, { ...opt, x: safe.x + safe.w * 0.04, y: safe.y + safe.h * 0.42 - h / 2 });
+      g.restore();
+    },
+  };
+
+  // STREAM — game-stream overlay: LIVE tag, chat panel, follower alerts, lyric caption
+  const STREAM_FONT = (size) => `800 ${size}px ${fam("Poppins, 'Arial Black', sans-serif")}`;
+  const stream = {
+    id: "stream",
+    label: "Stream",
+    tag: "En vivo",
+    fonts: ["800 100px Poppins"],
+    draw(g, f) {
+      const { W, H, t, safe } = f;
+      const u = safe.w / 825;
+      if (!videoBg(g, f, "saturate(1.15)")) {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#14092b");
+        bg.addColorStop(1, "#05030c");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+        // neon grid floor
+        g.save();
+        g.strokeStyle = "rgba(145,70,255,0.35)";
+        g.lineWidth = u * 2;
+        const hz = H * 0.62;
+        for (let i = -12; i <= 12; i++) {
+          g.beginPath();
+          g.moveTo(W / 2 + i * u * 20, hz);
+          g.lineTo(W / 2 + i * W * 0.2, H);
+          g.stroke();
+        }
+        for (let k = 0; k < 10; k++) {
+          const p = ((k + t * 0.8) % 10) / 10;
+          const y = hz + (H - hz) * p * p;
+          g.beginPath();
+          g.moveTo(0, y);
+          g.lineTo(W, y);
+          g.stroke();
+        }
+        g.restore();
+      }
+      g.save();
+      g.textBaseline = "middle";
+      // LIVE tag + viewers, top left
+      g.fillStyle = "#eb0400";
+      rrect(g, safe.x, safe.y, u * 92, u * 44, u * 6);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.font = LIVE_UI(800, u * 24);
+      g.textAlign = "center";
+      g.fillText("LIVE", safe.x + u * 46, safe.y + u * 22);
+      g.fillStyle = "rgba(0,0,0,0.55)";
+      rrect(g, safe.x + u * 100, safe.y, u * 150, u * 44, u * 6);
+      g.fill();
+      g.fillStyle = "#ff6b6b";
+      g.beginPath();
+      g.arc(safe.x + u * 122, safe.y + u * 22, u * 7, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.textAlign = "left";
+      g.fillText(liveCount(t).replace(" mil", "K"), safe.x + u * 138, safe.y + u * 22);
+      // chat panel, right
+      const cw = safe.w * 0.48;
+      const cx = safe.x + safe.w - cw;
+      const cy = safe.y + u * 70;
+      const ch = safe.h * 0.36;
+      g.fillStyle = "rgba(14,10,24,0.7)";
+      rrect(g, cx, cy, cw, ch, u * 14);
+      g.fill();
+      g.fillStyle = "rgba(145,70,255,0.9)";
+      rrect(g, cx, cy, cw, u * 44, u * 14);
+      g.fill();
+      g.fillRect(cx, cy + u * 30, cw, u * 14);
+      g.fillStyle = "#fff";
+      g.font = LIVE_UI(700, u * 22);
+      g.fillText("CHAT EN VIVO", cx + u * 18, cy + u * 22);
+      g.save();
+      g.beginPath();
+      g.rect(cx, cy + u * 44, cw, ch - u * 44);
+      g.clip();
+      const cs = liveComments(t, 9, 0.75);
+      let yy = cy + ch - u * 22;
+      for (let k = cs.length - 1; k >= 0 && yy > cy + u * 44; k--) {
+        const c = cs[k];
+        g.globalAlpha = clamp(c.age / 0.2);
+        g.font = LIVE_UI(700, u * 21);
+        g.fillStyle = c.col;
+        g.fillText(c.name + ":", cx + u * 16, yy);
+        const nw = g.measureText(c.name + ": ").width;
+        g.font = LIVE_UI(500, u * 21);
+        g.fillStyle = "#e9e6f2";
+        g.fillText(fitText(g, c.msg, cw - nw - u * 30), cx + u * 16 + nw, yy);
+        yy -= u * 34;
+      }
+      g.restore();
+      g.globalAlpha = 1;
+      // follower alert, every few seconds
+      const ap = (t % 7) / 7;
+      if (ap < 0.3) {
+        const a = Math.min(clamp(ap / 0.04), clamp((0.3 - ap) / 0.04));
+        const name = LIVE_NAMES[Math.floor(t / 7) % LIVE_NAMES.length];
+        g.globalAlpha = a;
+        const aw = u * 420;
+        const ax = safe.x + (safe.w - aw) / 2;
+        const ay = safe.y + safe.h * 0.56 + (1 - a) * u * 30;
+        g.fillStyle = "rgba(145,70,255,0.95)";
+        rrect(g, ax, ay, aw, u * 86, u * 16);
+        g.fill();
+        g.fillStyle = "#fff";
+        g.textAlign = "center";
+        g.font = LIVE_UI(800, u * 26);
+        g.fillText("¡NUEVO SEGUIDOR!", ax + aw / 2, ay + u * 28);
+        g.font = LIVE_UI(600, u * 24);
+        g.fillText(name, ax + aw / 2, ay + u * 60);
+        g.globalAlpha = 1;
+      }
+      g.restore();
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      place(g, f);
+      // the lyric as a caption bar at the bottom
+      const maxW = safe.w * 0.9;
+      const opt = { key: "stm", font: STREAM_FONT, size: 60, maxW, col: "#ffffff", center: true, lh: 1.16 };
+      const h = liveWords(g, f, L, u, { ...opt, measure: true });
+      const bh = h + u * 40;
+      const by = safe.y + safe.h - bh;
+      const grd = g.createLinearGradient(safe.x, 0, safe.x + safe.w, 0);
+      grd.addColorStop(0, "rgba(145,70,255,0.88)");
+      grd.addColorStop(1, "rgba(235,40,140,0.88)");
+      g.fillStyle = grd;
+      rrect(g, safe.x, by, safe.w, bh, u * 18);
+      g.fill();
+      liveWords(g, f, L, u, { ...opt, x: safe.x + (safe.w - maxW) / 2, y: by + u * 20 });
+      g.restore();
+    },
+  };
+
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;

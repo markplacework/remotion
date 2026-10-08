@@ -156,6 +156,11 @@
     nieve: { id: "nieve", label: "Nieve", kind: "motion", preset: "nieve", background: { type: "motion" }, video: true },
     tormenta: { id: "tormenta", label: "Tormenta", kind: "motion", preset: "tormenta", background: { type: "motion" }, video: true },
     otono: { id: "otono", label: "Otoño", kind: "motion", preset: "otono", background: { type: "motion" }, video: true },
+    // live broadcasts
+    live: { id: "live", label: "Live", kind: "motion", preset: "live", background: { type: "motion" }, meta: true, video: true },
+    noticiero: { id: "noticiero", label: "Noticiero", kind: "motion", preset: "noticiero", background: { type: "motion" }, meta: true, video: true },
+    radio: { id: "radio", label: "Radio", kind: "motion", preset: "radio", background: { type: "motion" }, meta: true, video: true },
+    stream: { id: "stream", label: "Stream", kind: "motion", preset: "stream", background: { type: "motion" }, video: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
