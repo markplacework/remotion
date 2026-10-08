@@ -365,6 +365,238 @@
     }
   };
 
+  // ----- Captions: film-style subtitles for any video -----
+  /** Run a call against our Modal service, asking for the token once if needed. */
+  async function withModal(run) {
+    let creds = await modalCreds();
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await run(creds);
+      } catch (e) {
+        if (e.code !== "auth" || attempt) throw e;
+        WM.ModalSync.setConfig(creds.url, "");
+        creds = await modalCreds(e.message + " Revisalo y probá de nuevo.");
+      }
+    }
+  }
+  const C = WM.Captions;
+  const cap = { file: null, cues: [], opts: { style: "cine", scale: 1, pos: "bottom" }, url: null, active: -1, ctl: null };
+  function capPick(file) {
+    cap.file = file;
+    $("cap-name").textContent = file.name.replace(/\.[^.]+$/, "");
+    $("cap-meta").textContent = (file.size / 1e6).toFixed(1) + " MB · tocá para cambiar";
+    $("cap-drop").classList.add("picked");
+    $("cap-go").disabled = false;
+  }
+  $("cap-file").onchange = (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = "";
+    if (f) capPick(f);
+  };
+  function capBusy(msg) {
+    $("cap-busy").hidden = !msg;
+    if (msg) $("cap-status").textContent = msg;
+    $("cap-go").disabled = !!msg || !cap.file;
+    $("cap-drop").classList.toggle("disabled", !!msg);
+  }
+  $("cap-go").onclick = async () => {
+    if (!cap.file) return;
+    try {
+      capBusy("Sacando el audio del video…");
+      const { wav, duration } = await C.extractWav(cap.file);
+      capBusy("Escuchando el video…");
+      const res = await withModal((creds) => C.transcribe({ wav, url: creds.url, token: creds.token }));
+      const cues = C.buildCues(res.words || [], duration);
+      if (!cues.length) throw new Error("No se escuchó ninguna voz en el video.");
+      capOpen(cues);
+    } catch (e) {
+      if (e.code !== "cancelled") toast(e.message);
+    } finally {
+      capBusy("");
+    }
+  };
+  function capOpen(cues) {
+    cap.cues = cues;
+    if (cap.url) URL.revokeObjectURL(cap.url);
+    cap.url = URL.createObjectURL(cap.file);
+    const v = $("cap-video");
+    v.src = cap.url;
+    v.onloadedmetadata = () => {
+      $("cap-box").style.aspectRatio = v.videoWidth + " / " + v.videoHeight;
+      $("cap-box").classList.toggle("portrait", v.videoHeight > v.videoWidth);
+    };
+    $("cap-start").hidden = true;
+    $("cap-editor").hidden = false;
+    capRenderList();
+  }
+  // player controls live under the picture, so nothing covers the subtitles
+  {
+    const v = $("cap-video");
+    const toggle = () => (v.paused ? v.play() : v.pause());
+    $("cap-play").onclick = toggle;
+    $("cap-box").onclick = toggle;
+    const sync = () => {
+      $("cap-scrub").max = v.duration || 1;
+      if (!capScrubbing) $("cap-scrub").value = v.currentTime;
+      $("cap-clock").textContent = T.format(v.currentTime) + " / " + T.format(v.duration || 0);
+      $("cap-play").classList.toggle("playing", !v.paused);
+    };
+    let capScrubbing = false;
+    ["timeupdate", "play", "pause", "loadedmetadata", "seeked"].forEach((ev) => v.addEventListener(ev, sync));
+    $("cap-scrub").addEventListener("input", () => {
+      capScrubbing = true;
+      v.currentTime = Number($("cap-scrub").value);
+    });
+    $("cap-scrub").addEventListener("change", () => (capScrubbing = false));
+  }
+  $("cap-new").onclick = () => {
+    $("cap-video").pause();
+    $("cap-editor").hidden = true;
+    $("cap-start").hidden = false;
+  };
+  // style chips
+  C.STYLES.forEach((st) => {
+    const b = document.createElement("button");
+    b.className = "cap-style";
+    b.dataset.capstyle = st.id;
+    b.setAttribute("aria-pressed", st.id === cap.opts.style);
+    b.innerHTML = `<canvas width="240" height="96" aria-hidden="true"></canvas><span>${st.label}</span><small>${st.hint}</small>`;
+    b.onclick = () => {
+      cap.opts.style = st.id;
+      document.querySelectorAll(".cap-style").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    };
+    $("cap-styles").appendChild(b);
+    // a frozen frame of the style: dark gradient, one line of subtitle
+    const g = b.querySelector("canvas").getContext("2d");
+    const bg = g.createLinearGradient(0, 0, 240, 96);
+    bg.addColorStop(0, "#2a3346");
+    bg.addColorStop(1, "#11151f");
+    g.fillStyle = bg;
+    g.fillRect(0, 0, 240, 96);
+    C.drawCue(g, 240, 96, "Tus subtítulos", { style: st.id, scale: 3.6 });
+  });
+  $("cap-size").oninput = () => {
+    cap.opts.scale = Number($("cap-size").value) / 100;
+    $("cap-size-val").textContent = $("cap-size").value + "%";
+  };
+  document.querySelectorAll("[data-cappos]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        cap.opts.pos = b.dataset.cappos;
+        document.querySelectorAll("[data-cappos]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      }),
+  );
+  // the cue list: time range + editable text
+  const fmtCap = (t) => T.format(t, true);
+  function capRenderList() {
+    const list = $("cap-list");
+    list.innerHTML = "";
+    $("cap-count").textContent = cap.cues.length + " subtítulos";
+    cap.cues.forEach((c, i) => {
+      const row = document.createElement("div");
+      row.className = "cap-row";
+      row.innerHTML =
+        '<div class="cap-times"><input class="cap-t" data-k="start" spellcheck="false" /><span>→</span><input class="cap-t" data-k="end" spellcheck="false" /></div>' +
+        '<textarea class="cap-text" rows="2" spellcheck="true"></textarea>' +
+        '<button class="cap-del" title="Borrar subtítulo" aria-label="Borrar subtítulo">×</button>';
+      const [a, b] = row.querySelectorAll(".cap-t");
+      a.value = fmtCap(c.start);
+      b.value = fmtCap(c.end);
+      [a, b].forEach((inp) =>
+        inp.addEventListener("change", () => {
+          const v = T.parse(inp.value);
+          if (Number.isFinite(v)) c[inp.dataset.k] = Math.max(0, v);
+          if (c.end <= c.start) c.end = c.start + 0.5;
+          inp.value = fmtCap(c[inp.dataset.k]);
+        }),
+      );
+      const ta = row.querySelector("textarea");
+      ta.value = c.text;
+      ta.addEventListener("input", () => (c.text = ta.value));
+      ta.addEventListener("focus", () => {
+        const v = $("cap-video");
+        if (v.paused) v.currentTime = c.start + 0.01;
+      });
+      row.querySelector(".cap-times").addEventListener("click", (e) => {
+        if (e.target.tagName !== "INPUT") $("cap-video").currentTime = c.start + 0.01;
+      });
+      row.querySelector(".cap-del").onclick = () => {
+        cap.cues.splice(i, 1);
+        capRenderList();
+      };
+      list.appendChild(row);
+    });
+    cap.active = -1;
+  }
+  // live overlay on the player
+  (function capLoop() {
+    requestAnimationFrame(capLoop);
+    if (view !== "captions" || $("cap-editor").hidden) return;
+    const v = $("cap-video");
+    const c = $("cap-overlay");
+    const box = $("cap-box");
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.round(box.clientWidth * dpr);
+    const h = Math.round(box.clientHeight * dpr);
+    if (!w || !h) return;
+    if (c.width !== w || c.height !== h) {
+      c.width = w;
+      c.height = h;
+    }
+    const g = c.getContext("2d");
+    // draw in the video's own pixel space, so it matches the export
+    const W = v.videoWidth || 1920;
+    const H = v.videoHeight || 1080;
+    g.setTransform(w / W, 0, 0, h / H, 0, 0);
+    g.clearRect(0, 0, W, H);
+    const i = cap.cues.findIndex((q) => v.currentTime >= q.start && v.currentTime < q.end);
+    if (i >= 0) C.drawCue(g, W, H, cap.cues[i].text, cap.opts);
+    if (i !== cap.active) {
+      cap.active = i;
+      document.querySelectorAll(".cap-row").forEach((r, k) => r.classList.toggle("on", k === i));
+      const row = document.querySelectorAll(".cap-row")[i];
+      if (row && !v.paused) row.scrollIntoView({ block: "nearest" });
+    }
+  })();
+  const capSlug = () => slugOf(cap.file ? cap.file.name : "video");
+  $("cap-srt").onclick = async () => {
+    const res = await WM.Exporter.saveFile(new Blob([C.toSRT(cap.cues)], { type: "text/plain" }), capSlug() + ".srt");
+    toast(res.ok ? "SRT guardado" : res.message);
+  };
+  $("cap-vtt").onclick = async () => {
+    const res = await WM.Exporter.saveFile(new Blob([C.toVTT(cap.cues)], { type: "text/vtt" }), capSlug() + ".vtt");
+    toast(res.ok ? "VTT guardado" : res.message);
+  };
+  $("cap-export").onclick = async () => {
+    if (cap.ctl) return;
+    $("cap-video").pause();
+    cap.ctl = new AbortController();
+    $("cap-exporting").hidden = false;
+    $("cap-export").disabled = true;
+    try {
+      const out = await C.burnIn({
+        file: cap.file,
+        cues: cap.cues,
+        opts: { ...cap.opts },
+        signal: cap.ctl.signal,
+        onProgress: (t, d) => {
+          $("cap-progress").style.width = (d ? (t / d) * 100 : 0) + "%";
+          $("cap-time").textContent = T.format(t) + " / " + T.format(d);
+        },
+      });
+      const res = await WM.Exporter.saveFile(out.blob, capSlug() + "-subtitulado." + out.ext);
+      toast(res.ok ? "Video guardado" : res.message);
+    } catch (e) {
+      if (e.code !== "cancelled") toast(e.message || "No se pudo exportar el video");
+    } finally {
+      cap.ctl = null;
+      $("cap-exporting").hidden = true;
+      $("cap-export").disabled = false;
+      $("cap-progress").style.width = "0%";
+    }
+  };
+  $("cap-cancel").onclick = () => cap.ctl && cap.ctl.abort();
+
   // ----- Karaoke: the lyric editor playing the instrumental -----
   function karaokeStatus(state, msg) {
     $("karaoke-status").textContent = msg;

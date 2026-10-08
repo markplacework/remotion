@@ -257,6 +257,12 @@ class Pipeline:
                     words.append({"text": w["word"], "start": float(w["start"]), "end": float(w["end"])})
         return words
 
+    # Captions: plain speech, no lyrics to follow and no music to remove
+    def speech(self, path: str) -> dict:
+        audio = load_audio(path, ASR_SR, 1)[0]
+        words = self.transcribe(audio, "", refine=True)
+        return {"words": words, "duration": len(audio) / ASR_SR}
+
     # 3. forced alignment of the known lyrics, line by line
     def force(self, audio: np.ndarray, line_words: list[list[str]], windows: list[tuple[float, float]]):
         out = []

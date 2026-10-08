@@ -11,6 +11,11 @@ POST /  — lyric sync
 and answers with the JSON the app already uses:
     { starts: [...], words: [{ text, words: [{ text, d0, d1 }] }], matched, total, duration }
 
+POST /transcribe — Captions
+    audio   the audio of a video (any format ffmpeg reads)
+and answers { words: [{ text, start, end }], duration }: every spoken word
+with its time, for the app to cut into subtitles.
+
 POST /stems — Remove Vocal
     audio   the song file
     stem    "instrumental" (default) or "vocals"
@@ -95,6 +100,15 @@ class Syncer:
             f.flush()
             return self.pipe.stem_mp3(f.name, stem)
 
+    def _speech(self, audio: bytes, filename: str) -> dict:
+        import tempfile
+
+        suffix = os.path.splitext(filename or "")[1] or ".wav"
+        with tempfile.NamedTemporaryFile(suffix=suffix) as f:
+            f.write(audio)
+            f.flush()
+            return self.pipe.speech(f.name)
+
     @modal.method()
     def stems(self, audio: bytes, filename: str = "song.mp3", stem: str = "instrumental") -> bytes:
         """Python entry point for tests."""
@@ -143,6 +157,21 @@ class Syncer:
                 return self._run(data, audio.filename, lines)
             except Exception as e:  # noqa: BLE001
                 raise HTTPException(500, f"No se pudo sincronizar: {e}") from e
+
+        @api.post("/transcribe")
+        async def transcribe(audio: UploadFile = File(...), authorization: str = Header("")):
+            token = os.environ.get("WAVE_SYNC_TOKEN")
+            if token and authorization != f"Bearer {token}":
+                raise HTTPException(401, "Token inválido")
+            data = await audio.read()
+            if not data:
+                raise HTTPException(400, "Falta el audio")
+            if len(data) > MAX_BYTES:
+                raise HTTPException(413, "El audio pesa más de 60 MB")
+            try:
+                return self._speech(data, audio.filename)
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(500, f"No se pudo transcribir: {e}") from e
 
         @api.post("/stems")
         async def stems(
