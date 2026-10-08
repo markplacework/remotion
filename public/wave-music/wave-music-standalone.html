@@ -2371,6 +2371,70 @@ body[data-view="karaoke"] .style-cats {
 body:not([data-view="karaoke"]) #styles button.cat-off {
   display: none;
 }
+/* phones: one sliding row per category (like Canva / CapCut) */
+.style-rows,
+.cats-back {
+  display: none;
+}
+.style-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 14px 0 8px;
+}
+.style-row-head span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.style-row-head button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.styles.style-row {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 26%;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 0 16px 4px;
+  scroll-padding: 0 16px;
+}
+.style-row::-webkit-scrollbar {
+  display: none;
+}
+.style-row button {
+  scroll-snap-align: start;
+}
+.cats-back {
+  margin: 6px 0 10px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent-2);
+  text-decoration: none;
+}
+@media (max-width: 640px) {
+  body[data-view="lyrics"]:not(.styles-grid) .style-rows {
+    display: block;
+  }
+  body[data-view="lyrics"]:not(.styles-grid) #style-cats,
+  body[data-view="lyrics"]:not(.styles-grid) #styles-pro,
+  body[data-view="lyrics"]:not(.styles-grid) #styles-more {
+    display: none !important;
+  }
+  body[data-view="lyrics"].styles-grid .cats-back {
+    display: block;
+  }
+}
 /* phones: 8 styles first, then four more per tap */
 .styles-more {
   display: none;
@@ -3727,6 +3791,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
           <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
           <div id="styles" role="group" aria-label="Estilo">
             <div class="style-group-head"><span>Animados</span></div>
+            <div id="style-rows" class="style-rows"></div>
+            <button type="button" id="cats-back" class="btn-link cats-back">← Volver a las categorías</button>
             <div id="style-cats" class="chips style-cats" role="group" aria-label="Categorías de estilos"></div>
             <p class="karaoke-only">Estilos de karaoke · la letra se pinta mientras se canta</p>
             <div id="styles-pro" class="styles"></div>
@@ -13993,7 +14059,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   var shownCount = 8; // var: chooseStyle may run before this line
   var currentCat = "todos";
   function applyMore() {
-    const all = [...document.querySelectorAll("#styles-pro button:not(.kara-only)")];
+    const all = [...document.querySelectorAll("#styles-pro > button:not(.kara-only)")];
     const listed = all.filter((b) => !b.classList.contains("cat-off"));
     let hidden = 0;
     listed.forEach((b, i) => {
@@ -14046,7 +14112,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     updateCenterBtn();
     needsSnap = true;
   }
-  WM.Themes.list.forEach((t) => {
+  function styleButton(t) {
     const b = document.createElement("button");
     b.dataset.style = t.id;
     if (t.karaokeOnly) b.classList.add("kara-only");
@@ -14054,10 +14120,30 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
     b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
     b.onclick = () => chooseStyle(t.id);
-    $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(b);
     if (t.kind === "motion") proThumbs.push({ canvas: b.querySelector("canvas"), preset: WM.Presets.get(t.preset) });
-  });
+    return b;
+  }
+  WM.Themes.list.forEach((t) => $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(styleButton(t)));
   showCat("todos");
+  // phones: a sliding row per category; "Ver todo" opens that category as a grid
+  STYLE_CATS.filter(([, , ids]) => ids).forEach(([key, label, ids]) => {
+    const head = document.createElement("div");
+    head.className = "style-row-head";
+    head.innerHTML = `<span>${label}</span><button type="button">Ver todo ›</button>`;
+    head.querySelector("button").onclick = () => {
+      document.body.classList.add("styles-grid");
+      showCat(key);
+    };
+    const row = document.createElement("div");
+    row.className = "style-row styles";
+    ids.forEach((id) => row.appendChild(styleButton(WM.Themes.get(id))));
+    $("style-rows").append(head, row);
+  });
+  $("cats-back").onclick = () => {
+    document.body.classList.remove("styles-grid");
+    showCat("todos");
+    $("style-rows").scrollIntoView({ block: "nearest" });
+  };
   WM.Presets.loadFonts();
   function paintSpotifyThumb(id) {
     const p = WM.Themes.spotifyPalette(id);

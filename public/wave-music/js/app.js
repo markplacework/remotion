@@ -1708,7 +1708,7 @@
   var shownCount = 8; // var: chooseStyle may run before this line
   var currentCat = "todos";
   function applyMore() {
-    const all = [...document.querySelectorAll("#styles-pro button:not(.kara-only)")];
+    const all = [...document.querySelectorAll("#styles-pro > button:not(.kara-only)")];
     const listed = all.filter((b) => !b.classList.contains("cat-off"));
     let hidden = 0;
     listed.forEach((b, i) => {
@@ -1761,7 +1761,7 @@
     updateCenterBtn();
     needsSnap = true;
   }
-  WM.Themes.list.forEach((t) => {
+  function styleButton(t) {
     const b = document.createElement("button");
     b.dataset.style = t.id;
     if (t.karaokeOnly) b.classList.add("kara-only");
@@ -1769,10 +1769,30 @@
     const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
     b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
     b.onclick = () => chooseStyle(t.id);
-    $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(b);
     if (t.kind === "motion") proThumbs.push({ canvas: b.querySelector("canvas"), preset: WM.Presets.get(t.preset) });
-  });
+    return b;
+  }
+  WM.Themes.list.forEach((t) => $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(styleButton(t)));
   showCat("todos");
+  // phones: a sliding row per category; "Ver todo" opens that category as a grid
+  STYLE_CATS.filter(([, , ids]) => ids).forEach(([key, label, ids]) => {
+    const head = document.createElement("div");
+    head.className = "style-row-head";
+    head.innerHTML = `<span>${label}</span><button type="button">Ver todo ›</button>`;
+    head.querySelector("button").onclick = () => {
+      document.body.classList.add("styles-grid");
+      showCat(key);
+    };
+    const row = document.createElement("div");
+    row.className = "style-row styles";
+    ids.forEach((id) => row.appendChild(styleButton(WM.Themes.get(id))));
+    $("style-rows").append(head, row);
+  });
+  $("cats-back").onclick = () => {
+    document.body.classList.remove("styles-grid");
+    showCat("todos");
+    $("style-rows").scrollIntoView({ block: "nearest" });
+  };
   WM.Presets.loadFonts();
   function paintSpotifyThumb(id) {
     const p = WM.Themes.spotifyPalette(id);

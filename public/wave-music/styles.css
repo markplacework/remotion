@@ -2236,6 +2236,70 @@ body[data-view="karaoke"] .style-cats {
 body:not([data-view="karaoke"]) #styles button.cat-off {
   display: none;
 }
+/* phones: one sliding row per category (like Canva / CapCut) */
+.style-rows,
+.cats-back {
+  display: none;
+}
+.style-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 14px 0 8px;
+}
+.style-row-head span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.style-row-head button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.styles.style-row {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 26%;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 0 16px 4px;
+  scroll-padding: 0 16px;
+}
+.style-row::-webkit-scrollbar {
+  display: none;
+}
+.style-row button {
+  scroll-snap-align: start;
+}
+.cats-back {
+  margin: 6px 0 10px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent-2);
+  text-decoration: none;
+}
+@media (max-width: 640px) {
+  body[data-view="lyrics"]:not(.styles-grid) .style-rows {
+    display: block;
+  }
+  body[data-view="lyrics"]:not(.styles-grid) #style-cats,
+  body[data-view="lyrics"]:not(.styles-grid) #styles-pro,
+  body[data-view="lyrics"]:not(.styles-grid) #styles-more {
+    display: none !important;
+  }
+  body[data-view="lyrics"].styles-grid .cats-back {
+    display: block;
+  }
+}
 /* phones: 8 styles first, then four more per tap */
 .styles-more {
   display: none;
