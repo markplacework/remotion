@@ -1444,7 +1444,7 @@
     };
     // colour combinations: main colour + highlight
     const COMBOS = [
-      { id: "", label: "Del estilo", ink: null, accent: null },
+      { id: "", label: "Colores originales del estilo", ink: null, accent: null },
       { id: "cian", label: "Blanco y cian", ink: "#ffffff", accent: "#22d3f5" },
       { id: "rosa", label: "Blanco y rosa", ink: "#ffffff", accent: "#ff3d8b" },
       { id: "amarillo", label: "Blanco y amarillo", ink: "#ffffff", accent: "#ffe600" },
@@ -1463,7 +1463,7 @@
       b.title = c.label;
       b.setAttribute("aria-label", c.label);
       b.dataset.combo = c.id;
-      b.innerHTML = c.ink ? `<i style="background:${c.ink}"></i><i style="background:${c.accent}"></i>` : `<span>Estilo</span>`;
+      b.innerHTML = c.ink ? `<i style="background:${c.ink}"></i><i style="background:${c.accent}"></i>` : `<span>Original</span>`;
       b.onclick = () => {
         preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
         combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
