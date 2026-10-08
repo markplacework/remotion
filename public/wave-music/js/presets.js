@@ -850,6 +850,9 @@
     if (fl) g.filter = filter;
     g.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
     if (fl) g.filter = "none";
+    // the look the user picked, only on their own footage
+    const bg = WM.BgVideo;
+    if (bg && (v === bg.el || v === bg.img)) bg.paintFilter(g, W, H);
     return true;
   }
   const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);

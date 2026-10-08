@@ -23,13 +23,21 @@
       if (api.kind === "image") return api.enabled && img.complete && img.naturalWidth > 0;
       return api.enabled && el.readyState >= 2 && el.videoWidth > 0;
     },
-    async load(file) {
+    img,
+    // look applied over the footage (see FILTERS)
+    filter: "none",
+    /** The bundled sample video. */
+    loadSample() {
+      return api.load(null, WM.DEMO_BG);
+    },
+    async load(file, sample) {
       api.clear();
-      url = URL.createObjectURL(file);
-      api.name = file.name;
-      api.kind = /^image\//.test(file.type) ? "image" : "video";
+      url = file ? URL.createObjectURL(file) : null;
+      api.name = file ? file.name : sample.name;
+      api.kind = file && /^image\//.test(file.type) ? "image" : "video";
+      const src = url || sample.src;
       if (api.kind === "image") {
-        img.src = url;
+        img.src = src;
         try {
           await img.decode();
         } catch {
@@ -39,7 +47,7 @@
         await new Promise((res, rej) => {
           el.onloadeddata = res;
           el.onerror = () => rej(new Error("No se pudo leer ese video"));
-          el.src = url;
+          el.src = src;
         });
       }
       api.enabled = true;
@@ -71,6 +79,37 @@
       }
       return api.ready ? el : null;
     },
+  };
+  // Filters are colour layers blended over the footage (not canvas
+  // filters), so they look the same in every browser, Safari included.
+  const FILTERS = {
+    none: { label: "Original", layers: [] },
+    bn: { label: "B/N", layers: [["saturation", "#808080", 1], ["soft-light", "#000", 0.25]] },
+    calido: { label: "Cálido", layers: [["soft-light", "#ff8a2a", 0.6]] },
+    frio: { label: "Frío", layers: [["soft-light", "#2a7bff", 0.6]] },
+    vintage: { label: "Vintage", layers: [["saturation", "#808080", 0.45], ["soft-light", "#ffb45a", 0.55], ["source-over", "#3a2410", 0.12]] },
+    drama: { label: "Dramático", layers: [["soft-light", "#000", 0.55], ["saturation", "#ff2a2a", 0.15]] },
+    oscuro: { label: "Oscuro", layers: [["source-over", "#000", 0.45]] },
+    duotono: { label: "Duotono", layers: [["color", "duo", 0.75]] },
+  };
+  api.FILTERS = FILTERS;
+  /** Paint the chosen filter over a frame of the user's footage. */
+  api.paintFilter = (g, W, H) => {
+    const fl = FILTERS[api.filter];
+    if (!fl || !fl.layers.length) return;
+    g.save();
+    fl.layers.forEach(([op, col, a]) => {
+      g.globalCompositeOperation = op;
+      g.globalAlpha = a;
+      if (col === "duo") {
+        const gr = g.createLinearGradient(0, 0, W, H);
+        gr.addColorStop(0, "#ff2d95");
+        gr.addColorStop(1, "#2d6bff");
+        g.fillStyle = gr;
+      } else g.fillStyle = col;
+      g.fillRect(0, 0, W, H);
+    });
+    g.restore();
   };
   WM.BgVideo = api;
 })((window.WaveMusic = window.WaveMusic || {}));

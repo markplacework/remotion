@@ -30,6 +30,9 @@
     // Test timestamps (seconds), one per line.
     starts: [1.66, 7.44, 11.88, 15.74, 20.82, 28.78],
   };
+  // Sample background for the styles that take a video (a ski run filmed
+  // by the project owner, shrunk to 540x960 for the app).
+  WM.DEMO_BG = { src: "assets/demo-bg.mp4", name: "video-de-ejemplo.mp4" };
   // Captions demo: a 51 s podcast clip (synthetic voices, no third-party
   // rights) and the words our transcription service returned for it, with
   // three slips of the synthetic voice corrected by hand.

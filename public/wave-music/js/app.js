@@ -1304,12 +1304,23 @@
     const lines = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     const order = ["kinetic", "aurora", "karaoke", "couture", "neon", "wordpop"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
+    // Aurora plays over the sample video, like a user's own background
+    const heroVid = document.createElement("video");
+    heroVid.muted = true;
+    heroVid.loop = true;
+    heroVid.playsInline = true;
+    heroVid.preload = "auto";
+    heroVid.src = WM.DEMO_BG.src;
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let shown = -1;
     let last = 0;
     (function loop(now) {
       requestAnimationFrame(loop);
-      if (view !== "home" || document.hidden || now - last < 33) return;
+      if (view !== "home" || document.hidden) {
+        if (!heroVid.paused) heroVid.pause();
+        return;
+      }
+      if (now - last < 33) return;
       last = now;
       const r = c.getBoundingClientRect();
       if (!r.width) return;
@@ -1333,7 +1344,11 @@
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       // keep the lyric clear of TikTok's side icons and caption
       const safe = { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
-      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, meta: { title: "Tu canción", artist: "Artista" } }));
+      const withVid = preset.id === "aurora";
+      if (withVid && heroVid.paused) heroVid.play().catch(() => {});
+      if (!withVid && !heroVid.paused) heroVid.pause();
+      const video = withVid && heroVid.readyState >= 2 ? heroVid : null;
+      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Artista" } }));
       // TikTok's own shade so its white UI reads over light styles
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       const top = g.createLinearGradient(0, 0, 0, H * 0.16);
@@ -1359,7 +1374,34 @@
     const on = WM.BgVideo.enabled;
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
+    $("btn-bgs").hidden = on;
+    $("bgv-filters").hidden = !on;
+    $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
+  Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.filter = id;
+    b.textContent = fl.label;
+    b.onclick = () => {
+      WM.BgVideo.filter = id;
+      updateBgv();
+      needsSnap = true;
+    };
+    $("bgv-filter-list").appendChild(b);
+  });
+  $("btn-bgs").onclick = async () => {
+    $("bgv-name").textContent = "Cargando…";
+    try {
+      await WM.BgVideo.loadSample();
+    } catch (err) {
+      WM.BgVideo.clear();
+      $("bgv-name").textContent = err.message;
+    }
+    updateBgv();
+    needsSnap = true;
+  };
   $("btn-bgv").onclick = () => $("file-bgv").click();
   $("btn-bgi").onclick = () => $("file-bgi").click();
   $("file-bgv").onchange = $("file-bgi").onchange = async (ev) => {
@@ -1382,6 +1424,7 @@
     updateBgv();
     needsSnap = true;
   };
+  updateBgv();
 
   // ---------- texto: tipografía y tamaño (estilos animados) ----------
   {
