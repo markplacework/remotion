@@ -2195,6 +2195,47 @@ body[data-view="captions"] #btn-demo {
   color: var(--faint);
   font-size: 12.5px;
 }
+/* text colour combinations */
+.text-colors {
+  margin: 4px 0 14px;
+}
+.color-combos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.combo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 99px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  cursor: pointer;
+  overflow: hidden;
+}
+.combo i {
+  display: block;
+  width: 16px;
+  height: 34px;
+}
+.combo span {
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.combo[aria-pressed="true"] {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.combo[aria-pressed="true"] span {
+  color: var(--text);
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;
@@ -3548,6 +3589,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
                 <select id="text-font"></select>
               </label>
             </div>
+            <div id="text-colors-field" class="text-colors">
+              <span class="opt-label">Colores del texto</span>
+              <div id="text-colors" class="color-combos" role="group" aria-label="Colores del texto"></div>
+            </div>
             <div class="fields">
               <label id="text-mode-field" class="field grow">
                 <span>Animación del texto</span>
@@ -3559,7 +3604,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             </div>
             <div class="text-size">
               <span class="opt-label">Tamaño del texto</span>
-              <input id="text-size" type="range" min="60" max="130" step="5" value="100" aria-label="Tamaño del texto" />
+              <input id="text-size" type="range" min="50" max="150" step="5" value="100" aria-label="Tamaño del texto" />
               <span id="text-size-val" class="text-size-val">100%</span>
             </div>
           </div>
@@ -5536,10 +5581,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },
-    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true },
-    blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } },
+    couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true, colors: false },
+    blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" }, colors: false },
     vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", background: { type: "motion" }, video: true },
-    vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true },
+    vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true, colors: false },
   };
 
   WM.Themes = {
@@ -5729,6 +5774,8 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       // the user's text size (1 = the style's own) and typeface (null = the style's)
       textScale: o.textScale || 1,
       font: o.font || null,
+      // the user's colour combination { ink, accent } (null = the style's)
+      colors: o.colors || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
@@ -5799,6 +5846,12 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
   // draw wrapper at the bottom sets it for the frame being drawn.
   let lyricFamily = null;
   const fam = (d) => lyricFamily || d;
+  // A colour combination picked by the user: the lyric's main colour (ink)
+  // and its highlight (accent); null keeps the style's own.
+  let lyricInk = null;
+  let lyricAcc = null;
+  const ink = (d) => lyricInk || d;
+  const acc = (d) => lyricAcc || d;
   /** Move and scale the lyric layer: where it was dragged, at the chosen size. */
   function place(g, f) {
     g.translate(f.shift.x, f.shift.y);
@@ -5832,7 +5885,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const L = f.lines[f.current];
-      const accent = KINETIC_COLORS[Math.max(0, f.current) % KINETIC_COLORS.length];
+      const accent = acc(KINETIC_COLORS[Math.max(0, f.current) % KINETIC_COLORS.length]);
       const pulse = f.pulse();
 
       // background: near-black with a slow colour bloom that breathes on the beat
@@ -5953,10 +6006,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
           // alternate rows go hollow: contrast without another colour
           g.shadowBlur = 0;
           g.lineWidth = Math.max(1, u * 3.5);
-          g.strokeStyle = "#ffffff";
+          g.strokeStyle = ink("#ffffff");
           g.strokeText(r.label, 0, 0);
         } else {
-          g.fillStyle = "#ffffff";
+          g.fillStyle = ink("#ffffff");
           g.fillText(r.label, 0, 0);
         }
         g.restore();
@@ -6207,7 +6260,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             g.globalAlpha = (out ? alphaMul * alphaMul : sharp * sharp) * 1;
             g.shadowColor = "rgba(255,220,180,0.35)";
             g.shadowBlur = u * 18;
-            g.fillStyle = w.hero ? "#ffd9a8" : "#f6efe4";
+            g.fillStyle = w.hero ? acc("#ffd9a8") : ink("#f6efe4");
             g.fillText(w.label, x, y);
             g.shadowBlur = 0;
             g.globalAlpha = 1;
@@ -6362,7 +6415,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
         const size = r.size * k;
         const rowY = y + size / 2;
         y += size + gap * k;
-        const col = NEON[(line.index + i) % 2];
+        const col = acc(NEON[(line.index + i) % 2]);
         let alpha = 1;
         let glitch = 0;
         let scale = 1;
@@ -6399,7 +6452,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
         g.strokeStyle = col;
         g.strokeText(r.label, 0, 0);
         g.shadowBlur = u * 14 * glow;
-        g.fillStyle = "#ffffff";
+        g.fillStyle = ink("#ffffff");
         if (glitch > 0.05) {
           // horizontal slice displacement
           for (let s = 0; s < 4; s++) {
@@ -6549,7 +6602,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             dy = lh * 1.4 * (1 - ease.out(a));
           }
           g.font = fontOf(w);
-          g.fillStyle = w.hero ? MIN.accent : MIN.ink;
+          g.fillStyle = w.hero ? acc(MIN.accent) : MIN.ink;
           g.fillText(w.label, x0 + it.x, base + dy);
         });
         g.restore();
@@ -6716,9 +6769,9 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       g.textBaseline = "middle";
       g.textAlign = "left";
       const grad = g.createLinearGradient(-safe.w / 2, 0, safe.w / 2, 0);
-      grad.addColorStop(0, "#ff3d8b");
-      grad.addColorStop(0.5, "#ff6a5c");
-      grad.addColorStop(1, "#ffb43d");
+      grad.addColorStop(0, acc("#ff3d8b"));
+      grad.addColorStop(0.5, acc("#ff6a5c"));
+      grad.addColorStop(1, lyricAcc ? ink("#ffffff") : "#ffb43d");
       for (let i = Math.max(0, Math.floor(pos) - 1); i <= Math.min(lines.length - 1, Math.ceil(pos) + 2); i++) {
         const s = i - pos;
         if (s < -1.6 || s > 2.1) continue;
@@ -6753,7 +6806,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             g.lineWidth = size * 0.1;
             g.strokeStyle = "rgba(10,4,20,0.55)";
             g.strokeText(it.w.label, 0, 0);
-            g.fillStyle = "rgba(255,255,255,0.38)";
+            g.fillStyle = hexA(ink("#ffffff"), 0.38);
             g.fillText(it.w.label, 0, 0);
             if (p > 0) {
               g.save();
@@ -6766,7 +6819,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
               g.translate(-x, 0);
               g.fillStyle = grad;
               if (i === f.current) {
-                g.shadowColor = "rgba(255,61,139,0.85)";
+                g.shadowColor = hexA(acc("#ff3d8b"), 0.85);
                 g.shadowBlur = size * 0.35;
               }
               g.fillText(it.w.label, x, 0);
@@ -6804,11 +6857,11 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       g.globalAlpha = alpha * fade;
       g.translate(x, y + r * (1 - squash));
       g.scale(1 / squash ** 0.5, squash);
-      g.shadowColor = "#ff3d8b";
+      g.shadowColor = acc("#ff3d8b");
       g.shadowBlur = size * 0.4;
       const ball = g.createRadialGradient(-r * 0.35, -r * 0.35, 0, 0, 0, r);
       ball.addColorStop(0, "#ffffff");
-      ball.addColorStop(1, "#ffb0cf");
+      ball.addColorStop(1, acc("#ffb0cf"));
       g.fillStyle = ball;
       g.beginPath();
       g.arc(0, 0, r, 0, Math.PI * 2);
@@ -6884,7 +6937,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       const u = safe.w / 825;
       const pulse = f.pulse();
       const L = f.lines[f.current];
-      const accent = POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length];
+      const accent = acc(POP_ACCENTS[Math.max(0, f.current) % POP_ACCENTS.length]);
       g.fillStyle = "#0b0b0f";
       g.fillRect(0, 0, W, H);
       const bx = W * (0.5 + 0.22 * Math.sin(t * 0.23));
@@ -7010,7 +7063,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
           g.strokeText(label, 0, 0);
           g.shadowColor = "transparent";
         }
-        g.fillStyle = isAct ? "#0b0b0f" : "#ffffff";
+        g.fillStyle = isAct ? "#0b0b0f" : ink("#ffffff");
         g.fillText(label, 0, 0);
         g.restore();
       });
@@ -7302,7 +7355,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
               txt = txt.slice(0, n);
             }
             x = x0 + it.x;
-            g.fillStyle = NOTE.ink;
+            g.fillStyle = ink(NOTE.ink);
             g.fillText(txt, x, y);
             if (typing) cursor = { x: x + g.measureText(txt).width, y };
           });
@@ -7333,13 +7386,13 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       let typing = false;
       if (line && line.words.length) typing = t < line.words[line.words.length - 1].t1 + 0.15;
       if (!typing && Math.floor(t * 1.9) % 2) return;
-      g.fillStyle = NOTE.accent;
+      g.fillStyle = acc(NOTE.accent);
       rrect(g, c.x + u * 3, c.y - body * 0.86, u * 4.5, body * 1.12, u * 2);
       g.fill();
     },
     nav(g, f, u, x0, x1, y) {
       g.save();
-      g.strokeStyle = g.fillStyle = NOTE.accent;
+      g.strokeStyle = g.fillStyle = acc(NOTE.accent);
       g.lineCap = g.lineJoin = "round";
       g.lineWidth = u * 6;
       g.beginPath();
@@ -7384,7 +7437,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     },
     toolbar(g, u, x0, x1, y) {
       g.save();
-      g.strokeStyle = g.fillStyle = NOTE.accent;
+      g.strokeStyle = g.fillStyle = acc(NOTE.accent);
       g.lineCap = g.lineJoin = "round";
       g.lineWidth = u * 4;
       const n = 5;
@@ -7607,10 +7660,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
             const y = ty + ri * lh + lh / 2 + dy;
             g.globalAlpha = alphaMul * lerp(0.32, 1, ease.out(p));
             if (p > 0 && p < 1) {
-              g.shadowColor = "rgba(255,255,255,0.8)";
+              g.shadowColor = hexA(acc("#ffffff"), 0.8);
               g.shadowBlur = size * 0.4 * Math.sin(Math.PI * p);
             } else g.shadowBlur = 0;
-            g.fillStyle = "#ffffff";
+            g.fillStyle = p > 0 && p < 1 && lyricAcc ? lyricAcc : ink("#ffffff");
             g.fillText(it.w.label, hx + it.x, y - u * 4 * Math.sin(Math.PI * p));
           });
         });
@@ -7987,13 +8040,13 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
         draw(-split, "rgba(255,40,60,0.75)");
         draw(split, "rgba(40,140,255,0.75)");
         g.globalCompositeOperation = "source-over";
-        draw(0, "#fffbe8");
+        draw(0, ink("#fffbe8"));
         g.restore();
         // blinking block cursor while the line is being sung
         const last = rows[rows.length - 1];
         if (last && t < L.words[L.words.length - 1].t1 + 0.6 && Math.floor(t * 2.4) % 2 === 0) {
           const y = cy + ((rows.length - 1) / 2) * lh;
-          g.fillStyle = "#fffbe8";
+          g.fillStyle = acc("#fffbe8");
           g.fillRect(safe.x + (safe.w - last.width) / 2 + last.width + size * 0.12, y - size * 0.32, size * 0.42, size * 0.6);
         }
         g.restore();
@@ -8409,10 +8462,12 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     const draw = p.draw;
     p.draw = function (g, f) {
       lyricFamily = f.font || null;
+      lyricInk = (f.colors && f.colors.ink) || null;
+      lyricAcc = (f.colors && f.colors.accent) || null;
       try {
         return draw.call(this, g, f);
       } finally {
-        lyricFamily = null;
+        lyricFamily = lyricInk = lyricAcc = null;
       }
     };
   });
@@ -8811,6 +8866,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       this.guides = null; // { x: bool, y: bool } while dragging
       this.textScale = 1;
       this.font = null; // CSS font-family, or null for the style's own
+      this.colors = null; // { ink, accent }, or null for the style's own
       this.timeline = null;
       this.framing = layout;
       new ResizeObserver(() => this.fit()).observe(host);
@@ -9015,7 +9071,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       }
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: this.theme.video ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font, colors: this.theme.colors === false ? null : this.colors }));
       if (this.guides) this.drawGuides(g, L);
     }
 
@@ -9631,6 +9687,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       this.offset = style.offset || null;
       this.textScale = style.textScale || 1;
       this.font = style.font || null;
+      this.colors = theme.colors === false ? null : style.colors || null;
       this.video = !!theme.video && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
       this.canvas = document.createElement("canvas");
@@ -9641,7 +9698,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font, colors: this.colors }));
       return this.canvas;
     }
     dispose() {
@@ -10914,6 +10971,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
           offset: preview.draggable ? preview.offset : null,
           textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
           font: preview.theme.kind === "motion" ? preview.font : null,
+          colors: preview.theme.kind === "motion" ? preview.colors : null,
         },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
@@ -11253,6 +11311,36 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
       preview.linesFor = null; // re-time the words
       needsSnap = true;
     };
+    // colour combinations: main colour + highlight
+    const COMBOS = [
+      { id: "", label: "Del estilo", ink: null, accent: null },
+      { id: "cian", label: "Blanco y cian", ink: "#ffffff", accent: "#22d3f5" },
+      { id: "rosa", label: "Blanco y rosa", ink: "#ffffff", accent: "#ff3d8b" },
+      { id: "amarillo", label: "Blanco y amarillo", ink: "#ffffff", accent: "#ffe600" },
+      { id: "lima", label: "Blanco y verde lima", ink: "#ffffff", accent: "#b8ff3d" },
+      { id: "violeta", label: "Blanco y violeta", ink: "#ffffff", accent: "#a875ff" },
+      { id: "rojo", label: "Blanco y rojo", ink: "#ffffff", accent: "#ff2a2a" },
+      { id: "naranja", label: "Crema y naranja", ink: "#fff3e0", accent: "#ff7a1a" },
+      { id: "dorado", label: "Dorado", ink: "#fff4d6", accent: "#ffc94d" },
+      { id: "pastel", label: "Rosa y celeste", ink: "#ffd6ea", accent: "#7fd8ff" },
+    ];
+    const combos = $("text-colors");
+    COMBOS.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "combo";
+      b.title = c.label;
+      b.setAttribute("aria-label", c.label);
+      b.dataset.combo = c.id;
+      b.innerHTML = c.ink ? `<i style="background:${c.ink}"></i><i style="background:${c.accent}"></i>` : `<span>Estilo</span>`;
+      b.onclick = () => {
+        preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
+        combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+        needsSnap = true;
+      };
+      b.setAttribute("aria-pressed", !c.id);
+      combos.appendChild(b);
+    });
     const size = $("text-size");
     size.oninput = () => {
       preview.textScale = Number(size.value) / 100;
@@ -11276,6 +11364,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
     const th = WM.Themes.get(id);
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
+    $("text-colors-field").hidden = th.colors === false;
     preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred

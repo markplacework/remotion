@@ -1102,6 +1102,7 @@
           offset: preview.draggable ? preview.offset : null,
           textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
           font: preview.theme.kind === "motion" ? preview.font : null,
+          colors: preview.theme.kind === "motion" ? preview.colors : null,
         },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
@@ -1441,6 +1442,36 @@
       preview.linesFor = null; // re-time the words
       needsSnap = true;
     };
+    // colour combinations: main colour + highlight
+    const COMBOS = [
+      { id: "", label: "Del estilo", ink: null, accent: null },
+      { id: "cian", label: "Blanco y cian", ink: "#ffffff", accent: "#22d3f5" },
+      { id: "rosa", label: "Blanco y rosa", ink: "#ffffff", accent: "#ff3d8b" },
+      { id: "amarillo", label: "Blanco y amarillo", ink: "#ffffff", accent: "#ffe600" },
+      { id: "lima", label: "Blanco y verde lima", ink: "#ffffff", accent: "#b8ff3d" },
+      { id: "violeta", label: "Blanco y violeta", ink: "#ffffff", accent: "#a875ff" },
+      { id: "rojo", label: "Blanco y rojo", ink: "#ffffff", accent: "#ff2a2a" },
+      { id: "naranja", label: "Crema y naranja", ink: "#fff3e0", accent: "#ff7a1a" },
+      { id: "dorado", label: "Dorado", ink: "#fff4d6", accent: "#ffc94d" },
+      { id: "pastel", label: "Rosa y celeste", ink: "#ffd6ea", accent: "#7fd8ff" },
+    ];
+    const combos = $("text-colors");
+    COMBOS.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "combo";
+      b.title = c.label;
+      b.setAttribute("aria-label", c.label);
+      b.dataset.combo = c.id;
+      b.innerHTML = c.ink ? `<i style="background:${c.ink}"></i><i style="background:${c.accent}"></i>` : `<span>Estilo</span>`;
+      b.onclick = () => {
+        preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
+        combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+        needsSnap = true;
+      };
+      b.setAttribute("aria-pressed", !c.id);
+      combos.appendChild(b);
+    });
     const size = $("text-size");
     size.oninput = () => {
       preview.textScale = Number(size.value) / 100;
@@ -1464,6 +1495,7 @@
     const th = WM.Themes.get(id);
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
+    $("text-colors-field").hidden = th.colors === false;
     preview.font = null;
     preview.setTheme(id);
     // each style has its own composition: start it centred

@@ -173,6 +173,8 @@
       // the user's text size (1 = the style's own) and typeface (null = the style's)
       textScale: o.textScale || 1,
       font: o.font || null,
+      // the user's colour combination { ink, accent } (null = the style's)
+      colors: o.colors || null,
       meta: o.meta || {},
       energy: (at = audioT) => (track ? sample(track.energy, track.rate, at) : 0.5),
       // the song's average loudness, to tell its loud parts from the rest
