@@ -1445,6 +1445,131 @@
   };
   updateBgv();
 
+  // ---------- biblioteca gratis (Pixabay, por nuestro servicio de Modal) ----------
+  {
+    const lib = { kind: "video", q: "", page: 1, total: 0, busy: false };
+    const SUGG = ["Ciudad de noche", "Playa", "Lluvia", "Neón", "Atardecer", "Naturaleza", "Fiesta", "Abstracto"];
+    // the media service sits next to the sync service, same token
+    const mediaUrl = (u) => u.replace(/-syncer-web(\.modal\.run)/, "-media$1").replace(/\/+$/, "");
+    const fmtDur = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+    SUGG.forEach((w) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = w;
+      b.onclick = () => {
+        $("lib-q").value = w;
+        search(true);
+      };
+      $("lib-sugg").appendChild(b);
+    });
+    async function call(path) {
+      let creds = await modalCreds();
+      for (let attempt = 0; ; attempt++) {
+        let res;
+        try {
+          res = await fetch(mediaUrl(creds.url) + path, { headers: creds.token ? { Authorization: "Bearer " + creds.token } : {} });
+        } catch {
+          throw new Error("No se pudo conectar con la biblioteca");
+        }
+        if (res.status === 401 && !attempt) {
+          WM.ModalSync.setConfig(creds.url, "");
+          creds = await modalCreds("El token no es válido. Revisalo y probá de nuevo.");
+          continue;
+        }
+        if (!res.ok) {
+          let msg = "";
+          try {
+            msg = (await res.json()).detail;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg || "La biblioteca respondió con un error (" + res.status + ")");
+        }
+        return res;
+      }
+    }
+    async function search(fresh) {
+      if (lib.busy) return;
+      if (fresh) {
+        lib.page = 1;
+        lib.q = $("lib-q").value.trim();
+        $("lib-grid").innerHTML = "";
+      }
+      lib.busy = true;
+      $("lib-more").hidden = true;
+      $("lib-msg").textContent = "Buscando…";
+      try {
+        const res = await call(`/search?kind=${lib.kind}&page=${lib.page}&q=${encodeURIComponent(lib.q)}`);
+        const data = await res.json();
+        lib.total = data.total;
+        data.items.forEach(addItem);
+        const shown = $("lib-grid").children.length;
+        $("lib-msg").textContent = shown ? "" : "No encontramos nada con esa búsqueda. Probá con otra palabra.";
+        $("lib-more").hidden = !(shown && shown < lib.total && lib.page < 10);
+      } catch (e) {
+        if (e.code !== "cancelled") $("lib-msg").textContent = e.message;
+        else $("lib-msg").textContent = "";
+      } finally {
+        lib.busy = false;
+      }
+    }
+    function addItem(it) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "lib-item";
+      b.title = (it.kind === "video" ? "Video" : "Foto") + " de " + it.user + " en Pixabay";
+      b.innerHTML = `<img loading="lazy" alt="" src="${it.thumb}" /><span class="lib-user"></span>${it.kind === "video" ? `<span class="lib-dur">${fmtDur(it.duration)}</span>` : ""}`;
+      b.querySelector(".lib-user").textContent = it.user;
+      b.onclick = () => pick(it, b);
+      $("lib-grid").appendChild(b);
+    }
+    async function pick(it, b) {
+      if (b.classList.contains("loading")) return;
+      b.classList.add("loading");
+      try {
+        const res = await call("/file?url=" + encodeURIComponent(it.src));
+        const blob = await res.blob();
+        const ext = it.kind === "video" ? "mp4" : (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+        const type = blob.type || (it.kind === "video" ? "video/mp4" : "image/jpeg");
+        await WM.BgVideo.load(new File([blob], `pixabay-${it.user}-${it.id}.${ext}`, { type }));
+        updateBgv();
+        needsSnap = true;
+        $("lib").hidden = true;
+        toast((it.kind === "video" ? "Video" : "Foto") + " de " + it.user + " (Pixabay) como fondo");
+      } catch (e) {
+        if (e.code !== "cancelled") toast(e.message);
+      } finally {
+        b.classList.remove("loading");
+      }
+    }
+    document.querySelectorAll(".lib-tabs .chip").forEach((t) => {
+      t.onclick = () => {
+        lib.kind = t.dataset.kind;
+        document.querySelectorAll(".lib-tabs .chip").forEach((x) => x.setAttribute("aria-pressed", x === t));
+        search(true);
+      };
+    });
+    $("lib-form").onsubmit = (ev) => {
+      ev.preventDefault();
+      search(true);
+    };
+    $("lib-more").onclick = () => {
+      lib.page++;
+      search(false);
+    };
+    $("lib-close").onclick = () => ($("lib").hidden = true);
+    $("lib").onclick = (ev) => {
+      if (ev.target === $("lib")) $("lib").hidden = true;
+    };
+    $("btn-lib").onclick = () => {
+      $("lib").hidden = false;
+      if (!$("lib-grid").children.length) {
+        if (!$("lib-q").value) $("lib-q").value = "Ciudad de noche";
+        search(true);
+      }
+    };
+  }
+
   // ---------- texto: tipografía y tamaño (estilos animados) ----------
   {
     const sel = $("text-font");
@@ -1571,6 +1696,7 @@
   }
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("lib").hidden && $("modalcfg").hidden && ev.key === "Escape") return ($("lib").hidden = true);
     if (!$("full").hidden && ev.key === "Escape") return closeFull();
     if (!$("export").hidden) {
       if (ev.key === "Escape" && !exportCtl) closeExport();

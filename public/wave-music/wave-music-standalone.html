@@ -2195,6 +2195,172 @@ body[data-view="captions"] #btn-demo {
   color: var(--faint);
   font-size: 12.5px;
 }
+/* free stock library (Pixabay) */
+.bgv-lib {
+  margin-top: 10px;
+  width: 100%;
+}
+.lib-card {
+  width: min(100%, 760px);
+  height: min(86vh, 820px);
+}
+.lib-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.lib-x {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lib-search {
+  display: flex;
+  gap: 8px;
+}
+.lib-search input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 99px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+}
+.lib-search .btn {
+  height: 40px;
+}
+.lib-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.lib-tabs {
+  display: flex;
+  gap: 6px;
+}
+.lib-sugg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lib-sugg button {
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.lib-sugg button:hover {
+  color: var(--text);
+}
+.lib-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.lib-item {
+  position: relative;
+  /* 9:16 tile (padding keeps its height inside the scrolling grid) */
+  height: 0;
+  padding: 0 0 177.78% !important;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.lib-item img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s;
+}
+.lib-item:hover img {
+  transform: scale(1.04);
+}
+.lib-item .lib-dur {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.lib-item .lib-user {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 6px 8px 14px;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
+  color: #fff;
+  font-size: 11px;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.lib-item:hover .lib-user {
+  opacity: 1;
+}
+.lib-item.loading::after {
+  content: "Cargando…";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.lib-msg:empty {
+  display: none;
+}
+.lib-more {
+  align-self: center;
+}
+.lib-credit {
+  margin: 0;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.lib-credit a {
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .lib-card {
+    height: 92vh;
+    padding: 16px;
+  }
+  .lib-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;
@@ -3531,6 +3697,10 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
               <button id="btn-bgi" class="btn btn-ghost">Subir imagen</button>
               <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
             </div>
+            <button id="btn-lib" class="btn btn-ghost bgv-lib">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              Buscar videos y fotos gratis
+            </button>
             <button id="btn-bgs" class="btn-link bgv-sample">Probar con un video de ejemplo</button>
             <span id="bgv-name" class="bgv-name"></span>
             <div id="bgv-filters" class="bgv-filters" hidden>
@@ -3680,6 +3850,33 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
         <span id="full-cur" class="time">00:00</span>
         <input id="full-scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
         <span id="full-dur" class="time">00:00</span>
+      </div>
+    </div>
+
+    <div id="lib" class="export" hidden>
+      <div class="export-card lib-card" role="dialog" aria-modal="true" aria-labelledby="lib-title">
+        <div class="lib-head">
+          <div class="export-head">
+            <h3 id="lib-title">Biblioteca gratis</h3>
+            <span class="export-spec">Videos y fotos libres de derechos · se pueden usar en tus videos</span>
+          </div>
+          <button id="lib-close" class="lib-x" aria-label="Cerrar">×</button>
+        </div>
+        <form id="lib-form" class="lib-search">
+          <input id="lib-q" type="search" placeholder="Buscá: playa, ciudad de noche, lluvia…" autocomplete="off" />
+          <button class="btn btn-primary" type="submit">Buscar</button>
+        </form>
+        <div class="lib-bar">
+          <div class="lib-tabs" role="tablist">
+            <button type="button" class="chip" data-kind="video" aria-pressed="true">Videos</button>
+            <button type="button" class="chip" data-kind="photo" aria-pressed="false">Fotos</button>
+          </div>
+          <div id="lib-sugg" class="lib-sugg"></div>
+        </div>
+        <div id="lib-grid" class="lib-grid" aria-live="polite"></div>
+        <p id="lib-msg" class="export-note lib-msg"></p>
+        <button id="lib-more" class="btn btn-ghost lib-more" hidden>Ver más</button>
+        <p class="lib-credit">Contenido de <a href="https://pixabay.com/" target="_blank" rel="noopener">Pixabay</a></p>
       </div>
     </div>
 
@@ -11270,6 +11467,131 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
   };
   updateBgv();
 
+  // ---------- biblioteca gratis (Pixabay, por nuestro servicio de Modal) ----------
+  {
+    const lib = { kind: "video", q: "", page: 1, total: 0, busy: false };
+    const SUGG = ["Ciudad de noche", "Playa", "Lluvia", "Neón", "Atardecer", "Naturaleza", "Fiesta", "Abstracto"];
+    // the media service sits next to the sync service, same token
+    const mediaUrl = (u) => u.replace(/-syncer-web(\.modal\.run)/, "-media$1").replace(/\/+$/, "");
+    const fmtDur = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+    SUGG.forEach((w) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = w;
+      b.onclick = () => {
+        $("lib-q").value = w;
+        search(true);
+      };
+      $("lib-sugg").appendChild(b);
+    });
+    async function call(path) {
+      let creds = await modalCreds();
+      for (let attempt = 0; ; attempt++) {
+        let res;
+        try {
+          res = await fetch(mediaUrl(creds.url) + path, { headers: creds.token ? { Authorization: "Bearer " + creds.token } : {} });
+        } catch {
+          throw new Error("No se pudo conectar con la biblioteca");
+        }
+        if (res.status === 401 && !attempt) {
+          WM.ModalSync.setConfig(creds.url, "");
+          creds = await modalCreds("El token no es válido. Revisalo y probá de nuevo.");
+          continue;
+        }
+        if (!res.ok) {
+          let msg = "";
+          try {
+            msg = (await res.json()).detail;
+          } catch {
+            /* ignore */
+          }
+          throw new Error(msg || "La biblioteca respondió con un error (" + res.status + ")");
+        }
+        return res;
+      }
+    }
+    async function search(fresh) {
+      if (lib.busy) return;
+      if (fresh) {
+        lib.page = 1;
+        lib.q = $("lib-q").value.trim();
+        $("lib-grid").innerHTML = "";
+      }
+      lib.busy = true;
+      $("lib-more").hidden = true;
+      $("lib-msg").textContent = "Buscando…";
+      try {
+        const res = await call(`/search?kind=${lib.kind}&page=${lib.page}&q=${encodeURIComponent(lib.q)}`);
+        const data = await res.json();
+        lib.total = data.total;
+        data.items.forEach(addItem);
+        const shown = $("lib-grid").children.length;
+        $("lib-msg").textContent = shown ? "" : "No encontramos nada con esa búsqueda. Probá con otra palabra.";
+        $("lib-more").hidden = !(shown && shown < lib.total && lib.page < 10);
+      } catch (e) {
+        if (e.code !== "cancelled") $("lib-msg").textContent = e.message;
+        else $("lib-msg").textContent = "";
+      } finally {
+        lib.busy = false;
+      }
+    }
+    function addItem(it) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "lib-item";
+      b.title = (it.kind === "video" ? "Video" : "Foto") + " de " + it.user + " en Pixabay";
+      b.innerHTML = `<img loading="lazy" alt="" src="${it.thumb}" /><span class="lib-user"></span>${it.kind === "video" ? `<span class="lib-dur">${fmtDur(it.duration)}</span>` : ""}`;
+      b.querySelector(".lib-user").textContent = it.user;
+      b.onclick = () => pick(it, b);
+      $("lib-grid").appendChild(b);
+    }
+    async function pick(it, b) {
+      if (b.classList.contains("loading")) return;
+      b.classList.add("loading");
+      try {
+        const res = await call("/file?url=" + encodeURIComponent(it.src));
+        const blob = await res.blob();
+        const ext = it.kind === "video" ? "mp4" : (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+        const type = blob.type || (it.kind === "video" ? "video/mp4" : "image/jpeg");
+        await WM.BgVideo.load(new File([blob], `pixabay-${it.user}-${it.id}.${ext}`, { type }));
+        updateBgv();
+        needsSnap = true;
+        $("lib").hidden = true;
+        toast((it.kind === "video" ? "Video" : "Foto") + " de " + it.user + " (Pixabay) como fondo");
+      } catch (e) {
+        if (e.code !== "cancelled") toast(e.message);
+      } finally {
+        b.classList.remove("loading");
+      }
+    }
+    document.querySelectorAll(".lib-tabs .chip").forEach((t) => {
+      t.onclick = () => {
+        lib.kind = t.dataset.kind;
+        document.querySelectorAll(".lib-tabs .chip").forEach((x) => x.setAttribute("aria-pressed", x === t));
+        search(true);
+      };
+    });
+    $("lib-form").onsubmit = (ev) => {
+      ev.preventDefault();
+      search(true);
+    };
+    $("lib-more").onclick = () => {
+      lib.page++;
+      search(false);
+    };
+    $("lib-close").onclick = () => ($("lib").hidden = true);
+    $("lib").onclick = (ev) => {
+      if (ev.target === $("lib")) $("lib").hidden = true;
+    };
+    $("btn-lib").onclick = () => {
+      $("lib").hidden = false;
+      if (!$("lib-grid").children.length) {
+        if (!$("lib-q").value) $("lib-q").value = "Ciudad de noche";
+        search(true);
+      }
+    };
+  }
+
   // ---------- texto: tipografía y tamaño (estilos animados) ----------
   {
     const sel = $("text-font");
@@ -11396,6 +11718,7 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
   }
 
   document.addEventListener("keydown", (ev) => {
+    if (!$("lib").hidden && $("modalcfg").hidden && ev.key === "Escape") return ($("lib").hidden = true);
     if (!$("full").hidden && ev.key === "Escape") return closeFull();
     if (!$("export").hidden) {
       if (ev.key === "Escape" && !exportCtl) closeExport();

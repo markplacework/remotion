@@ -22,7 +22,18 @@ POST /stems — Remove Vocal
 and answers with that stem as an MP3. Asking for both stems of the same
 song separates it once (cached on the warm container).
 
-The endpoint requires `Authorization: Bearer <token>`. The token lives in
+Free stock media (Pixabay), on a small CPU container of its own
+(builder-ai92--wave-music-sync-media.modal.run):
+
+GET /search?q=...&kind=video|photo&page=1
+    answers { items: [{ id, kind, thumb, src, w, h, duration, user, page }],
+    total }. Results are cached for 24 h, as Pixabay asks.
+GET /file?url=...
+    streams a Pixabay file back with CORS headers, so the app can use it as
+    a background (and record it) like an uploaded file.
+The Pixabay key lives in the Modal secret "PIXEBAY".
+
+The endpoints require `Authorization: Bearer <token>`. The token lives in
 the Modal secret "wave-music-sync-token" (key WAVE_SYNC_TOKEN), so every
 redeploy keeps it:
     modal secret create wave-music-sync-token WAVE_SYNC_TOKEN=...
@@ -196,3 +207,112 @@ class Syncer:
             return Response(content=mp3, media_type="audio/mpeg")
 
         return api
+
+
+# ---------------------------------------------------------------------------
+# Free stock media: Pixabay search, behind our token (CPU only, no GPU)
+# ---------------------------------------------------------------------------
+media_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi[standard]==0.115.6", "httpx==0.28.1")
+media_cache = modal.Dict.from_name("wave-pixabay-cache", create_if_missing=True)
+CACHE_SECONDS = 24 * 3600
+PIXABAY_HOSTS = ("pixabay.com", "cdn.pixabay.com")
+
+
+def _pixabay_key() -> str:
+    # the secret's variable name is whatever was typed in the dashboard
+    for k, v in os.environ.items():
+        if ("PIXABAY" in k.upper() or "PIXEBAY" in k.upper()) and v:
+            return v
+    raise RuntimeError("Falta la clave de Pixabay")
+
+
+def _items(kind: str, hits: list) -> list:
+    out = []
+    for h in hits:
+        if kind == "video":
+            v = h.get("videos", {})
+            # ~960 px is plenty behind lyrics and loads fast; fall back to whatever exists
+            pick = next((v[q] for q in ("small", "medium", "tiny", "large") if v.get(q, {}).get("url")), None)
+            if not pick:
+                continue
+            out.append({
+                "id": h["id"], "kind": "video", "thumb": pick.get("thumbnail") or v.get("tiny", {}).get("thumbnail", ""),
+                "src": pick["url"], "w": pick.get("width", 0), "h": pick.get("height", 0),
+                "duration": h.get("duration", 0), "user": h.get("user", ""), "page": h.get("pageURL", ""),
+            })
+        else:
+            out.append({
+                "id": h["id"], "kind": "photo", "thumb": h.get("webformatURL", ""), "src": h.get("largeImageURL") or h.get("webformatURL", ""),
+                "w": h.get("imageWidth", 0), "h": h.get("imageHeight", 0), "duration": 0,
+                "user": h.get("user", ""), "page": h.get("pageURL", ""),
+            })
+    # vertical first: they fill a 9:16 frame without cropping
+    out.sort(key=lambda it: 0 if it["h"] > it["w"] else 1)
+    return out
+
+
+@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY")], scaledown_window=60, timeout=120)
+@modal.concurrent(max_inputs=20)
+@modal.asgi_app()
+def media():
+    import time
+    from urllib.parse import urlparse
+
+    import httpx
+    from fastapi import FastAPI, Header, HTTPException, Query, Response
+    from fastapi.middleware.cors import CORSMiddleware
+
+    api = FastAPI(title="Wave Studio media")
+    api.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
+
+    def check(authorization: str):
+        token = os.environ.get("WAVE_SYNC_TOKEN")
+        if token and authorization != f"Bearer {token}":
+            raise HTTPException(401, "Token inválido")
+
+    @api.get("/")
+    def health():
+        return {"ok": True, "service": "wave-media"}
+
+    @api.get("/search")
+    def search(q: str = Query("", max_length=100), kind: str = "video", page: int = 1, authorization: str = Header("")):
+        check(authorization)
+        if kind not in ("video", "photo"):
+            raise HTTPException(400, "kind tiene que ser video o photo")
+        q = q.strip().lower()
+        page = max(1, min(page, 10))
+        ck = f"{kind}|{q}|{page}"
+        hit = media_cache.get(ck)
+        if hit and time.time() - hit["at"] < CACHE_SECONDS:
+            return hit["data"]
+        params = {"key": _pixabay_key(), "q": q, "page": page, "per_page": 30, "safesearch": "true", "lang": "es"}
+        if kind == "photo":
+            params.update(image_type="photo", orientation="vertical")
+            url = "https://pixabay.com/api/"
+        else:
+            url = "https://pixabay.com/api/videos/"
+        r = httpx.get(url, params=params, timeout=20)
+        if r.status_code == 429:
+            raise HTTPException(429, "Demasiadas búsquedas, probá en un minuto")
+        if r.status_code != 200:
+            raise HTTPException(502, f"Pixabay respondió {r.status_code}")
+        body = r.json()
+        data = {"items": _items(kind, body.get("hits", [])), "total": body.get("totalHits", 0)}
+        media_cache[ck] = {"at": time.time(), "data": data}
+        return data
+
+    @api.get("/file")
+    def file(url: str, authorization: str = Header("")):
+        check(authorization)
+        host = urlparse(url).hostname or ""
+        if urlparse(url).scheme != "https" or not any(host == h or host.endswith("." + h) for h in PIXABAY_HOSTS):
+            raise HTTPException(400, "Solo archivos de Pixabay")
+        r = httpx.get(url, timeout=60, follow_redirects=True)
+        if r.status_code != 200:
+            raise HTTPException(502, f"No se pudo bajar el archivo ({r.status_code})")
+        if len(r.content) > 80 * 1024 * 1024:
+            raise HTTPException(413, "El archivo es demasiado grande")
+        return Response(content=r.content, media_type=r.headers.get("content-type", "application/octet-stream"),
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+    return api

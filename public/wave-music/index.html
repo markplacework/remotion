@@ -443,6 +443,10 @@
               <button id="btn-bgi" class="btn btn-ghost">Subir imagen</button>
               <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
             </div>
+            <button id="btn-lib" class="btn btn-ghost bgv-lib">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              Buscar videos y fotos gratis
+            </button>
             <button id="btn-bgs" class="btn-link bgv-sample">Probar con un video de ejemplo</button>
             <span id="bgv-name" class="bgv-name"></span>
             <div id="bgv-filters" class="bgv-filters" hidden>
@@ -592,6 +596,33 @@
         <span id="full-cur" class="time">00:00</span>
         <input id="full-scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
         <span id="full-dur" class="time">00:00</span>
+      </div>
+    </div>
+
+    <div id="lib" class="export" hidden>
+      <div class="export-card lib-card" role="dialog" aria-modal="true" aria-labelledby="lib-title">
+        <div class="lib-head">
+          <div class="export-head">
+            <h3 id="lib-title">Biblioteca gratis</h3>
+            <span class="export-spec">Videos y fotos libres de derechos · se pueden usar en tus videos</span>
+          </div>
+          <button id="lib-close" class="lib-x" aria-label="Cerrar">×</button>
+        </div>
+        <form id="lib-form" class="lib-search">
+          <input id="lib-q" type="search" placeholder="Buscá: playa, ciudad de noche, lluvia…" autocomplete="off" />
+          <button class="btn btn-primary" type="submit">Buscar</button>
+        </form>
+        <div class="lib-bar">
+          <div class="lib-tabs" role="tablist">
+            <button type="button" class="chip" data-kind="video" aria-pressed="true">Videos</button>
+            <button type="button" class="chip" data-kind="photo" aria-pressed="false">Fotos</button>
+          </div>
+          <div id="lib-sugg" class="lib-sugg"></div>
+        </div>
+        <div id="lib-grid" class="lib-grid" aria-live="polite"></div>
+        <p id="lib-msg" class="export-note lib-msg"></p>
+        <button id="lib-more" class="btn btn-ghost lib-more" hidden>Ver más</button>
+        <p class="lib-credit">Contenido de <a href="https://pixabay.com/" target="_blank" rel="noopener">Pixabay</a></p>
       </div>
     </div>
 
