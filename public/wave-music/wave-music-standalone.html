@@ -13625,29 +13625,26 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         $(a.dataset.scroll).scrollIntoView({ behavior: "smooth", block: "start" });
       };
     });
-    // the demo song's verse, two lines per style, so the phone runs through it
-    const VERSE = [
-      "Estoy tratando de decirte que",
-      "Me desespero de esperarte",
-      "Que no salgo a buscarte porque sé",
-      "Que corro el riesgo de encontrarte",
-      "Que me sigo mordiendo noche y día",
-      "Las uñas del rencor",
-      "Que te sigo debiendo todavía",
-      "Una canción de amor",
-    ];
     const LOOP = 5.8;
-    const pairs = [0, 2, 4, 6].map((i) => {
+    // invented lines, two per style, written to fit each one's footage
+    const PHRASES = {
+      karaoke: ["Cantemos esta noche", "Que se escuche tu voz"],
+      aurora: ["Bajo de la montaña", "Y siento que vuelo"],
+      tormenta: ["Las luces de la ciudad", "Me llevan hasta vos"],
+      street: ["Nadie nos para", "Seguimos rodando"],
+    };
+    const pairs = {};
+    Object.entries(PHRASES).forEach(([id, [a1, a2]]) => {
       const TL = {
         entries: [
-          { lineId: "h" + i, text: VERSE[i], start: 0.2, end: 2.9 },
-          { lineId: "h" + (i + 1), text: VERSE[i + 1], start: 2.9, end: 5.6 },
+          { lineId: id + "1", text: a1, start: 0.2, end: 2.9 },
+          { lineId: id + "2", text: a2, start: 2.9, end: 5.6 },
         ],
       };
-      return { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
+      pairs[id] = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     });
     // styles shown over their own sample footage, the way users will use them
-    const order = ["aurora", "karaoke", "tormenta", "broadcast", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["karaoke", "aurora", "tormenta", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
@@ -13714,8 +13711,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       Object.entries(heroVids).forEach(([id, v]) => id !== preset.id && !v.paused && v.pause());
       if (hv.paused) hv.play().catch(() => {});
       const video = hv.readyState >= 2 ? hv : null;
-      const lines = pairs[Math.floor(sec / LOOP) % pairs.length];
-      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Todavía una canción de amor", artist: "Los Rodríguez" } }));
+      const lines = pairs[preset.id];
+      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Wave Studio" } }));
       // TikTok's own shade so its white UI reads over light styles
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       const top = g.createLinearGradient(0, 0, 0, H * 0.16);
