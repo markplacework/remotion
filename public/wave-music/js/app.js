@@ -1454,7 +1454,8 @@
       const H = (W * h) / w;
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       // keep the lyric clear of TikTok's side icons and caption
-      const safe = { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
+      // Broadcast's graphics span the screen: centre them on it
+      const safe = preset.id === "broadcast" ? { x: 30, y: H * 0.16, w: W - 60, h: H * 0.5 } : { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
       const hv = vidFor(preset.id);
       vidFor(order[(k + 1) % order.length].id); // warm up the next one
       Object.entries(heroVids).forEach(([id, v]) => id !== preset.id && !v.paused && v.pause());

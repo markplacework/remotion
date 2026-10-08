@@ -3044,7 +3044,8 @@
       const lh = size * 1.02;
       const barH = rows.length * lh + u * 34;
       const barW = Math.max(...rows.map((r) => r.width)) + u * 70;
-      const x0 = safe.x + u * 16;
+      // centred under the picture, like a match-graphic caption
+      const x0 = safe.x + (safe.w - barW) / 2;
       const y0 = ty - u * 40 - barH;
       const inn = ease.out(clamp((t - line.start + 0.2) / 0.35));
       const k = u * 14;
