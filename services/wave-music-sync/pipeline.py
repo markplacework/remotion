@@ -32,6 +32,9 @@ import unicodedata
 import numpy as np
 
 ASR_SR = 16000
+# wav2vec2 models for forced alignment, from Hugging Face (larger than
+# WhisperX's torchaudio default for Spanish, and better on sung vowels)
+ALIGN_MODELS = {"es": "jonatasgrosman/wav2vec2-large-xlsr-53-spanish"}
 
 
 # ---------- audio ----------
@@ -152,7 +155,8 @@ class Pipeline:
         self.demucs.eval()
         compute_type = compute_type or ("float16" if device == "cuda" else "int8")
         self.asr = whisperx.load_model(whisper_model, device, compute_type=compute_type, language=language)
-        self.align_model, self.align_meta = whisperx.load_align_model(language_code=language, device=device)
+        self.align_model, self.align_meta = whisperx.load_align_model(
+            language_code=language, device=device, model_name=ALIGN_MODELS.get(language))
         self._torch = torch
         self._wx = whisperx
 

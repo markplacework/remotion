@@ -41,11 +41,12 @@ def download_models():
     """Bake every model into the image so cold starts don't download."""
     import whisperx
     from demucs.pretrained import get_model
+    from pipeline import ALIGN_MODELS
 
     get_model("htdemucs")
     whisperx.load_model(WHISPER_MODEL, "cpu", compute_type="int8", language="es")
     for lang in LANGUAGES:
-        whisperx.load_align_model(language_code=lang, device="cpu")
+        whisperx.load_align_model(language_code=lang, device="cpu", model_name=ALIGN_MODELS.get(lang))
 
 
 image = image.run_function(download_models)
