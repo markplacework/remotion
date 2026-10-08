@@ -1692,6 +1692,33 @@
     };
   }
 
+  // ---------- categorías de estilos (Lyrics) ----------
+  // each one fills whole rows of the 4-column grid
+  const STYLE_CATS = [
+    ["todos", "Todos", null],
+    ["populares", "Populares", ["kinetic", "cinematic", "aurora", "wordpop", "karaoke", "notes", "live", "lluvia"]],
+    ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
+    ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
+    ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
+    ["retro", "Retro", ["vhs", "vinilo", "neon", "radio"]],
+    ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
+    ["redes", "Redes", ["wordpop", "notes", "recorte", "karaoke"]],
+  ];
+  function showCat(key) {
+    const ids = (STYLE_CATS.find((c) => c[0] === key) || STYLE_CATS[0])[2];
+    document.querySelectorAll("#styles-pro button").forEach((b) => b.classList.toggle("cat-off", !!ids && !ids.includes(b.dataset.style)));
+    document.querySelectorAll("#style-cats .chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.cat === key));
+  }
+  STYLE_CATS.forEach(([key, label]) => {
+    const c = document.createElement("button");
+    c.type = "button";
+    c.className = "chip";
+    c.dataset.cat = key;
+    c.textContent = label;
+    c.onclick = () => showCat(key);
+    $("style-cats").appendChild(c);
+  });
+
   function chooseStyle(id) {
     document.querySelectorAll("#styles button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.style === id));
     $("spotify-opts").hidden = id !== "spotify";
@@ -1722,6 +1749,7 @@
     $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(b);
     if (t.kind === "motion") proThumbs.push({ canvas: b.querySelector("canvas"), preset: WM.Presets.get(t.preset) });
   });
+  showCat("todos");
   WM.Presets.loadFonts();
   function paintSpotifyThumb(id) {
     const p = WM.Themes.spotifyPalette(id);

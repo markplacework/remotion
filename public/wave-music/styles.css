@@ -2226,6 +2226,16 @@ body[data-view="captions"] #btn-demo {
     gap: 6px;
   }
 }
+/* style categories (Lyrics) */
+.style-cats {
+  margin: 2px 0 12px;
+}
+body[data-view="karaoke"] .style-cats {
+  display: none;
+}
+body:not([data-view="karaoke"]) #styles button.cat-off {
+  display: none;
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;
