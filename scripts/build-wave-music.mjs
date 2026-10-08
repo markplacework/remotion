@@ -50,6 +50,7 @@ html = html.replace(/<script src="(js\/[^"]+)"><\/script>/g, (_, src) => {
       .replace('"../fake-chat/background-alt.png"', () => JSON.stringify(backgroundUri()))
       .replace(/"(assets\/[^"]+\.png)"/g, (_, src) => JSON.stringify(dataUri(readFileSync(join(dir, src)), "image/png")))
       .replace(/"(assets\/[^"]+\.mp4)"/g, (_, src) => JSON.stringify(dataUri(readFileSync(join(dir, src)), "video/mp4")))
+      .replace(/"(assets\/[^"]+\.mp3)"/g, (_, src) => JSON.stringify(dataUri(readFileSync(join(dir, src)), "audio/mpeg")))
       .replace('"../fake-chat/song.mp3"', () =>
         JSON.stringify(dataUri(readFileSync(join(root, "public/fake-chat/song.mp3")), "audio/mpeg")),
       );

@@ -295,10 +295,25 @@
     ev.target.value = "";
     if (f) pickSplit({ blob: f, name: f.name });
   };
+  /** The demo's stems ship with the app: no AI call when trying it. */
+  async function seedDemoStems(key) {
+    const S = WM.DEMO.stems;
+    await Promise.all(
+      ["instrumental", "vocals"].map(async (stem) => {
+        if (stemCache.has(key + "|" + stem)) return;
+        try {
+          stemCache.set(key + "|" + stem, await (await fetch(S[stem])).blob());
+        } catch {
+          /* falls back to the AI service */
+        }
+      }),
+    );
+  }
   $("split-demo").onclick = async () => {
     try {
       const blob = await (await fetch(WM.DEMO.audioSrc)).blob();
       pickSplit({ blob, name: "cancion-demo.mp3", demo: true });
+      await seedDemoStems(splitSong.key);
     } catch {
       toast("No se pudo cargar la canción demo");
     }
@@ -1541,7 +1556,13 @@
     }
     $("sync-mode").value = "ai";
     onModeChange();
-    applyTimeline(T.buildTimeline(parsed.lines, D.starts, audio.duration, "demo"));
+    // the demo comes already synced by the AI (no credits spent)
+    WM.AiWords = {};
+    parsed.lines.forEach((l, i) => (WM.AiWords[l.id] = D.ai.words[i]));
+    WM.AiSync.last = { matched: D.ai.matched, total: D.ai.total };
+    applyTimeline(T.buildTimeline(parsed.lines, D.ai.starts, audio.duration, "demo"));
+    // and its voice already separated, for Karaoke
+    await seedDemoStems(audio.sourceUrl);
     audio.seek(0);
     audio.play();
     document.body.classList.add("has-demo");
