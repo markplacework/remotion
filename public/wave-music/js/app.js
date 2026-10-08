@@ -157,7 +157,7 @@
       token.value = WM.ModalSync.getToken();
       showErr(error);
       m.hidden = false;
-      setTimeout(() => url.focus(), 30);
+      setTimeout(() => (url.value ? token : url).focus(), 30);
       const close = () => {
         m.hidden = true;
         $("modalcfg-ok").onclick = $("modalcfg-cancel").onclick = m.onkeydown = null;
@@ -222,8 +222,8 @@
     const mode = $("sync-mode").value;
     $("ai-row").hidden = !isAi(mode);
     if (mode === "modal") {
-      const has = !!WM.ModalSync.getUrl();
-      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir la URL del servicio de Modal";
+      const has = WM.ModalSync.isConfigured();
+      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir el token del servicio de Modal";
       $("ai-key-change").textContent = "Cambiar servicio";
       $("ai-key-change").hidden = !has;
     } else {

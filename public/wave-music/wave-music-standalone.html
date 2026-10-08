@@ -2151,14 +2151,14 @@ canvas.th-pro {
           <span class="export-spec">Versión de prueba</span>
         </div>
         <div class="export-step">
-          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá la URL que dio <code>modal deploy</code>.</p>
+          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá el token del servicio.</p>
           <label class="field aikey-field">
             <span>URL del servicio</span>
             <input id="modalcfg-url" type="url" placeholder="https://…--wave-music-sync-syncer-web.modal.run" autocomplete="off" spellcheck="false" />
           </label>
           <label class="field aikey-field">
-            <span>Token (si el servicio lo pide)</span>
-            <input id="modalcfg-token" type="password" placeholder="opcional" autocomplete="off" spellcheck="false" />
+            <span>Token</span>
+            <input id="modalcfg-token" type="password" placeholder="token del servicio" autocomplete="off" spellcheck="false" />
           </label>
           <p id="modalcfg-error" class="aikey-error" hidden></p>
           <p class="export-note aikey-small">Se guarda solo en este navegador. La primera canción tarda más (el servicio arranca la GPU); después, unos segundos por canción.</p>
@@ -2675,11 +2675,11 @@ canvas.th-pro {
 // ai-sync.js produces ({ starts, words }), so the rest of the app doesn't
 // care which provider ran.
 //
-// The endpoint URL (and an optional token, if the service was deployed
-// with WAVE_SYNC_TOKEN) are typed once and kept in this browser.
+// Our deployed service is DEFAULT_URL and asks for a token (typed once and
+// kept in this browser). Another URL can be set from the dialog.
 (function (WM) {
-  // Set this after `modal deploy` to skip the URL prompt.
-  const DEFAULT_URL = "";
+  // Printed by `modal deploy services/wave-music-sync/app.py`; it requires a token.
+  const DEFAULT_URL = "https://builder-ai92--wave-music-sync-syncer-web.modal.run";
   const URL_STORE = "wm-modal-url";
   const TOKEN_STORE = "wm-modal-token";
   const MAX_BYTES = 60 * 1024 * 1024;
@@ -2704,6 +2704,8 @@ canvas.th-pro {
 
   const getUrl = () => read(URL_STORE) || DEFAULT_URL;
   const getToken = () => read(TOKEN_STORE);
+  // ready to call without asking: our service needs a token, other URLs may not
+  const isConfigured = () => !!getUrl() && (!!getToken() || getUrl() !== DEFAULT_URL);
   function setConfig(url, token) {
     write(URL_STORE, url.replace(/\/+$/, ""));
     write(TOKEN_STORE, token);
@@ -2751,7 +2753,7 @@ canvas.th-pro {
     return data;
   }
 
-  WM.ModalSync = { getUrl, getToken, setConfig, clearConfig, checkUrl, sync };
+  WM.ModalSync = { getUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync };
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -2874,7 +2876,7 @@ canvas.th-pro {
         if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
         let url = M.getUrl();
         let token = M.getToken();
-        if (!url) ({ url, token } = await askModal());
+        if (!M.isConfigured()) ({ url, token } = await askModal());
         const buf = await audio.getArrayBuffer();
         const file = audio.sourceFile;
         const blob = file || new Blob([buf], { type: "audio/mpeg" });
@@ -8009,7 +8011,7 @@ canvas.th-pro {
       token.value = WM.ModalSync.getToken();
       showErr(error);
       m.hidden = false;
-      setTimeout(() => url.focus(), 30);
+      setTimeout(() => (url.value ? token : url).focus(), 30);
       const close = () => {
         m.hidden = true;
         $("modalcfg-ok").onclick = $("modalcfg-cancel").onclick = m.onkeydown = null;
@@ -8074,8 +8076,8 @@ canvas.th-pro {
     const mode = $("sync-mode").value;
     $("ai-row").hidden = !isAi(mode);
     if (mode === "modal") {
-      const has = !!WM.ModalSync.getUrl();
-      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir la URL del servicio de Modal";
+      const has = WM.ModalSync.isConfigured();
+      $("ai-key-state").textContent = has ? "Servicio de Modal configurado" : "Te va a pedir el token del servicio de Modal";
       $("ai-key-change").textContent = "Cambiar servicio";
       $("ai-key-change").hidden = !has;
     } else {

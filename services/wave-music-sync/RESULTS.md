@@ -1,7 +1,9 @@
 # Prueba con la canción de la demo
 
-`python test_demo.py --local`: mismo código que corre en Modal, ejecutado en
-CPU porque la red de la sesión de desarrollo no llega a `api.modal.com`.
+Primero con `python test_demo.py --local` (mismo código, en CPU). Después,
+con el servicio ya publicado, `modal run test_demo.py` en la GPU A10G de Modal
+dio los mismos tiempos (±0,01 s) y ubicó las 42 palabras por alineación forzada;
+las dos llamadas (Whisper solo + Modal), arranque en frío incluido, tardaron ~30 s.
 Canción: `public/fake-chat/song.mp3` (45,5 s); letra: `js/demo.js`.
 
 "Referencia" = donde vuelve la voz tras el silencio previo a cada línea,

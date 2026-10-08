@@ -117,7 +117,7 @@
         if (!audio || !audio.loaded) throw new Error("Primero cargá el audio");
         let url = M.getUrl();
         let token = M.getToken();
-        if (!url) ({ url, token } = await askModal());
+        if (!M.isConfigured()) ({ url, token } = await askModal());
         const buf = await audio.getArrayBuffer();
         const file = audio.sourceFile;
         const blob = file || new Blob([buf], { type: "audio/mpeg" });

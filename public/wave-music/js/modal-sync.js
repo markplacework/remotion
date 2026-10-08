@@ -5,11 +5,11 @@
 // ai-sync.js produces ({ starts, words }), so the rest of the app doesn't
 // care which provider ran.
 //
-// The endpoint URL (and an optional token, if the service was deployed
-// with WAVE_SYNC_TOKEN) are typed once and kept in this browser.
+// Our deployed service is DEFAULT_URL and asks for a token (typed once and
+// kept in this browser). Another URL can be set from the dialog.
 (function (WM) {
-  // Set this after `modal deploy` to skip the URL prompt.
-  const DEFAULT_URL = "";
+  // Printed by `modal deploy services/wave-music-sync/app.py`; it requires a token.
+  const DEFAULT_URL = "https://builder-ai92--wave-music-sync-syncer-web.modal.run";
   const URL_STORE = "wm-modal-url";
   const TOKEN_STORE = "wm-modal-token";
   const MAX_BYTES = 60 * 1024 * 1024;
@@ -34,6 +34,8 @@
 
   const getUrl = () => read(URL_STORE) || DEFAULT_URL;
   const getToken = () => read(TOKEN_STORE);
+  // ready to call without asking: our service needs a token, other URLs may not
+  const isConfigured = () => !!getUrl() && (!!getToken() || getUrl() !== DEFAULT_URL);
   function setConfig(url, token) {
     write(URL_STORE, url.replace(/\/+$/, ""));
     write(TOKEN_STORE, token);
@@ -81,5 +83,5 @@
     return data;
   }
 
-  WM.ModalSync = { getUrl, getToken, setConfig, clearConfig, checkUrl, sync };
+  WM.ModalSync = { getUrl, getToken, isConfigured, setConfig, clearConfig, checkUrl, sync };
 })((window.WaveMusic = window.WaveMusic || {}));

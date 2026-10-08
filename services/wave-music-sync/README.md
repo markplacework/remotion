@@ -15,17 +15,19 @@ Cómo funciona (`pipeline.py`):
 ## Publicar
 
 ```bash
-pip install modal
+pip install 'modal[api-proxy-support]'   # el extra hace falta detrás de un proxy
 export MODAL_TOKEN_ID=... MODAL_TOKEN_SECRET=...
-# opcional: exigir un token a quien llame al endpoint
-export WAVE_SYNC_TOKEN=algo-secreto
+# una sola vez: el token que el endpoint le exige a quien lo llama
+modal secret create wave-music-sync-token WAVE_SYNC_TOKEN=algo-secreto
 modal deploy services/wave-music-sync/app.py
 ```
 
-`modal deploy` imprime la URL del endpoint
-(`https://<workspace>--wave-music-sync-syncer-web.modal.run`). La app web la
-pide la primera vez que usás "IA precisa (Modal)". También se puede fijar en
-`DEFAULT_URL` dentro de `public/wave-music/js/modal-sync.js`.
+Usar GPU en Modal requiere tener un medio de pago cargado en la cuenta.
+
+Publicado en `https://builder-ai92--wave-music-sync-syncer-web.modal.run`
+(`DEFAULT_URL` en `public/wave-music/js/modal-sync.js`). La app pide el token la
+primera vez que usás "IA precisa (Modal)" y lo guarda en ese navegador. Cada
+llamada lleva `Authorization: Bearer <token>`; sin él responde 401.
 
 ## Endpoint
 
@@ -52,7 +54,7 @@ Respuesta:
 `d0`/`d1` son relativos al inicio de la línea, igual que en `js/ai-sync.js`.
 
 ```bash
-curl -F audio=@public/fake-chat/song.mp3 -F lyrics="$(printf 'línea 1\nlínea 2')" https://…modal.run/
+curl -H "Authorization: Bearer $TOKEN" -F audio=@public/fake-chat/song.mp3 -F lyrics="$(printf 'línea 1\nlínea 2')" https://…modal.run/
 ```
 
 ## Probar y comparar con la demo

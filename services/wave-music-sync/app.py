@@ -9,8 +9,10 @@ Exposes one web endpoint (POST, multipart form):
 and answers with the JSON the app already uses:
     { starts: [...], words: [{ text, words: [{ text, d0, d1 }] }], matched, total, duration }
 
-If WAVE_SYNC_TOKEN is set in the shell that runs `modal deploy`, the
-endpoint requires `Authorization: Bearer <token>`; otherwise it is open.
+The endpoint requires `Authorization: Bearer <token>`. The token lives in
+the Modal secret "wave-music-sync-token" (key WAVE_SYNC_TOKEN), so every
+redeploy keeps it:
+    modal secret create wave-music-sync-token WAVE_SYNC_TOKEN=...
 """
 
 import os
@@ -53,8 +55,7 @@ image = image.run_function(download_models)
 
 app = modal.App(APP_NAME, image=image)
 
-_token = os.environ.get("WAVE_SYNC_TOKEN", "")
-secrets = [modal.Secret.from_dict({"WAVE_SYNC_TOKEN": _token})] if _token else []
+secrets = [modal.Secret.from_name("wave-music-sync-token", required_keys=["WAVE_SYNC_TOKEN"])]
 
 MAX_BYTES = 60 * 1024 * 1024
 
