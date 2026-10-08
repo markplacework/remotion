@@ -2136,6 +2136,175 @@ body[data-view="captions"] #btn-demo {
   color: var(--faint);
   font-size: 12.5px;
 }
+/* home: reviews + FAQ */
+.home-sec {
+  margin-top: 88px;
+}
+.sec-title {
+  margin: 0;
+  text-align: center;
+  font-family: Figtree, Inter, sans-serif;
+  font-size: clamp(28px, 3.6vw, 38px);
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+.sec-sub {
+  margin: 12px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.sample-note {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--faint);
+  font-size: 12px;
+}
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  color: #ffc53d;
+}
+.stars svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+.stars.big svg {
+  width: 20px;
+  height: 20px;
+}
+.star-off {
+  display: inline-flex;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.16);
+}
+.reviews {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.review {
+  margin: 0;
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.review blockquote {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.review figcaption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.review-av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.faq {
+  max-width: 760px;
+  margin: 32px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faq-item {
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  transition: border-color 0.2s;
+}
+.faq-item[open] {
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-icon {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.faq-icon::before,
+.faq-icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--muted);
+  transition: transform 0.2s;
+}
+.faq-icon::after {
+  transform: rotate(90deg);
+}
+.faq-item[open] .faq-icon::after {
+  transform: rotate(0);
+}
+.faq-item p {
+  margin: 0;
+  padding: 0 20px 18px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+@media (max-width: 860px) {
+  .reviews {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .reviews {
+    grid-template-columns: 1fr;
+  }
+  .home-sec {
+    margin-top: 64px;
+  }
+  .faq-item summary {
+    font-size: 15px;
+    padding: 16px;
+  }
+  .faq-item p {
+    padding: 0 16px 16px;
+  }
+}
 /* card art motion */
 .art-label {
   font: 600 11px Inter, sans-serif;
@@ -2799,6 +2968,80 @@ body[data-view="karaoke"] #styles button:not([data-style="karaoke"]) {
           </a>
         </nav>
         <p class="studio-foot">Para artistas, creadores y fans · Exporta en 9:16 para TikTok, Reels y Shorts</p>
+        <section class="home-sec" aria-labelledby="rev-title">
+          <h2 class="sec-title" id="rev-title">Lo que dicen los creadores</h2>
+          <p class="sec-sub"><span class="stars big" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span> Músicos, creadores y fans</p>
+          <p class="sample-note">Reseñas de ejemplo para esta prueba · se reemplazan por las reales antes del lanzamiento</p>
+          <div class="reviews">
+            <figure class="review">
+              <span class="stars" aria-label="5 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span>
+              <blockquote>“Subí mi tema, toqué sincronizar y en un minuto tenía el video listo para TikTok. Antes me llevaba una tarde entera.”</blockquote>
+              <figcaption><span class="review-av">CI</span>Cantautora independiente</figcaption>
+            </figure>
+            <figure class="review">
+              <span class="stars" aria-label="5 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span>
+              <blockquote>“Remove Vocal me salvó: saqué la pista para tocar en vivo y suena limpia. Y el karaoke quedó igual al de las apps.”</blockquote>
+              <figcaption><span class="review-av">CB</span>Cantante de bandas de covers</figcaption>
+            </figure>
+            <figure class="review">
+              <span class="stars" aria-label="4 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><span class="star-off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span></span>
+              <blockquote>“Los subtítulos estilo película quedan muy prolijos en mis clips de podcast. Me gustaría más estilos, pero ya lo uso cada semana.”</blockquote>
+              <figcaption><span class="review-av">CP</span>Creador de podcast</figcaption>
+            </figure>
+            <figure class="review">
+              <span class="stars" aria-label="5 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span>
+              <blockquote>“Los estilos Pro parecen hechos por un editor. La gente me pregunta con qué app los hago.”</blockquote>
+              <figcaption><span class="review-av">PB</span>Productor y beatmaker</figcaption>
+            </figure>
+            <figure class="review">
+              <span class="stars" aria-label="5 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span>
+              <blockquote>“Lo uso para los lyric videos de los artistas que manejo. Es rápido y la letra cae justo con la voz.”</blockquote>
+              <figcaption><span class="review-av">MA</span>Manager de artistas</figcaption>
+            </figure>
+            <figure class="review">
+              <span class="stars" aria-label="4 de 5 estrellas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg><span class="star-off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg></span></span>
+              <blockquote>“Muy fácil de usar desde el celular. La sincronización con IA es lo mejor que probé.”</blockquote>
+              <figcaption><span class="review-av">FE</span>Fan que hace edits</figcaption>
+            </figure>
+          </div>
+        </section>
+        <section class="home-sec" aria-labelledby="faq-title">
+          <h2 class="sec-title" id="faq-title">Preguntas frecuentes</h2>
+          <div class="faq">
+            <details class="faq-item">
+              <summary>¿Qué es Wave Studio?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Un estudio online con IA para músicos y creadores: separás la voz de la música, creás videos con la letra sincronizada, armás karaokes y subtitulás videos. Todo desde el navegador.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Tengo que instalar algo?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>No. Funciona en el navegador, en la compu o en el celular. Subís tu archivo y listo.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Cuánto tarda en sincronizar la letra?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Alrededor de un minuto por canción. La IA separa la voz y ubica cada frase en el momento justo; después podés ajustar cualquier línea a mano si querés.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Qué tan precisa es la sincronización?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Muy precisa: en nuestras pruebas, cada frase cae en promedio a una décima de segundo de la voz real. Funciona mejor cuando la voz se escucha clara.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿En qué formato se exporta?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Video vertical 9:16, listo para TikTok, Reels y Shorts. En Captions también podés bajar los subtítulos en SRT o VTT, y en Remove Vocal la voz y la música por separado en MP3.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Funciona con canciones en otros idiomas?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Sí. Está pensado para español, pero la IA reconoce también inglés, portugués y la mayoría de los idiomas comunes.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Puedo usar cualquier canción?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Podés usar tus canciones o temas sobre los que tengas permiso. Si vas a publicar música de otros artistas, asegurate de tener los derechos o de usarla según las reglas de cada red.</p>
+            </details>
+            <details class="faq-item">
+              <summary>¿Mis archivos quedan guardados?<span class="faq-icon" aria-hidden="true"></span></summary>
+              <p>Tus archivos se usan solo para procesar tu canción o video. No los publicamos ni los compartimos.</p>
+            </details>
+          </div>
+        </section>
       </div>
     </main>
 
