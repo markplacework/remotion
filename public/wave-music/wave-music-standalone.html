@@ -2422,17 +2422,26 @@ body:not([data-view="karaoke"]) #styles button.cat-off {
   color: var(--accent-2);
   text-decoration: none;
 }
-@media (max-width: 640px) {
-  body[data-view="lyrics"]:not(.styles-grid) .style-rows {
-    display: block;
-  }
-  body[data-view="lyrics"]:not(.styles-grid) #style-cats,
-  body[data-view="lyrics"]:not(.styles-grid) #styles-pro,
-  body[data-view="lyrics"]:not(.styles-grid) #styles-more {
-    display: none !important;
-  }
-  body[data-view="lyrics"].styles-grid .cats-back {
-    display: block;
+/* the styles open split by category (all sizes); "Ver todo" shows the full grid */
+body[data-view="lyrics"]:not(.styles-grid) .style-rows {
+  display: block;
+}
+body[data-view="lyrics"]:not(.styles-grid) #style-cats,
+body[data-view="lyrics"]:not(.styles-grid) #styles-pro,
+body[data-view="lyrics"]:not(.styles-grid) #styles-more {
+  display: none !important;
+}
+body[data-view="lyrics"].styles-grid .cats-back {
+  display: block;
+}
+/* wider screens: each category is a plain 4-column block, no sliding */
+@media (min-width: 641px) {
+  .styles.style-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: row;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
   }
 }
 /* phones: 8 styles first, then four more per tap */
@@ -13637,7 +13646,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     const t = ((now / 1000) % 5.2) + 0.1;
     proThumbs.forEach(({ canvas, preset }) => {
       const r = canvas.getBoundingClientRect();
-      if (!r.width) return;
+      // only what is on screen is animated (dozens of thumbnails otherwise)
+      if (!r.width || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.round(r.width * dpr);
       const h = Math.round(r.height * dpr);

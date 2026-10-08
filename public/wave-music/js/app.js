@@ -1286,7 +1286,8 @@
     const t = ((now / 1000) % 5.2) + 0.1;
     proThumbs.forEach(({ canvas, preset }) => {
       const r = canvas.getBoundingClientRect();
-      if (!r.width) return;
+      // only what is on screen is animated (dozens of thumbnails otherwise)
+      if (!r.width || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.round(r.width * dpr);
       const h = Math.round(r.height * dpr);
