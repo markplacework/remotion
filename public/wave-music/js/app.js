@@ -1371,15 +1371,27 @@
         $(a.dataset.scroll).scrollIntoView({ behavior: "smooth", block: "start" });
       };
     });
-    const TL = {
-      entries: [
-        { lineId: "h1", text: "Bailando bajo la luna", start: 0.2, end: 1.9 },
-        { lineId: "h2", text: "Tu voz en mi canción", start: 1.9, end: 3.6 },
-        { lineId: "h3", text: "Esta noche es nuestra", start: 3.6, end: 5.6 },
-      ],
-    };
+    // the demo song's verse, two lines per style, so the phone runs through it
+    const VERSE = [
+      "Estoy tratando de decirte que",
+      "Me desespero de esperarte",
+      "Que no salgo a buscarte porque sé",
+      "Que corro el riesgo de encontrarte",
+      "Que me sigo mordiendo noche y día",
+      "Las uñas del rencor",
+      "Que te sigo debiendo todavía",
+      "Una canción de amor",
+    ];
     const LOOP = 5.8;
-    const lines = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
+    const pairs = [0, 2, 4, 6].map((i) => {
+      const TL = {
+        entries: [
+          { lineId: "h" + i, text: VERSE[i], start: 0.2, end: 2.9 },
+          { lineId: "h" + (i + 1), text: VERSE[i + 1], start: 2.9, end: 5.6 },
+        ],
+      };
+      return { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
+    });
     // styles shown over their own sample footage, the way users will use them
     const order = ["tormenta", "aurora", "broadcast", "street", "otono", "cinematic"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
@@ -1444,7 +1456,8 @@
       Object.entries(heroVids).forEach(([id, v]) => id !== preset.id && !v.paused && v.pause());
       if (hv.paused) hv.play().catch(() => {});
       const video = hv.readyState >= 2 ? hv : null;
-      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Artista" } }));
+      const lines = pairs[Math.floor(sec / LOOP) % pairs.length];
+      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Todavía una canción de amor", artist: "Los Rodríguez" } }));
       // TikTok's own shade so its white UI reads over light styles
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       const top = g.createLinearGradient(0, 0, 0, H * 0.16);
