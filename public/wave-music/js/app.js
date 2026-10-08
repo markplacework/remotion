@@ -1016,7 +1016,17 @@
   function updateCenterBtn() {
     const o = preview.offset;
     $("btn-center").hidden = !(preview.draggable && (o.x || o.y));
+    $("btn-autocenter").hidden = !preview.draggable;
   }
+  $("btn-autocenter").onclick = (e) => {
+    e.stopPropagation();
+    const o = preview.centreOffset();
+    if (!o) return toast("Cargá la letra para centrarla");
+    preview.setOffset(o);
+    updateCenterBtn();
+    needsSnap = true;
+    toast("Letra centrada en el video");
+  };
   $("btn-center").onclick = (e) => {
     e.stopPropagation();
     preview.setOffset({ x: 0, y: 0 });

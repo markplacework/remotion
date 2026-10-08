@@ -154,6 +154,73 @@
     setOffset(o) {
       this.offset = { x: o.x, y: o.y };
     }
+    /**
+     * The offset that puts the lyric dead centre (x and y) in the final
+     * 9:16 video. Each sampled line is drawn twice, in place and pushed far
+     * off screen: the pixels that change are the lyric, whatever the style
+     * draws around it. Returns null when there is nothing to measure.
+     */
+    centreOffset() {
+      if (this.theme.kind !== "motion" || !this.timeline) return null;
+      const preset = WM.Presets.get(this.theme.preset);
+      const lines = WM.Motion.prepare(this.timeline, WM.Motion.modeFor(preset));
+      const sung = lines.filter((l) => l.words.length);
+      if (!sung.length) return null;
+      const W = 1080;
+      const H = 1920;
+      const safe = MOTION_SAFE.video;
+      const k = 0.25;
+      const cw = W * k;
+      const ch = H * k;
+      const mk = () => {
+        const c = document.createElement("canvas");
+        c.width = cw;
+        c.height = ch;
+        return c.getContext("2d", { willReadFrequently: true });
+      };
+      const a = mk();
+      const b = mk();
+      const draw = (g, t, off) => {
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.clearRect(0, 0, cw, ch);
+        g.setTransform(k, 0, 0, k, 0, 0);
+        preset.draw(g, WM.Motion.frame({ lines, t, W, H, safe, energy: WM.Energy.current, meta: this.meta, offset: off, video: null, textScale: this.textScale, font: this.font }));
+      };
+      // up to 8 lines across the song, each when all its words are showing
+      const step = Math.max(1, Math.floor(sung.length / 8));
+      const xs = [];
+      const ys = [];
+      for (let i = 0; i < sung.length && xs.length < 8; i += step) {
+        const L = sung[i];
+        const last = L.words[L.words.length - 1];
+        const t = Math.min(L.end - 0.05, Math.max(last.t1, L.start + 0.6) + 0.15) - 0.08;
+        draw(a, t, { x: 0, y: 0 });
+        draw(b, t, { x: 6, y: 6 });
+        const da = a.getImageData(0, 0, cw, ch).data;
+        const db = b.getImageData(0, 0, cw, ch).data;
+        let x0 = cw;
+        let y0 = ch;
+        let x1 = -1;
+        let y1 = -1;
+        for (let y = 0; y < ch; y++) {
+          for (let x = 0; x < cw; x++) {
+            const p = (y * cw + x) * 4;
+            if (Math.abs(da[p] - db[p]) + Math.abs(da[p + 1] - db[p + 1]) + Math.abs(da[p + 2] - db[p + 2]) > 60) {
+              if (x < x0) x0 = x;
+              if (x > x1) x1 = x;
+              if (y < y0) y0 = y;
+              if (y > y1) y1 = y;
+            }
+          }
+        }
+        if (x1 < 0) continue;
+        xs.push((x0 + x1 + 1) / 2 / k);
+        ys.push((y0 + y1 + 1) / 2 / k);
+      }
+      if (!xs.length) return null;
+      const mid = (v) => v.slice().sort((p, q) => p - q)[Math.floor(v.length / 2)];
+      return { x: (W / 2 - mid(xs)) / safe.w, y: (H / 2 - mid(ys)) / safe.h };
+    }
     /** Map a pointer movement (CSS px) to safe-area fractions. */
     pointerToOffset(dx, dy) {
       const c = this.motionCanvas;
