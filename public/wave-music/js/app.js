@@ -1406,8 +1406,12 @@
         v.loop = true;
         v.playsInline = true;
         v.preload = "auto";
-        v.crossOrigin = "anonymous";
-        v.src = `${WM.ModalSync.mediaUrl()}/sample/${id}.mp4`;
+        // Aurora keeps your own ski clip (bundled); the rest, their Pixabay samples
+        if (id === "aurora") v.src = WM.DEMO_BG.src;
+        else {
+          v.crossOrigin = "anonymous";
+          v.src = `${WM.ModalSync.mediaUrl()}/sample/${id}.mp4`;
+        }
         // offline: the bundled clip instead
         v.onerror = () => {
           v.onerror = null;
