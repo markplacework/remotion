@@ -1381,7 +1381,7 @@
     const LOOP = 5.8;
     const lines = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     // styles shown over their own sample footage, the way users will use them
-    const order = ["tormenta", "aurora", "broadcast", "recorte", "otono", "cinematic"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["tormenta", "aurora", "broadcast", "street", "otono", "cinematic"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
