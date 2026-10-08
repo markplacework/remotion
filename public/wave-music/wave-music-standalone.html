@@ -5767,8 +5767,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     // extreme sports (they suit action footage: the sample clip included)
     adrenalina: { id: "adrenalina", label: "Adrenalina", kind: "motion", preset: "adrenalina", background: { type: "motion" }, video: true, sampleVideo: true },
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
-    summit: { id: "summit", label: "Summit", kind: "motion", preset: "summit", background: { type: "motion" }, video: true, sampleVideo: true },
-    groovy: { id: "groovy", label: "Groovy", kind: "motion", preset: "groovy", background: { type: "motion" } },
+    broadcast: { id: "broadcast", label: "Broadcast", kind: "motion", preset: "broadcast", background: { type: "motion" }, meta: true, video: true, sampleVideo: true },
+    recorte: { id: "recorte", label: "Recorte", kind: "motion", preset: "recorte", background: { type: "motion" }, video: true, sampleVideo: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
@@ -8912,163 +8912,163 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     },
   };
 
-  // SUMMIT — mountain expedition: outdoor-brand type, altitude HUD, wind & snow
-  const SUM_FONT = (size) => `800 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
-  const SUM_DIRS = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-  const summit = {
-    id: "summit",
-    label: "Summit",
-    tag: "Montaña",
-    fonts: ["800 100px Montserrat", "700 100px 'Barlow Condensed'"],
+  // BROADCAST — sports TV graphics: live bug, match clock, lower third, ticker
+  const BC_FONT = (size) => `700 ${size}px ${fam("'Barlow Condensed', Impact, sans-serif")}`;
+  const BC_ACCENT = "#ffd400";
+  /** Slanted box (parallelogram), the shape of sports graphics. */
+  function slant(g, x, y, w, h, k) {
+    g.beginPath();
+    g.moveTo(x + k, y);
+    g.lineTo(x + w + k, y);
+    g.lineTo(x + w - k, y + h);
+    g.lineTo(x - k, y + h);
+    g.closePath();
+  }
+  const broadcast = {
+    id: "broadcast",
+    label: "Broadcast",
+    tag: "Deportes",
+    fonts: ["700 100px 'Barlow Condensed'"],
     draw(g, f) {
-      const { W, H, t, safe } = f;
+      const { W, H, t, safe, meta } = f;
       const u = safe.w / 825;
-      if (videoBg(g, f, "saturate(1.05) contrast(1.06)")) {
-        const sh = g.createLinearGradient(0, 0, 0, H);
-        sh.addColorStop(0, "rgba(4,16,32,0.55)");
-        sh.addColorStop(0.35, "rgba(4,16,32,0.12)");
-        sh.addColorStop(1, "rgba(4,16,32,0.45)");
+      if (videoBg(g, f, "saturate(1.1) contrast(1.08)")) {
+        const sh = g.createLinearGradient(0, H * 0.55, 0, H);
+        sh.addColorStop(0, "rgba(0,0,0,0)");
+        sh.addColorStop(1, "rgba(0,0,0,0.55)");
         g.fillStyle = sh;
         g.fillRect(0, 0, W, H);
       } else {
-        const sky = g.createLinearGradient(0, 0, 0, H);
-        sky.addColorStop(0, "#0b2340");
-        sky.addColorStop(0.5, "#3f78ad");
-        sky.addColorStop(1, "#cfe2f2");
-        g.fillStyle = sky;
+        // stadium at night: floodlight flares over a dark pitch
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#050a1a");
+        bg.addColorStop(0.6, "#0b1a3a");
+        bg.addColorStop(1, "#06301c");
+        g.fillStyle = bg;
         g.fillRect(0, 0, W, H);
-        // three ranges of big peaks, the near ones drifting faster
-        [["#8fb0cf", 0.66, 0.012, 5], ["#4f7aa3", 0.76, 0.02, 4], ["#eef5fb", 0.9, 0.035, 3]].forEach(([col, base, sp, n], k) => {
-          const step = W / n;
-          const shift = (t * sp * W) % step;
-          const first = Math.floor((t * sp * W) / step);
-          g.fillStyle = col;
-          g.beginPath();
-          g.moveTo(-step, H);
-          for (let i = -1; i <= n + 1; i++) {
-            const id = i + first + k * 50;
-            const x = i * step - shift;
-            g.lineTo(x, H * (base - 0.03 + rand(id * 1.9) * 0.05));
-            g.lineTo(x + step * (0.35 + rand(id * 2.7) * 0.3), H * (base - 0.1 - rand(id * 3.1) * 0.12));
-          }
-          g.lineTo(W + step, H);
-          g.closePath();
-          g.fill();
-          if (k === 2) {
-            const fog = g.createLinearGradient(0, H * (base - 0.2), 0, H);
-            fog.addColorStop(0, "rgba(255,255,255,0)");
-            fog.addColorStop(1, "rgba(220,234,246,0.6)");
-            g.fillStyle = fog;
-            g.fillRect(0, H * (base - 0.2), W, H);
-          }
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        [0.15, 0.5, 0.85].forEach((x, i) => {
+          const fx = W * x;
+          const fy = H * 0.1;
+          const gr = g.createRadialGradient(fx, fy, 0, fx, fy, H * 0.35);
+          gr.addColorStop(0, `rgba(220,235,255,${0.45 + 0.1 * Math.sin(t * 2 + i)})`);
+          gr.addColorStop(0.1, "rgba(160,190,255,0.18)");
+          gr.addColorStop(1, "rgba(160,190,255,0)");
+          g.fillStyle = gr;
+          g.fillRect(0, 0, W, H);
         });
+        g.restore();
+        // pitch stripes
+        for (let i = 0; i < 10; i++) {
+          g.fillStyle = i % 2 ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.05)";
+          g.fillRect(0, H * 0.62 + i * H * 0.04, W, H * 0.04);
+        }
       }
-      // wind-blown snow
+      // top-left bug: logo + LIVE + match clock (the song's time)
+      const s = Math.floor(t);
       g.save();
-      for (let i = 0; i < 120; i++) {
-        const sp = 0.25 + rand(i * 2.1) * 0.5;
-        const y = ((rand(i * 3.3) + t * sp) % 1) * H;
-        const x = ((rand(i * 7.7) - t * sp * 0.6) % 1 + 1) % 1 * W;
-        const r = u * (1.5 + rand(i * 5.1) * 3.5);
-        g.fillStyle = `rgba(255,255,255,${0.35 + rand(i) * 0.5})`;
-        g.fillRect(x, y, r * 2.2, r);
-      }
+      g.textBaseline = "middle";
+      const bx = safe.x;
+      const by = safe.y;
+      const bh = u * 54;
+      g.fillStyle = "#0a1440";
+      slant(g, bx, by, u * 96, bh, u * 8);
+      g.fill();
+      g.fillStyle = "#ffffff";
+      g.font = BC_FONT(u * 36);
+      g.textAlign = "center";
+      g.fillText("WS", bx + u * 48, by + bh / 2);
+      g.fillStyle = "#e10600";
+      slant(g, bx + u * 102, by, u * 104, bh, u * 8);
+      g.fill();
+      g.fillStyle = "#ffffff";
+      g.fillText("● VIVO", bx + u * 154, by + bh / 2);
+      g.fillStyle = "rgba(10,20,64,0.88)";
+      slant(g, bx + u * 212, by, u * 124, bh, u * 8);
+      g.fill();
+      g.fillStyle = BC_ACCENT;
+      g.fillText(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`, bx + u * 274, by + bh / 2);
       g.restore();
-      this.hud(g, f, u);
+      // bottom ticker
+      const ty = safe.y + safe.h - u * 50;
+      g.save();
+      g.fillStyle = "rgba(6,12,40,0.9)";
+      g.fillRect(0, ty, W, u * 50);
+      g.fillStyle = BC_ACCENT;
+      g.fillRect(0, ty, u * 150, u * 50);
+      g.fillStyle = "#0a1440";
+      g.font = BC_FONT(u * 30);
+      g.textBaseline = "middle";
+      g.textAlign = "center";
+      g.fillText("AHORA", u * 75, ty + u * 25);
+      g.beginPath();
+      g.rect(u * 150, ty, W, u * 50);
+      g.clip();
+      const msg = `♪ ${upper(meta.title || "Tu canción")}  ·  ${upper(meta.artist || "Artista")}  ·  WAVE STUDIO  ·  `;
+      g.font = BC_FONT(u * 30);
+      g.textAlign = "left";
+      g.fillStyle = "#ffffff";
+      const mw = g.measureText(msg).width;
+      const ox = -((t * u * 90) % mw);
+      for (let x = u * 160 + ox; x < W; x += mw) g.fillText(msg, x, ty + u * 25);
+      g.restore();
       const L = f.lines[f.current];
       if (!L || !L.words.length) return;
       g.save();
       place(g, f);
-      this.drawLine(g, f, L, u);
+      this.lowerThird(g, f, L, u, ty);
       g.restore();
     },
-    hud(g, f, u) {
-      const { safe, t } = f;
-      g.save();
-      g.strokeStyle = g.fillStyle = "rgba(255,255,255,0.92)";
-      g.shadowColor = "rgba(0,25,50,0.7)";
-      g.shadowBlur = u * 12;
-      g.lineWidth = Math.max(1, u * 2);
-      g.textAlign = "center";
-      g.textBaseline = "top";
-      // compass strip
-      const heading = (t * 6) % 360;
-      const cx = safe.x + safe.w / 2;
-      const half = safe.w * 0.36;
-      g.save();
-      g.beginPath();
-      g.rect(cx - half, safe.y, half * 2, u * 70);
-      g.clip();
-      for (let d = Math.floor((heading - 60) / 5) * 5; d <= heading + 60; d += 5) {
-        const x = cx + ((d - heading) / 60) * half;
-        const big = d % 45 === 0;
-        g.globalAlpha = 1 - Math.abs(d - heading) / 62;
-        g.fillRect(x, safe.y, Math.max(1, u * 2), u * (big ? 22 : 10));
-        if (big) {
-          g.font = `700 ${u * 26}px 'Barlow Condensed', sans-serif`;
-          g.fillText(SUM_DIRS[(((d / 45) % 8) + 8) % 8], x, safe.y + u * 28);
-        }
-      }
-      g.restore();
-      g.beginPath();
-      g.moveTo(cx, safe.y + u * 58);
-      g.lineTo(cx - u * 8, safe.y + u * 70);
-      g.lineTo(cx + u * 8, safe.y + u * 70);
-      g.fill();
-      // altitude and temperature
-      g.font = `700 ${u * 30}px 'Barlow Condensed', sans-serif`;
-      g.textBaseline = "alphabetic";
-      g.textAlign = "left";
-      g.fillText("ALT", safe.x, safe.y + safe.h - u * 44);
-      g.font = `700 ${u * 58}px 'Barlow Condensed', sans-serif`;
-      g.fillText(`${(3200 + Math.floor(t * 4)).toLocaleString("es")} m`, safe.x, safe.y + safe.h);
-      g.textAlign = "right";
-      g.font = `700 ${u * 30}px 'Barlow Condensed', sans-serif`;
-      g.fillText("TEMP", safe.x + safe.w, safe.y + safe.h - u * 44);
-      g.font = `700 ${u * 58}px 'Barlow Condensed', sans-serif`;
-      g.fillText(`-${8 + Math.floor(f.energy() * 6)}°C`, safe.x + safe.w, safe.y + safe.h);
-      g.restore();
-    },
-    drawLine(g, f, line, u) {
-      const { t, safe } = f;
-      const size = u * 86;
+    lowerThird(g, f, line, u, ty) {
+      const { t, safe, meta } = f;
+      const size = u * 84;
       const words = line.words.map((w) => ({ ...w, label: upper(w.text) }));
-      const rows = wrapCached(g, `su|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => SUM_FONT(size), safe.w * 0.88, size * 0.3);
-      const lh = size * 1.08;
-      const blockH = rows.length * lh;
-      const top = safe.y + safe.h * 0.45 - blockH / 2;
-      const left = safe.x + safe.w * 0.06;
-      const intro = ease.out(clamp((t - line.start) / 0.6));
+      const rows = wrapCached(g, `bc|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => BC_FONT(size), safe.w * 0.86, size * 0.26);
+      const lh = size * 1.02;
+      const barH = rows.length * lh + u * 34;
+      const barW = Math.max(...rows.map((r) => r.width)) + u * 70;
+      const x0 = safe.x + u * 16;
+      const y0 = ty - u * 40 - barH;
+      const inn = ease.out(clamp((t - line.start + 0.2) / 0.35));
+      const k = u * 14;
       g.save();
-      g.shadowColor = "rgba(0,20,40,0.45)";
-      g.shadowBlur = u * 18;
-      // stage label + rule that draws itself
-      g.fillStyle = "rgba(255,255,255,0.9)";
-      g.font = `700 ${u * 28}px 'Barlow Condensed', sans-serif`;
-      if ("letterSpacing" in g) g.letterSpacing = `${u * 6}px`;
-      g.textBaseline = "alphabetic";
+      // name tag above the bar
+      g.font = BC_FONT(u * 32);
+      const tag = upper(meta.artist || "Artista");
+      const tw = g.measureText(tag).width + u * 40;
+      g.globalAlpha = inn;
+      g.fillStyle = BC_ACCENT;
+      slant(g, x0, y0 - u * 46, tw * inn, u * 46, u * 8);
+      g.fill();
+      g.fillStyle = "#0a1440";
+      g.textBaseline = "middle";
       g.textAlign = "left";
-      g.globalAlpha = intro;
-      g.fillText(`TRAMO ${String(line.index + 1).padStart(2, "0")}`, left, top - u * 26);
-      if ("letterSpacing" in g) g.letterSpacing = "0px";
-      g.fillRect(left + u * 170, top - u * 38, safe.w * 0.5 * intro, Math.max(1, u * 2));
+      if (inn > 0.6) g.fillText(tag, x0 + u * 20, y0 - u * 23);
+      // the white bar wipes in from the left
       g.globalAlpha = 1;
-      g.font = SUM_FONT(size);
-      g.textBaseline = "top";
+      g.fillStyle = "rgba(0,0,0,0.35)";
+      slant(g, x0 + u * 8, y0 + u * 8, barW * inn, barH, k);
+      g.fill();
+      g.fillStyle = "#ffffff";
+      slant(g, x0, y0, barW * inn, barH, k);
+      g.fill();
+      g.fillStyle = "#e10600";
+      slant(g, x0 - u * 16, y0, u * 14, barH, k);
+      g.fill();
+      g.beginPath();
+      g.rect(x0 - k, y0, barW * inn + k * 2, barH);
+      g.clip();
+      g.font = BC_FONT(size);
+      g.textBaseline = "middle";
+      g.fillStyle = "#0a1440";
       rows.forEach((row, ri) => {
-        const y = top + ri * lh;
+        const y = y0 + u * 17 + ri * lh + lh / 2;
         row.items.forEach((it) => {
-          const p = clamp((t - it.w.t0 + 0.04) / 0.32);
+          const p = clamp((t - it.w.t0 + 0.05) / 0.2);
           if (p <= 0) return;
-          const x = left + it.x;
-          // each word wipes in from the left
-          g.save();
-          g.beginPath();
-          g.rect(x - u * 4, y - size * 0.2, (it.width + u * 8) * ease.out(p), size * 1.4);
-          g.clip();
-          g.fillStyle = "#ffffff";
-          g.fillText(it.w.label, x + u * 18 * (1 - ease.out(p)), y);
-          g.restore();
+          g.globalAlpha = p;
+          g.fillText(it.w.label, x0 + u * 32 + it.x + (1 - p) * u * 20, y);
         });
       });
       g.restore();
@@ -9276,10 +9276,12 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         g.fillStyle = "#fff6c8";
         g.shadowColor = "#1a1aa8";
         g.shadowOffsetX = g.shadowOffsetY = u * 5;
-        g.font = RETRO_FONT(u * 96);
-        g.fillText(upper(meta.title || "Karaoke"), W / 2, safe.y + safe.h * 0.32);
-        g.font = RETRO_FONT(u * 52);
-        g.fillText(upper(meta.artist || ""), W / 2, safe.y + safe.h * 0.32 + u * 90);
+        const title = upper(meta.title || "Karaoke");
+        g.font = RETRO_FONT(fitSize(g, title, RETRO_FONT, u * 84, safe.w * 0.88));
+        g.fillText(title, W / 2, safe.y + safe.h * 0.32);
+        const artist = upper(meta.artist || "");
+        g.font = RETRO_FONT(fitSize(g, artist, RETRO_FONT, u * 46, safe.w * 0.8));
+        g.fillText(artist, W / 2, safe.y + safe.h * 0.32 + u * 80);
         g.restore();
       }
       g.save();
@@ -9374,30 +9376,37 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       const floorY = H * 0.8;
       g.save();
       g.globalCompositeOperation = "lighter";
-      // two coloured beams from the corners, fixed, breathing a little on the beat
-      [["255,61,139", 0.05, 0.62], ["90,120,255", 0.95, 0.38]].forEach(([col, sx, ex]) => {
-        const gr = g.createLinearGradient(W * sx, 0, W * ex, floorY);
-        gr.addColorStop(0, `rgba(${col},${0.3 + 0.1 * pulse})`);
+      // coloured beams swinging from the rig, brighter on the beat
+      [["255,61,139", 0.08, 0], ["90,120,255", 0.92, 1.7], ["255,61,139", 0.3, 3.1], ["90,120,255", 0.7, 4.4]].forEach(([col, sx, ph], i) => {
+        const len = floorY * 1.05;
+        const spread = W * 0.3;
+        g.save();
+        g.translate(W * sx, -u * 10);
+        g.rotate((i < 2 ? (i ? 0.45 : -0.45) : 0) + Math.sin(t * 0.42 + ph) * 0.38);
+        const gr = g.createLinearGradient(0, 0, 0, len);
+        gr.addColorStop(0, `rgba(${col},${(i < 2 ? 0.32 : 0.2) + 0.14 * pulse})`);
         gr.addColorStop(1, `rgba(${col},0)`);
         g.fillStyle = gr;
         g.beginPath();
-        g.moveTo(W * sx - u * 16, -u * 10);
-        g.lineTo(W * sx + u * 16, -u * 10);
-        g.lineTo(W * ex + W * 0.16, floorY);
-        g.lineTo(W * ex - W * 0.16, floorY);
+        g.moveTo(-u * 12, 0);
+        g.lineTo(u * 12, 0);
+        g.lineTo(spread / 2, len);
+        g.lineTo(-spread / 2, len);
         g.closePath();
         g.fill();
+        g.restore();
       });
-      // the main follow-spot, fixed on the singer's place
+      // the main spot on the singer's place, swaying gently
+      const sway = Math.sin(t * 0.3) * W * 0.06;
       const cone = g.createLinearGradient(0, 0, 0, floorY);
-      cone.addColorStop(0, "rgba(255,238,200,0.42)");
+      cone.addColorStop(0, "rgba(255,238,200,0.4)");
       cone.addColorStop(1, "rgba(255,238,200,0.08)");
       g.fillStyle = cone;
       g.beginPath();
       g.moveTo(W / 2 - u * 26, 0);
       g.lineTo(W / 2 + u * 26, 0);
-      g.lineTo(W / 2 + W * 0.3, floorY);
-      g.lineTo(W / 2 - W * 0.3, floorY);
+      g.lineTo(W / 2 + sway + W * 0.3, floorY);
+      g.lineTo(W / 2 + sway - W * 0.3, floorY);
       g.closePath();
       g.fill();
       // pool of light on the floor
@@ -9447,53 +9456,104 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     crowd(g, f, u) {
       const { W, H, t } = f;
       const pulse = f.pulse();
+      // two rows of different people: sizes, hair, caps, arms, phones, lighters
       [
-        [0.88, 13, 0.75, "#0d0a14"],
-        [0.95, 9, 1, "#000000"],
-      ].forEach(([base, n, k, col], row) => {
-        const by = H * base;
-        for (let i = 0; i < n; i++) {
-          const seed = i + row * 40;
-          const x = ((i + 0.5 + (rand(seed * 3.3) - 0.5) * 0.5) / n) * W;
-          const bob = Math.abs(Math.sin(t * 3 + seed * 1.7)) * u * 10 * (0.4 + pulse) * k;
-          const r = u * (30 + rand(seed) * 10) * k;
-          const sh = r * 2.6;
-          g.fillStyle = col;
-          // shoulders and head
-          rrect(g, x - sh / 2, by - bob, sh, H, r * 0.9);
+        { base: 0.875, n: 12, k: 0.72, col: "#151022", rim: 0.14 },
+        { base: 0.95, n: 8, k: 1, col: "#000000", rim: 0.26 },
+      ].forEach((row, ri) => {
+        const by = H * row.base;
+        for (let i = 0; i < row.n; i++) {
+          const seed = i * 13.7 + ri * 101;
+          const x = ((i + 0.5 + (rand(seed * 3.3) - 0.5) * 0.7) / row.n) * W;
+          const k = row.k * (0.85 + rand(seed * 1.1) * 0.35);
+          // some jump on the beat, most just sway
+          const jumper = rand(seed * 8.3) > 0.7;
+          const bob = (jumper ? Math.max(0, Math.sin(t * 4.2 + seed)) * u * 26 * (0.5 + pulse) : Math.abs(Math.sin(t * 2.6 + seed)) * u * 6) * k;
+          const r = u * 30 * k;
+          const sw = r * (2.1 + rand(seed * 2.2) * 0.9);
+          const hy = by - r * 1.05 - bob;
+          const sway = Math.sin(t * 1.4 + seed) * u * 4;
+          g.fillStyle = row.col;
+          // body
+          rrect(g, x - sw / 2, by - bob + r * 0.1, sw, H, r * 0.9);
           g.fill();
-          g.beginPath();
-          g.arc(x, by - r * 0.9 - bob, r, 0, Math.PI * 2);
-          g.fill();
-          // warm rim light from the stage
-          g.strokeStyle = `rgba(255,200,150,${0.22 * k})`;
-          g.lineWidth = u * 2;
-          g.beginPath();
-          g.arc(x, by - r * 0.9 - bob, r, Math.PI * 1.1, Math.PI * 1.9);
-          g.stroke();
-          if (rand(seed * 7.7) > 0.5) {
-            // a raised arm, some holding a phone
-            const side = rand(seed * 4.4) > 0.5 ? 1 : -1;
-            g.save();
-            g.translate(x + side * r * 0.9, by - bob);
-            g.rotate(side * (0.18 + 0.12 * Math.sin(t * 2 + seed)));
-            g.fillStyle = col;
-            rrect(g, -u * 9 * k, -r * 3.2, u * 18 * k, r * 3.2, u * 9 * k);
+          // neck
+          g.fillRect(x - r * 0.35 + sway, hy, r * 0.7, r * 1.2);
+          const hair = Math.floor(rand(seed * 5.9) * 5);
+          if (hair === 3) {
+            // long hair falling behind the head
+            rrect(g, x - r * 1.05 + sway, hy - r * 0.6, r * 2.1, r * 2.3, r);
             g.fill();
-            if (rand(seed * 1.9) > 0.45) {
-              const ph = r * 0.9;
-              g.fillStyle = "#1a1a22";
-              rrect(g, -ph * 0.32, -r * 3.2 - ph, ph * 0.64, ph, u * 4);
+          }
+          g.beginPath();
+          g.ellipse(x + sway, hy, r * 0.92, r, 0, 0, Math.PI * 2);
+          g.fill();
+          if (hair === 1) {
+            // cap with a brim
+            g.beginPath();
+            g.ellipse(x + sway, hy - r * 0.35, r * 1.0, r * 0.7, 0, Math.PI, 0);
+            g.fill();
+            g.fillRect(x + sway, hy - r * 0.42, r * 1.6, r * 0.22);
+          } else if (hair === 2) {
+            // bun on top
+            g.beginPath();
+            g.arc(x + sway, hy - r * 1.05, r * 0.42, 0, Math.PI * 2);
+            g.fill();
+          } else if (hair === 4) {
+            // curly
+            for (let c = 0; c < 5; c++) {
+              g.beginPath();
+              g.arc(x + sway + (c - 2) * r * 0.42, hy - r * 0.7 + Math.abs(c - 2) * r * 0.18, r * 0.42, 0, Math.PI * 2);
               g.fill();
-              const glow = 0.55 + 0.45 * Math.sin(t * 1.5 + seed);
-              g.fillStyle = `rgba(230,240,255,${0.85 * glow})`;
-              rrect(g, -ph * 0.26, -r * 3.2 - ph * 0.92, ph * 0.52, ph * 0.84, u * 3);
+            }
+          }
+          // stage light catching the top of the head
+          g.strokeStyle = `rgba(255,200,150,${row.rim})`;
+          g.lineWidth = u * 2.2;
+          g.beginPath();
+          g.ellipse(x + sway, hy, r * 0.92, r, 0, Math.PI * 1.15, Math.PI * 1.85);
+          g.stroke();
+          // arms: none, one or two; some hold a phone or a lighter
+          const arms = rand(seed * 7.7);
+          const nArms = arms > 0.75 ? 2 : arms > 0.35 ? 1 : 0;
+          for (let a = 0; a < nArms; a++) {
+            const side = nArms === 2 ? (a ? 1 : -1) : rand(seed * 4.4) > 0.5 ? 1 : -1;
+            const wave = Math.sin(t * (1.6 + rand(seed) * 1.5) + seed + a) * (0.15 + 0.15 * pulse);
+            const len = r * (2.6 + rand(seed * 6.1 + a) * 0.8);
+            g.save();
+            g.translate(x + side * sw * 0.38, by - bob + r * 0.4);
+            g.rotate(side * (0.25 + rand(seed * 9.2 + a) * 0.3) + wave);
+            g.fillStyle = row.col;
+            rrect(g, -r * 0.24, -len, r * 0.48, len, r * 0.24);
+            g.fill();
+            g.beginPath();
+            g.arc(0, -len, r * 0.3, 0, Math.PI * 2);
+            g.fill();
+            const what = rand(seed * 1.9 + a);
+            if (what > 0.55) {
+              // phone screen glowing
+              const ph = r * 0.85;
+              const glow = 0.6 + 0.4 * Math.sin(t * 1.3 + seed);
+              g.fillStyle = "#16161e";
+              rrect(g, -ph * 0.32, -len - ph * 0.9, ph * 0.64, ph, u * 3);
               g.fill();
-              const halo = g.createRadialGradient(0, -r * 3.2 - ph / 2, 0, 0, -r * 3.2 - ph / 2, ph * 1.6);
-              halo.addColorStop(0, `rgba(220,235,255,${0.35 * glow})`);
+              g.fillStyle = `rgba(225,238,255,${0.85 * glow})`;
+              rrect(g, -ph * 0.26, -len - ph * 0.84, ph * 0.52, ph * 0.84, u * 2);
+              g.fill();
+              const halo = g.createRadialGradient(0, -len - ph * 0.4, 0, 0, -len - ph * 0.4, ph * 1.8);
+              halo.addColorStop(0, `rgba(220,235,255,${0.3 * glow})`);
               halo.addColorStop(1, "rgba(220,235,255,0)");
               g.fillStyle = halo;
-              g.fillRect(-ph * 1.6, -r * 3.2 - ph * 2.1, ph * 3.2, ph * 3.2);
+              g.fillRect(-ph * 1.8, -len - ph * 2.2, ph * 3.6, ph * 3.6);
+            } else if (what > 0.35) {
+              // lighter flame
+              const fl = r * (0.45 + 0.08 * Math.sin(t * 9 + seed));
+              const fg = g.createRadialGradient(0, -len - r * 0.4, 0, 0, -len - r * 0.4, fl * 2.4);
+              fg.addColorStop(0, "rgba(255,240,180,0.95)");
+              fg.addColorStop(0.35, "rgba(255,170,60,0.6)");
+              fg.addColorStop(1, "rgba(255,120,40,0)");
+              g.fillStyle = fg;
+              g.fillRect(-fl * 2.4, -len - r * 0.4 - fl * 2.4, fl * 4.8, fl * 4.8);
             }
             g.restore();
           }
@@ -9561,99 +9621,126 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     },
   };
 
-  // GROOVY — 70s: sunburst, chunky extruded type that bounces in
-  const GROOVY_FONT = (size) => `400 ${size}px ${fam("Shrikhand, Georgia, serif")}`;
-  const GROOVY_RAYS = ["#f3a33c", "#e2702c", "#f6c453", "#c9492b"];
-  const groovy = {
-    id: "groovy",
-    label: "Groovy",
-    tag: "70s",
-    fonts: ["400 100px Shrikhand"],
+  // RECORTE — giant type cut out of the dark: the footage plays inside the letters
+  const CUT_FONT = (size) => `400 ${size}px ${fam("Anton, Impact, sans-serif")}`;
+  const cutLayers = new WeakMap();
+  const recorte = {
+    id: "recorte",
+    label: "Recorte",
+    tag: "Impacto",
+    fonts: ["400 100px Anton"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      const cx = W / 2;
-      const cy = H * 1.05;
-      g.fillStyle = "#f6e3c3";
+      // the dark plate (the footage barely shows through it)
+      const vid = videoBg(g, f, "grayscale(0.6)");
+      g.fillStyle = vid ? "rgba(10,10,12,0.84)" : "#0b0b0d";
       g.fillRect(0, 0, W, H);
-      // sunburst turning slowly from below the frame
-      const n = 28;
-      const R = H * 1.4;
-      g.save();
-      g.translate(cx, cy);
-      g.rotate(t * 0.05);
-      for (let i = 0; i < n; i++) {
-        g.fillStyle = GROOVY_RAYS[i % GROOVY_RAYS.length];
-        g.beginPath();
-        g.moveTo(0, 0);
-        g.arc(0, 0, R, (i / n) * Math.PI * 2, ((i + 0.5) / n) * Math.PI * 2);
-        g.closePath();
-        g.fill();
-      }
-      g.restore();
-      // a big sun behind the lyric: rings, then a cream disc
-      const sy = safe.y + safe.h * 0.42;
-      const sr = safe.w * 0.47 * (1 + 0.015 * pulse);
-      ["#5a2e1c", "#c9492b", "#e2702c", "#f6c453"].forEach((col, i) => {
-        g.fillStyle = col;
-        g.beginPath();
-        g.arc(cx, sy, sr + (4 - i) * u * 26, 0, Math.PI * 2);
-        g.fill();
-      });
-      g.fillStyle = "#f6e3c3";
-      g.beginPath();
-      g.arc(cx, sy, sr, 0, Math.PI * 2);
-      g.fill();
-      grainOver(g, W, H, t, 0.08);
       const L = f.lines[f.current];
-      if (!L || !L.words.length) return;
+      if (!L || !L.words.length) {
+        grainOver(g, W, H, t, 0.06);
+        return;
+      }
+      const spec = this.layout(g, f, L, u);
+      // a layer the size of the canvas: footage (or colour) kept only inside the type
+      const c = g.canvas;
+      let lay = cutLayers.get(c);
+      if (!lay || lay.width !== c.width || lay.height !== c.height) {
+        lay = document.createElement("canvas");
+        lay.width = c.width;
+        lay.height = c.height;
+        cutLayers.set(c, lay);
+      }
+      const lg = lay.getContext("2d");
+      lg.setTransform(1, 0, 0, 1, 0, 0);
+      lg.clearRect(0, 0, lay.width, lay.height);
+      lg.setTransform(g.getTransform());
+      // the type first, then the footage poured into it (source-in)
+      lg.save();
+      place(lg, f);
+      this.text(lg, f, spec, u, "fill");
+      lg.restore();
+      lg.globalCompositeOperation = "source-in";
+      if (!videoBg(lg, f, "saturate(1.2) contrast(1.1)")) {
+        // flowing colour when there is no footage
+        const gr = lg.createLinearGradient(0, H * (0.2 + 0.1 * Math.sin(t * 0.4)), W, H * (0.8 - 0.1 * Math.cos(t * 0.3)));
+        gr.addColorStop(0, "#ff3d6e");
+        gr.addColorStop(0.5, "#ff9a3c");
+        gr.addColorStop(1, "#7b3dff");
+        lg.fillStyle = gr;
+        lg.fillRect(0, 0, W, H);
+        lg.globalCompositeOperation = "source-atop";
+        for (let i = 0; i < 5; i++) {
+          const x = W * ((rand(i * 3.1) + t * 0.05 * (i + 1)) % 1);
+          const sg = lg.createLinearGradient(x - W * 0.1, 0, x + W * 0.1, 0);
+          sg.addColorStop(0, "rgba(255,255,255,0)");
+          sg.addColorStop(0.5, `rgba(255,255,255,${0.2 + 0.15 * pulse})`);
+          sg.addColorStop(1, "rgba(255,255,255,0)");
+          lg.fillStyle = sg;
+          lg.fillRect(0, 0, W, H);
+        }
+      }
+      lg.globalCompositeOperation = "source-over";
+      g.save();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(lay, 0, 0);
+      g.restore();
+      // a fine outline around the letters, and grain
       g.save();
       place(g, f);
-      this.drawLine(g, f, L, u);
+      this.text(g, f, spec, u, "stroke");
       g.restore();
+      grainOver(g, W, H, t, 0.05);
     },
-    drawLine(g, f, line, u) {
+    layout(g, f, line, u) {
+      const { safe } = f;
+      const rows = stackRows(line.words);
+      const spec = rows.map((ws) => {
+        const label = upper(ws.map((w) => w.text).join(" "));
+        g.font = CUT_FONT(100);
+        const w100 = g.measureText(label).width || 1;
+        return { label, size: Math.min(u * 330, (100 * safe.w * 0.96) / w100), t0: ws[0].t0 };
+      });
+      let total = spec.reduce((a, r) => a + r.size * 0.9, 0);
+      const k = total > safe.h * 0.86 ? (safe.h * 0.86) / total : 1;
+      spec.forEach((r) => (r.size *= k));
+      total *= k;
+      let y = safe.y + safe.h * 0.47 - total / 2;
+      spec.forEach((r) => {
+        r.y = y + (r.size * 0.9) / 2;
+        y += r.size * 0.9;
+      });
+      return spec;
+    },
+    text(g, f, spec, u, mode) {
       const { t, safe } = f;
-      const size = u * 106;
-      const hero = longestIndex(line.words);
-      const words = line.words.map((w) => ({ ...w, label: w.text.toLocaleLowerCase("es") }));
-      const rows = wrapCached(g, `gr|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => GROOVY_FONT(size), safe.w * 0.8, size * 0.25);
-      const lh = size * 1.08;
-      const top = safe.y + safe.h * 0.42 - (rows.length * lh) / 2;
-      const depth = Math.round(size * 0.1);
-      g.font = GROOVY_FONT(size);
-      g.textBaseline = "middle";
+      const cx = safe.x + safe.w / 2;
       g.textAlign = "center";
-      g.lineJoin = "round";
-      rows.forEach((row, ri) => {
-        const y = top + ri * lh + lh / 2;
-        row.items.forEach((it, wi) => {
-          const w = it.w;
-          const a = (t - w.t0 - wi * 0.06) / 0.4;
-          if (a < 0) return;
-          const e = ease.back(clamp(a));
-          const x = safe.x + (safe.w - row.width) / 2 + it.x + it.width / 2;
-          const wob = Math.sin(t * 2.4 + w.index * 1.3) * 0.035;
-          g.save();
-          g.translate(x, y + (1 - e) * size * 0.8 + Math.sin(t * 2.4 + w.index) * u * 4);
-          g.rotate(wob + (1 - clamp(a)) * 0.3);
-          g.scale(e, e);
-          // extrusion: stacked copies down-right in deep brown
-          g.fillStyle = "#5a2e1c";
-          for (let d = depth; d > 0; d -= 1) g.fillText(w.label, d * 0.9, d);
-          g.lineWidth = size * 0.07;
-          g.strokeStyle = "#5a2e1c";
-          g.strokeText(w.label, 0, 0);
-          g.fillStyle = w.index === hero ? "#e2702c" : "#fff3dc";
-          g.fillText(w.label, 0, 0);
-          g.restore();
-        });
+      g.textBaseline = "middle";
+      spec.forEach((r, i) => {
+        const a = (t - r.t0 - i * 0.05) / 0.3;
+        if (a < 0) return;
+        const e = ease.out(clamp(a));
+        g.save();
+        g.translate(cx, r.y);
+        g.scale(lerp(1.18, 1, e), lerp(1.18, 1, e));
+        g.font = CUT_FONT(r.size);
+        g.globalAlpha = clamp(a * 2);
+        if (mode === "fill") {
+          g.fillStyle = "#000";
+          g.fillText(r.label, 0, 0);
+        } else {
+          g.lineWidth = Math.max(1, u * 2);
+          g.strokeStyle = "rgba(255,255,255,0.55)";
+          g.strokeText(r.label, 0, 0);
+        }
+        g.restore();
       });
     },
   };
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, summit, groovy, karasing, kararetro, karastage };
+  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;

@@ -149,8 +149,8 @@
     // extreme sports (they suit action footage: the sample clip included)
     adrenalina: { id: "adrenalina", label: "Adrenalina", kind: "motion", preset: "adrenalina", background: { type: "motion" }, video: true, sampleVideo: true },
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true, sampleVideo: true },
-    summit: { id: "summit", label: "Summit", kind: "motion", preset: "summit", background: { type: "motion" }, video: true, sampleVideo: true },
-    groovy: { id: "groovy", label: "Groovy", kind: "motion", preset: "groovy", background: { type: "motion" } },
+    broadcast: { id: "broadcast", label: "Broadcast", kind: "motion", preset: "broadcast", background: { type: "motion" }, meta: true, video: true, sampleVideo: true },
+    recorte: { id: "recorte", label: "Recorte", kind: "motion", preset: "recorte", background: { type: "motion" }, video: true, sampleVideo: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
     kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
