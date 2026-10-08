@@ -2270,9 +2270,10 @@ body:not([data-view="karaoke"]) #styles button.cat-off {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  margin: 0 -16px;
-  padding: 0 16px 4px;
-  scroll-padding: 0 16px;
+  /* bleed to the card's edges (its padding is 14px) */
+  margin: 0 -14px;
+  padding: 0 14px 4px;
+  scroll-padding: 0 14px;
 }
 .style-row::-webkit-scrollbar {
   display: none;

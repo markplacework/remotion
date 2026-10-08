@@ -2405,9 +2405,10 @@ body:not([data-view="karaoke"]) #styles button.cat-off {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  margin: 0 -16px;
-  padding: 0 16px 4px;
-  scroll-padding: 0 16px;
+  /* bleed to the card's edges (its padding is 14px) */
+  margin: 0 -14px;
+  padding: 0 14px 4px;
+  scroll-padding: 0 14px;
 }
 .style-row::-webkit-scrollbar {
   display: none;
@@ -14092,7 +14093,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     shownCount += 4;
     applyMore();
   };
-  STYLE_CATS.forEach(([key, label]) => {
+  // no "Todos" chip: "Volver a las categorías" goes back to the split view
+  STYLE_CATS.filter(([key]) => key !== "todos").forEach(([key, label]) => {
     const c = document.createElement("button");
     c.type = "button";
     c.className = "chip";

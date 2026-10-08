@@ -1732,7 +1732,8 @@
     shownCount += 4;
     applyMore();
   };
-  STYLE_CATS.forEach(([key, label]) => {
+  // no "Todos" chip: "Volver a las categorías" goes back to the split view
+  STYLE_CATS.filter(([key]) => key !== "todos").forEach(([key, label]) => {
     const c = document.createElement("button");
     c.type = "button";
     c.className = "chip";
