@@ -1274,6 +1274,72 @@
     requestAnimationFrame(thumbLoop);
   })(0);
 
+  // Home hero: a real lyric video playing inside the phone mockup, cycling styles.
+  (function heroScreen() {
+    const c = $("hero-screen");
+    if (!c) return;
+    $("hero-tools").onclick = () => $("tools").scrollIntoView({ behavior: "smooth", block: "start" });
+    const TL = {
+      entries: [
+        { lineId: "h1", text: "Bailando bajo la luna", start: 0.2, end: 1.9 },
+        { lineId: "h2", text: "Tu voz en mi canción", start: 1.9, end: 3.6 },
+        { lineId: "h3", text: "Esta noche es nuestra", start: 3.6, end: 5.6 },
+      ],
+    };
+    const LOOP = 5.8;
+    const lines = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
+    const order = ["kinetic", "aurora", "karaoke", "couture", "neon", "wordpop"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const tag = $("hero-style");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let shown = -1;
+    let last = 0;
+    (function loop(now) {
+      requestAnimationFrame(loop);
+      if (view !== "home" || document.hidden || now - last < 33) return;
+      last = now;
+      const r = c.getBoundingClientRect();
+      if (!r.width) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round(r.width * dpr);
+      const h = Math.round(r.height * dpr);
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
+      const sec = still ? 2.6 : now / 1000;
+      const k = Math.floor(sec / LOOP) % order.length;
+      const preset = order[k];
+      if (k !== shown) {
+        shown = k;
+        tag.textContent = "Estilo: " + preset.label;
+      }
+      const g = c.getContext("2d");
+      const W = 360;
+      const H = (W * h) / w;
+      g.setTransform(w / W, 0, 0, h / H, 0, 0);
+      // keep the lyric clear of TikTok's side icons and caption
+      const safe = { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
+      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, meta: { title: "Tu canción", artist: "Artista" } }));
+      // TikTok's own shade so its white UI reads over light styles
+      g.setTransform(w / W, 0, 0, h / H, 0, 0);
+      const top = g.createLinearGradient(0, 0, 0, H * 0.16);
+      top.addColorStop(0, "rgba(0,0,0,.45)");
+      top.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = top;
+      g.fillRect(0, 0, W, H * 0.16);
+      const bot = g.createLinearGradient(0, H * 0.62, 0, H);
+      bot.addColorStop(0, "rgba(0,0,0,0)");
+      bot.addColorStop(1, "rgba(0,0,0,.6)");
+      g.fillStyle = bot;
+      g.fillRect(0, H * 0.62, W, H * 0.38);
+      const side = g.createLinearGradient(W * 0.78, 0, W, 0);
+      side.addColorStop(0, "rgba(0,0,0,0)");
+      side.addColorStop(1, "rgba(0,0,0,.28)");
+      g.fillStyle = side;
+      g.fillRect(W * 0.78, 0, W * 0.22, H);
+    })(0);
+  })();
+
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
