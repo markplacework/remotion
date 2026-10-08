@@ -1393,7 +1393,7 @@
       return { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     });
     // styles shown over their own sample footage, the way users will use them
-    const order = ["aurora", "karaoke", "tormenta", "broadcast"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["aurora", "karaoke", "tormenta", "broadcast", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
