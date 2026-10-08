@@ -91,27 +91,47 @@
   }
   function buildCues(words, duration) {
     const cues = [];
-    let cur = null;
-    const flush = () => {
-      if (!cur) return;
-      cues.push({ start: cur.start, end: cur.end, text: breakLines(cur.words.join(" ")) });
-      cur = null;
+    let cur = []; // the words of the card being filled
+    const text = (ws) => ws.map((w) => w.t).join(" ");
+    const flush = (ws) => {
+      if (ws.length) cues.push({ start: ws[0].start, end: ws[ws.length - 1].end, text: breakLines(text(ws)) });
     };
     words.forEach((w) => {
       const t = w.text.trim();
       if (!t) return;
-      if (cur) {
-        const gap = w.start - cur.end;
-        const len = cur.words.join(" ").length + 1 + t.length;
-        const prev = cur.words[cur.words.length - 1];
-        const sentence = /[.?!…]$/.test(prev) && cur.words.join(" ").length > 18;
-        if (gap > GAP_SPLIT || len > MAX_CHARS || w.end - cur.start > MAX_DUR || sentence) flush();
+      const item = { t, start: w.start, end: w.end };
+      if (cur.length) {
+        const last = cur[cur.length - 1];
+        const gap = w.start - last.end;
+        const sentence = /[.?!…]$/.test(last.t) && text(cur).length > 6;
+        // a word that closes the phrase may stretch the card a little,
+        // instead of being left alone at the start of the next one
+        const room = /[.?!…,;:]$/.test(t) ? MAX_CHARS + 10 : MAX_CHARS;
+        const tooLong = text(cur).length + 1 + t.length > room || w.end - cur[0].start > MAX_DUR;
+        if (gap > GAP_SPLIT || sentence) {
+          flush(cur);
+          cur = [];
+        } else if (tooLong) {
+          // rather than cutting mid-phrase, close the card at its last comma
+          // (if it's past the first third) and carry the rest over
+          let k = -1;
+          for (let i = cur.length - 1; i >= Math.ceil(cur.length / 3); i--)
+            if (/[,;:]$/.test(cur[i - 1] ? cur[i - 1].t : "")) {
+              k = i;
+              break;
+            }
+          if (k > 0) {
+            flush(cur.slice(0, k));
+            cur = cur.slice(k);
+          } else {
+            flush(cur);
+            cur = [];
+          }
+        }
       }
-      if (!cur) cur = { start: w.start, end: w.end, words: [] };
-      cur.words.push(t);
-      cur.end = w.end;
+      cur.push(item);
     });
-    flush();
+    flush(cur);
     // hold each card a little after the last word, never into the next one
     cues.forEach((c, i) => {
       const next = cues[i + 1] ? cues[i + 1].start - 0.08 : duration || c.end + 1;

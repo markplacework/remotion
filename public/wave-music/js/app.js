@@ -415,6 +415,18 @@
       capBusy("");
     }
   };
+  // demo: the podcast clip with its subtitles already made, no wait
+  $("cap-demo").onclick = async () => {
+    const D = WM.DEMO_CAPTIONS;
+    try {
+      const blob = await (await fetch(D.videoSrc)).blob();
+      capPick(new File([blob], D.name, { type: "video/mp4" }));
+      capOpen(C.buildCues(D.words, D.duration));
+      toast("Video demo · subtítulos hechos por la IA");
+    } catch {
+      toast("No se pudo cargar el video demo");
+    }
+  };
   function capOpen(cues) {
     cap.cues = cues;
     if (cap.url) URL.revokeObjectURL(cap.url);
