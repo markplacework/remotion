@@ -1732,8 +1732,7 @@
     shownCount += 4;
     applyMore();
   };
-  // no "Todos" chip: "Volver a las categorías" goes back to the split view
-  STYLE_CATS.filter(([key]) => key !== "todos").forEach(([key, label]) => {
+  STYLE_CATS.forEach(([key, label]) => {
     const c = document.createElement("button");
     c.type = "button";
     c.className = "chip";
@@ -1776,25 +1775,6 @@
   }
   WM.Themes.list.forEach((t) => $(t.kind === "motion" ? "styles-pro" : "styles-classic").appendChild(styleButton(t)));
   showCat("todos");
-  // phones: a sliding row per category; "Ver todo" opens that category as a grid
-  STYLE_CATS.filter(([, , ids]) => ids).forEach(([key, label, ids]) => {
-    const head = document.createElement("div");
-    head.className = "style-row-head";
-    head.innerHTML = `<span>${label}</span><button type="button">Ver todo ›</button>`;
-    head.querySelector("button").onclick = () => {
-      document.body.classList.add("styles-grid");
-      showCat(key);
-    };
-    const row = document.createElement("div");
-    row.className = "style-row styles";
-    ids.forEach((id) => row.appendChild(styleButton(WM.Themes.get(id))));
-    $("style-rows").append(head, row);
-  });
-  $("cats-back").onclick = () => {
-    document.body.classList.remove("styles-grid");
-    showCat("todos");
-    $("style-rows").scrollIntoView({ block: "nearest" });
-  };
   WM.Presets.loadFonts();
   function paintSpotifyThumb(id) {
     const p = WM.Themes.spotifyPalette(id);
