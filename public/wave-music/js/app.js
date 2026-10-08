@@ -1463,7 +1463,10 @@
       b.title = c.label;
       b.setAttribute("aria-label", c.label);
       b.dataset.combo = c.id;
-      b.innerHTML = c.ink ? `<i style="background:${c.ink}"></i><i style="background:${c.accent}"></i>` : `<span>Original</span>`;
+      if (c.ink) {
+        // square swatch split corner to corner: main colour / highlight
+        b.style.background = `linear-gradient(135deg, ${c.ink} calc(50% - 1px), rgba(0,0,0,.45) calc(50% - 1px) calc(50% + 1px), ${c.accent} calc(50% + 1px))`;
+      } else b.innerHTML = `<span>Original</span>`;
       b.onclick = () => {
         preview.colors = c.ink ? { ink: c.ink, accent: c.accent } : null;
         combos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));

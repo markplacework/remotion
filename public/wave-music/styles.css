@@ -2077,16 +2077,11 @@ body[data-view="captions"] #btn-demo {
   height: 34px;
   min-width: 34px;
   padding: 0;
-  border-radius: 99px;
+  border-radius: 7px;
   border: 1px solid var(--line-2);
   background: var(--surface-2);
   cursor: pointer;
   overflow: hidden;
-}
-.combo i {
-  display: block;
-  width: 16px;
-  height: 34px;
 }
 .combo span {
   padding: 0 12px;
