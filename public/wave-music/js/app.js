@@ -1393,7 +1393,7 @@
       return { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     });
     // styles shown over their own sample footage, the way users will use them
-    const order = ["tormenta", "aurora", "broadcast", "street", "otono", "cinematic"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["aurora", "karaoke", "tormenta", "broadcast"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
@@ -1406,7 +1406,7 @@
         v.loop = true;
         v.playsInline = true;
         v.preload = "auto";
-        // Aurora keeps your own ski clip (bundled); the rest, their Pixabay samples
+        // Aurora plays over your own ski clip (bundled); the rest, their Pixabay samples
         if (id === "aurora") v.src = WM.DEMO_BG.src;
         else {
           v.crossOrigin = "anonymous";
