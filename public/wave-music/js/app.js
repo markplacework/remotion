@@ -1279,6 +1279,12 @@
     const c = $("hero-screen");
     if (!c) return;
     $("hero-tools").onclick = () => $("tools").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelectorAll("[data-scroll]").forEach((a) => {
+      a.onclick = (e) => {
+        e.preventDefault();
+        $(a.dataset.scroll).scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+    });
     const TL = {
       entries: [
         { lineId: "h1", text: "Bailando bajo la luna", start: 0.2, end: 1.9 },
