@@ -232,6 +232,52 @@
     return grain;
   }
   const CINE_DEFAULT = "'Cormorant Garamond', Georgia, serif";
+  const CINE_TITLE = "Cinzel, 'Cormorant Garamond', Georgia, serif";
+  /** Metallic fills for the trailer type, around a row at y. */
+  function cineGold(g, size, y = 0) {
+    const gr = g.createLinearGradient(0, y - size * 0.5, 0, y + size * 0.5);
+    gr.addColorStop(0, "#fff6dc");
+    gr.addColorStop(0.45, "#f1d59b");
+    gr.addColorStop(0.55, "#d2a660");
+    gr.addColorStop(1, "#f6deaa");
+    return gr;
+  }
+  function cineSilver(g, size, y = 0) {
+    const gr = g.createLinearGradient(0, y - size * 0.5, 0, y + size * 0.5);
+    gr.addColorStop(0, "#ffffff");
+    gr.addColorStop(0.5, "#ece6dc");
+    gr.addColorStop(0.56, "#cfc6b8");
+    gr.addColorStop(1, "#f4efe6");
+    return gr;
+  }
+  /** Anamorphic lens flare: a hot core and a long blue streak across the frame. */
+  function cineFlare(g, f, u, y, power, alpha = 1) {
+    const { W } = f;
+    const p = Math.min(1, power) * alpha;
+    if (p <= 0.02) return;
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    const streak = g.createLinearGradient(0, 0, W, 0);
+    streak.addColorStop(0, "rgba(70,170,255,0)");
+    streak.addColorStop(0.5, `rgba(150,215,255,${0.55 * p})`);
+    streak.addColorStop(1, "rgba(70,170,255,0)");
+    g.fillStyle = streak;
+    g.fillRect(0, y - u * 2.5, W, u * 5);
+    const haze = g.createLinearGradient(0, y - u * 40, 0, y + u * 40);
+    haze.addColorStop(0, "rgba(60,150,255,0)");
+    haze.addColorStop(0.5, `rgba(60,150,255,${0.14 * p})`);
+    haze.addColorStop(1, "rgba(60,150,255,0)");
+    g.fillStyle = haze;
+    g.fillRect(0, y - u * 40, W, u * 80);
+    const cx = W / 2 + Math.sin(f.t * 0.3) * u * 60;
+    const core = g.createRadialGradient(cx, y, 0, cx, y, u * 90);
+    core.addColorStop(0, `rgba(255,255,255,${0.5 * p})`);
+    core.addColorStop(0.25, `rgba(170,220,255,${0.22 * p})`);
+    core.addColorStop(1, "rgba(120,190,255,0)");
+    g.fillStyle = core;
+    g.fillRect(cx - u * 90, y - u * 90, u * 180, u * 180);
+    g.restore();
+  }
   /** Text drawn only as its blurred shadow: a lens out of focus. */
   function blurText(g, txt, x, y, blur, color) {
     // shadow offset and blur live in device pixels, the text in user space
@@ -249,7 +295,7 @@
     id: "cinematic",
     label: "Cinematic",
     tag: "Película",
-    fonts: ["500 100px 'Cormorant Garamond'", "italic 500 100px 'Cormorant Garamond'", "600 100px 'Cormorant Garamond'", "500 100px Inter"],
+    fonts: ["600 100px Cinzel", "500 100px Inter"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
@@ -338,19 +384,11 @@
       place(g, f);
       this.drawTitle(g, f, u);
       const ly = this.drawLyric(g, f, u);
-      // anamorphic flare through the lyric, flaring on the beat
+      // anamorphic flare through the lyric: on every new line and on the beat
       if (ly != null) {
-        g.globalCompositeOperation = "lighter";
-        const fl = 0.25 + 0.55 * pulse;
-        const streak = g.createLinearGradient(0, 0, W, 0);
-        streak.addColorStop(0, "rgba(80,190,255,0)");
-        streak.addColorStop(0.5, `rgba(120,210,255,${0.22 * fl})`);
-        streak.addColorStop(1, "rgba(80,190,255,0)");
-        g.fillStyle = streak;
-        g.fillRect(0, ly - u * 2, W, u * 4);
-        g.fillStyle = `rgba(80,190,255,${0.05 * fl})`;
-        g.fillRect(-W, ly - u * 14, W * 3, u * 28);
-        g.globalCompositeOperation = "source-over";
+        const L = f.lines[f.current];
+        const hit = L ? Math.exp(-Math.max(0, t - L.start) / 0.45) : 0;
+        cineFlare(g, f, u, ly, 0.25 + 0.75 * Math.max(pulse * 0.8, hit));
       }
       g.restore();
       g.restore();
@@ -370,12 +408,13 @@
       g.fillStyle = g.createPattern(tile, "repeat");
       g.fillRect(0, 0, W + 192, H + 192);
       g.restore();
-      const bar = H * 0.075;
+      // scope bars (2.39:1 feel)
+      const bar = H * 0.1;
       g.fillStyle = "#000";
       g.fillRect(0, 0, W, bar);
       g.fillRect(0, H - bar, W, bar);
     },
-    /** Opening title card, before the first line is sung. */
+    /** Opening title card, before the first line is sung: "ARTIST presenta", then the title. */
     drawTitle(g, f, u) {
       const { t, safe, lines } = f;
       const first = lines[0];
@@ -383,10 +422,11 @@
       const a = clamp(t / 1.2) * clamp((end - 0.25 - t) / 0.7);
       if (a <= 0) return;
       const meta = f.meta || {};
-      const title = meta.title || "Wave Music";
+      const title = upper(meta.title || "Wave Music");
       const cx = safe.x + safe.w / 2;
       const cy = safe.y + safe.h * 0.5;
-      const push = 1 + 0.04 * clamp(t / Math.max(1, end));
+      const push = 1 + 0.05 * clamp(t / Math.max(1, end));
+      const has = "letterSpacing" in g;
       g.save();
       g.translate(cx, cy);
       g.scale(push, push);
@@ -395,68 +435,72 @@
       g.globalAlpha = a;
       if (meta.artist) {
         g.font = `500 ${u * 22}px Inter, sans-serif`;
-        if ("letterSpacing" in g) g.letterSpacing = `${u * 9}px`;
-        g.fillStyle = "rgba(246,239,228,0.75)";
-        g.fillText(upper(meta.artist), u * 4.5, -u * 92);
+        if (has) g.letterSpacing = `${u * 10}px`;
+        g.fillStyle = "rgba(240,230,210,0.7)";
+        g.fillText(upper(meta.artist) + "  PRESENTA", u * 5, -u * 110);
       }
-      if ("letterSpacing" in g) g.letterSpacing = "0px";
-      let size = u * 96;
-      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
+      // the title tracks in, wide to tight
+      const k = ease.out(clamp(t / 2.2));
+      let size = u * 84;
+      if (has) g.letterSpacing = `${size * (0.5 - 0.32 * k)}px`;
+      g.font = `600 ${size}px ${fam(CINE_TITLE)}`;
       const tw = g.measureText(title).width;
-      if (tw > safe.w * 0.9) size *= (safe.w * 0.9) / tw;
-      g.font = `italic 500 ${size}px ${fam(CINE_DEFAULT)}`;
-      g.shadowColor = "rgba(255,226,190,0.45)";
-      g.shadowBlur = u * 26;
-      g.fillStyle = "#f6efe4";
+      if (tw > safe.w * 0.92) {
+        size *= (safe.w * 0.92) / tw;
+        g.font = `600 ${size}px ${fam(CINE_TITLE)}`;
+      }
+      g.shadowColor = "rgba(255,214,160,0.45)";
+      g.shadowBlur = u * 30;
+      g.fillStyle = cineGold(g, size);
       g.fillText(title, 0, 0);
-      g.shadowBlur = 0;
-      g.fillStyle = "rgba(246,239,228,0.6)";
-      const lw = u * 120 * ease.out(clamp(t / 1.6));
-      g.fillRect(-lw / 2, u * 76, lw, Math.max(1, u * 1.5));
       g.restore();
-      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      if (has) g.letterSpacing = "0px";
+      // a flare sweeps through the title as it lands
+      cineFlare(g, f, u, cy, 0.5 + 0.5 * Math.exp(-Math.abs(t - 1.1) / 0.5), a);
     },
-    /** Trailer-style lyric: tracked capitals, the key word in italic. Returns its centre y. */
+    /** Trailer-style lyric: Cinzel capitals that track in and rack into focus. Returns its centre y. */
     drawLyric(g, f, u) {
       const { t, safe } = f;
-      const size = u * 70;
-      const track = size * 0.2;
+      const size = u * 66;
       const cy = safe.y + safe.h * 0.5;
       const has = "letterSpacing" in g;
+      const track = size * 0.16;
       const fontOf = (w) => {
-        if (has) g.letterSpacing = w.hero ? "0px" : `${track}px`;
-        return w.hero ? `italic 500 ${size * 1.42}px ${fam(CINE_DEFAULT)}` : `600 ${size}px ${fam(CINE_DEFAULT)}`;
+        if (has) g.letterSpacing = `${track}px`;
+        return `600 ${w.hero ? size * 1.22 : size}px ${fam(CINE_TITLE)}`;
       };
       const show = (line, alphaMul, lift, out) => {
         if (!line || !line.words.length || alphaMul <= 0) return;
         const hero = longestIndex(line.words);
-        const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: w.index === hero ? w.text.toLocaleLowerCase("es") : upper(w.text) }));
-        const rows = wrapCached(g, `c2|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, fontOf, safe.w * 0.88, size * 0.55);
-        const lh = size * 1.7;
+        const words = line.words.map((w) => ({ ...w, hero: w.index === hero, label: upper(w.text) }));
+        const rows = wrapCached(g, `c3|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, fontOf, safe.w * 0.9, size * 0.42);
+        const lh = size * 1.55;
         // a slow push-in across the whole line, like a dolly move
         const dur = Math.max(1, line.end - line.start);
-        const push = 1 + 0.045 * clamp((t - line.start) / dur);
+        const push = 1 + 0.04 * clamp((t - line.start) / dur);
         g.save();
         g.translate(safe.x + safe.w / 2, cy + lift);
         g.scale(push, push);
         g.textBaseline = "middle";
-        g.textAlign = "left";
+        g.textAlign = "center";
         rows.forEach((row, ri) => {
           const y = (ri - (rows.length - 1) / 2) * lh;
           row.items.forEach((it) => {
             const w = it.w;
-            // focus pull: each word starts soft and racks into focus
-            const a = out ? 1 : clamp((t - w.t0 + 0.1) / 0.45);
+            // focus pull and tracking-in: each word arrives soft and wide, and settles
+            const a = out ? 1 : clamp((t - w.t0 + 0.1) / 0.55);
             if (a <= 0) return;
-            g.font = fontOf(w);
-            const x = -row.width / 2 + it.x;
             const sharp = ease.inOut(a);
-            const blur = out ? u * 30 * (1 - alphaMul) : u * 34 * (1 - sharp);
-            if (blur > u) blurText(g, w.label, x, y, blur, `rgba(255,232,205,${(out ? alphaMul : Math.min(1, a * 2)) * 0.9})`);
-            g.globalAlpha = (out ? alphaMul * alphaMul : sharp * sharp) * 1;
-            g.shadowColor = "rgba(255,220,180,0.35)";
-            g.shadowBlur = u * 18;
-            g.fillStyle = w.hero ? "#ffd9a8" : "#f6efe4";
+            const fsize = w.hero ? size * 1.22 : size;
+            const x = -row.width / 2 + it.x + it.width / 2;
+            if (has) g.letterSpacing = `${track + (out ? 0 : fsize * 0.45 * (1 - ease.out(a)))}px`;
+            g.font = `600 ${fsize}px ${fam(CINE_TITLE)}`;
+            const blur = out ? u * 26 * (1 - alphaMul) : u * 30 * (1 - sharp);
+            if (blur > u) blurText(g, w.label, x, y, blur, `rgba(255,228,190,${(out ? alphaMul : Math.min(1, a * 2)) * 0.85})`);
+            g.globalAlpha = out ? alphaMul * alphaMul : sharp * sharp;
+            g.shadowColor = w.hero ? "rgba(255,200,130,0.55)" : "rgba(255,225,190,0.35)";
+            g.shadowBlur = u * (w.hero ? 26 : 16);
+            g.fillStyle = w.hero ? cineGold(g, fsize, y) : cineSilver(g, fsize, y);
             g.fillText(w.label, x, y);
             g.shadowBlur = 0;
             g.globalAlpha = 1;
@@ -4133,12 +4177,19 @@
   }
 
   // LLUVIA — a rainy night seen through a wet window
-  const RAIN_FONT = (size) => `600 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
+  const RAIN_FONT = (size) => `italic 400 ${size}px ${fam("'Instrument Serif', Georgia, serif")}`;
+  let rainCanvas = null;
+  const rainLayer = (w, h) => {
+    if (!rainCanvas) rainCanvas = document.createElement("canvas");
+    if (rainCanvas.width < w) rainCanvas.width = w;
+    if (rainCanvas.height < h) rainCanvas.height = h;
+    return rainCanvas;
+  };
   const lluvia = {
     id: "lluvia",
     label: "Lluvia",
     tag: "Melancolía",
-    fonts: ["600 100px Montserrat"],
+    fonts: ["italic 400 100px 'Instrument Serif'"],
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
@@ -4158,7 +4209,85 @@
       if (!L || !L.words.length) return;
       g.save();
       place(g, f);
-      softLine(g, f, L, u, { key: "ll", font: RAIN_FONT, size: 86, col: "#f2f6ff", heroCol: "#9fd4ff", hero: true, blur: 30, glow: "rgba(150,200,255,0.45)", drop: 14 });
+      this.drawLyric(g, f, u);
+      g.restore();
+    },
+    /**
+     * The lyric as if seen through a wet window: each word clears like
+     * misted glass, and the line is mirrored below in a rippling puddle.
+     */
+    drawLyric(g, f, u) {
+      const { t, safe } = f;
+      const L = f.lines[f.current];
+      const prev = f.lines[f.current - 1];
+      const since = L ? t - L.start : 0;
+      if (prev && since < 0.22) this.block(g, f, u, prev, 1 - since / 0.22, true);
+      this.block(g, f, u, L, 1, false);
+    },
+    block(g, f, u, line, alpha, out) {
+      if (!line || !line.words.length || alpha <= 0) return;
+      const { t, safe } = f;
+      const size = u * 128;
+      const words = line.words.map((w) => ({ ...w, label: w.text.toLocaleLowerCase("es") }));
+      const rows = wrapCached(g, `rn|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => RAIN_FONT(size), safe.w * 0.9, size * 0.28);
+      const lh = size * 1.02;
+      const h = rows.length * lh;
+      const cx = safe.x + safe.w / 2;
+      // the line before slides down and away, like water running off
+      const top = safe.y + safe.h * 0.42 - h / 2 + (out ? (1 - alpha) * u * 70 : 0);
+      // the words, drawn once into a layer: shown sharp, then mirrored in the puddle
+      const pad = size * 0.5;
+      const lw = Math.ceil(safe.w + pad * 2);
+      const lhh = Math.ceil(h + pad * 2);
+      const layer = rainLayer(lw, lhh);
+      const c = layer.getContext("2d");
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, lw, lhh);
+      c.font = RAIN_FONT(size);
+      c.textBaseline = "middle";
+      c.textAlign = "left";
+      rows.forEach((row, ri) => {
+        const y = pad + ri * lh + lh / 2;
+        const x0 = pad + (safe.w - row.width) / 2;
+        row.items.forEach((it) => {
+          const w = it.w;
+          // a beat after the line before has run off
+          const a = out ? 1 : clamp((t - w.t0 - (line.index > 0 ? 0.12 : 0)) / 0.6);
+          if (a <= 0) return;
+          const clear = ease.out(a);
+          // misted: blurred and pale, then the glass clears
+          if (clear < 1) {
+            c.save();
+            c.shadowColor = `rgba(200,225,255,${0.8 * (1 - clear) + 0.2})`;
+            c.shadowBlur = u * 26 * (1 - clear);
+            c.shadowOffsetX = 10000;
+            c.fillText(w.label, x0 + it.x - 10000, y);
+            c.restore();
+          }
+          c.globalAlpha = clear;
+          c.shadowColor = "rgba(140,190,255,0.55)";
+          c.shadowBlur = u * 22;
+          c.fillStyle = "#eef5ff";
+          c.fillText(w.label, x0 + it.x, y);
+          c.shadowBlur = 0;
+          c.globalAlpha = 1;
+        });
+      });
+      g.save();
+      g.globalAlpha = alpha;
+      g.drawImage(layer, 0, 0, lw, lhh, cx - lw / 2, top - pad, lw, lhh);
+      // the puddle: flipped, faded, broken into rippling strips
+      const base = top + h + u * 26;
+      const strip = Math.max(2, Math.round(u * 4));
+      const depth = Math.min(lhh, h * 0.7 + pad * 0.5);
+      for (let sy = 0; sy < depth; sy += strip) {
+        const k = 1 - sy / depth;
+        const dx = Math.sin(t * 2.4 + sy * 0.09 / u) * u * 6 * (0.4 + (1 - k));
+        g.globalAlpha = alpha * 0.3 * k * k;
+        const src = lhh - pad - sy - strip;
+        if (src < 0) break;
+        g.drawImage(layer, 0, src, lw, strip, cx - lw / 2 + dx, base + sy, lw, strip);
+      }
       g.restore();
     },
   };
@@ -5377,6 +5506,7 @@
       const a = ease.out((t - L.start) / 0.4);
       let alpha = 1;
       let dy = 0;
+      let dx = 0;
       let k = 1;
       if (o.exit != null) {
         alpha = 1 - o.exit;
@@ -5391,6 +5521,9 @@
       } else if (c.anim === "zoom") {
         alpha = a;
         k = 1.35 - 0.35 * a;
+      } else if (c.anim === "slide") {
+        alpha = a;
+        dx = (1 - a) * size * 1.6;
       }
       if (c.beat && o.exit == null) k *= 1 + 0.045 * f.pulse();
       if (alpha <= 0) return;
@@ -5398,7 +5531,7 @@
       g.globalAlpha = alpha;
       const cx = safe.x + safe.w / 2;
       const cy = y0 + blockH / 2;
-      g.translate(cx, cy + dy);
+      g.translate(cx + dx, cy + dy);
       g.scale(k, k);
       g.translate(-cx, -cy);
       g.font = cuFont(c, size);

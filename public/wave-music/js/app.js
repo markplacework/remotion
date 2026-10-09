@@ -1561,6 +1561,8 @@
     $("bgv-filters").hidden = !on;
     if (WM.LiveChat.onBg) WM.LiveChat.onBg();
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
+    $("bgv-filter-amount").hidden = WM.BgVideo.filter === "none";
+    if (on) requestAnimationFrame(paintFilterThumbs);
   }
   var cuSeenBg = "";
   /** A video or photo the user brought (uploaded or from the library), not an example. */
@@ -1592,12 +1594,13 @@
     };
   }
   WM.Fx.onchange = () => (needsSnap = true);
+  // filters as CapCut-style tiles: each one previews itself on their own footage
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "chip";
+    b.className = "flt";
     b.dataset.filter = id;
-    b.textContent = fl.label;
+    b.innerHTML = `<canvas width="112" height="150" aria-hidden="true"></canvas><span>${fl.label}</span>`;
     b.onclick = () => {
       WM.BgVideo.filter = id;
       updateBgv();
@@ -1605,6 +1608,31 @@
     };
     $("bgv-filter-list").appendChild(b);
   });
+  {
+    const r = $("bgv-filter-amount").querySelector("input");
+    r.oninput = () => {
+      WM.BgVideo.filterAmount = Number(r.value) / 100;
+      $("bgv-filter-amount").querySelector("output").textContent = r.value + "%";
+      needsSnap = true;
+    };
+  }
+  function paintFilterThumbs() {
+    const src = WM.BgVideo.kind === "image" ? WM.BgVideo.img : WM.BgVideo.el;
+    const sw = src.videoWidth || src.naturalWidth;
+    const sh = src.videoHeight || src.naturalHeight;
+    if (!WM.BgVideo.enabled || !sw) return;
+    $("bgv-filter-list").querySelectorAll("canvas").forEach((c) => {
+      const g = c.getContext("2d");
+      const k = Math.max(c.width / sw, c.height / sh);
+      g.globalCompositeOperation = "source-over";
+      g.drawImage(src, (c.width - sw * k) / 2, (c.height - sh * k) / 2, sw * k, sh * k);
+      WM.BgVideo.paintFilter(g, c.width, c.height, c.parentNode.dataset.filter, 1);
+    });
+  }
+  // the tiles follow the footage while they are on screen
+  setInterval(() => {
+    if (!document.hidden && !$("bgv-filters").hidden && $("bgv-filters").offsetParent) paintFilterThumbs();
+  }, 1200);
   $("btn-bgs").onclick = async () => {
     $("bgv-name").textContent = "Cargando…";
     try {
@@ -2062,15 +2090,15 @@
     needsSnap = true;
   }
   function cuTemplates() {
-    const sub = document.createElement("span");
-    sub.className = "cu-mine-label";
-    sub.textContent = "Para empezar";
-    $("cu-starters").replaceChildren(sub, ...CU.STARTERS.map((s) => cuChip(s.name, s.cfg, false)));
+    // ready looks are the styles themselves ("Personalizar este estilo"): here, only theirs
     const mine = CU.templates();
     const head = document.createElement("span");
     head.className = "cu-mine-label";
     head.textContent = "Mis plantillas";
-    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, true)));
+    const empty = document.createElement("span");
+    empty.className = "cu-mine-label";
+    empty.textContent = "Todavía no guardaste plantillas. Armá tu look y tocá «+ Guardar la mía».";
+    $("cu-mine").replaceChildren(...(mine.length ? [head, ...mine.map((m) => cuChip(m.name, m.cfg, true))] : [empty]));
   }
   /** The template being edited: its name and whether there is something to save. */
   function cuEditing() {
@@ -2153,6 +2181,7 @@
       mode: WM.Motion.wordMode,
       off: preview.offset,
       filter: WM.BgVideo.filter,
+      filterAmount: WM.BgVideo.filterAmount,
       fx: WM.Fx.current,
       sp: preview.spotifyColor,
     });
@@ -2204,6 +2233,9 @@
       }
       preview.setOffset(o.off);
       WM.BgVideo.filter = o.filter;
+      WM.BgVideo.filterAmount = o.filterAmount == null ? 1 : o.filterAmount;
+      $("bgv-filter-amount").querySelector("input").value = Math.round(WM.BgVideo.filterAmount * 100);
+      $("bgv-filter-amount").querySelector("output").textContent = Math.round(WM.BgVideo.filterAmount * 100) + "%";
       WM.Fx.current = { ...o.fx };
       $("bgv-fx-amount").querySelector("input").value = o.fx.amount;
       $("bgv-fx-amount").querySelector("output").textContent = o.fx.amount + "%";

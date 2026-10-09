@@ -99,6 +99,7 @@
     c = { ...DEFAULTS, ...c };
     if (c.particles && c.particles !== "none" && (!c.fx || c.fx === "none")) c.fx = c.particles;
     if (c.fx === "sparkles") c.fx = "stars"; // "Brillos" is gone
+    if (c.fx === "confetti") c.fx = "none";
     delete c.particles;
     return c;
   }
@@ -118,6 +119,14 @@
     }
   };
 
+  // once: the ready looks ("Para empezar") are gone, so a look left over
+  // from them goes back to Personalizado's own (saved templates stay)
+  if (read("wm-custom-v", 0) < 2) {
+    write(KEY_CUR, {});
+    write(KEY_ORIGIN, {});
+    write(KEY_ACTIVE, null);
+    write("wm-custom-v", 2);
+  }
   const api = {
     DEFAULTS,
     STARTERS,

@@ -461,7 +461,6 @@
                 <button class="btn btn-primary" type="submit">Guardar</button>
               </form>
               <div id="cu-mine" class="chips cu-tpls"></div>
-              <div id="cu-starters" class="chips cu-tpls"></div>
             </section>
             <details class="cu-sec" open>
               <summary>Texto</summary>
@@ -482,7 +481,7 @@
                 <label class="cu-color"><input type="color" data-cu="accent" /><span>Destacado</span></label>
                 <label class="cu-color"><input type="color" data-cu="effectColor" /><span>Efecto</span></label>
               </div>
-              <div class="chips" data-cu="effect">
+              <div class="chips grid3" data-cu="effect">
                 <button type="button" class="chip" data-v="none">Ninguno</button>
                 <button type="button" class="chip" data-v="shadow">Sombra</button>
                 <button type="button" class="chip" data-v="outline">Contorno</button>
@@ -493,15 +492,16 @@
             </details>
             <details class="cu-sec" open>
               <summary>Animación</summary>
-              <div class="chips" data-cu="anim">
+              <div class="chips grid3" data-cu="anim">
                 <button type="button" class="chip" data-v="fade">Aparecer</button>
                 <button type="button" class="chip" data-v="rise">Subir</button>
+                <button type="button" class="chip" data-v="slide">Deslizar</button>
                 <button type="button" class="chip" data-v="pop">Pop</button>
                 <button type="button" class="chip" data-v="zoom">Zoom</button>
-                <button type="button" class="chip" data-v="typewriter">Máquina de escribir</button>
-                <button type="button" class="chip" data-v="words">Palabra por palabra</button>
+                <button type="button" class="chip" data-v="typewriter" title="Máquina de escribir">Escribir</button>
+                <button type="button" class="chip" data-v="words" title="Palabra por palabra">Palabra</button>
                 <button type="button" class="chip" data-v="karaoke">Karaoke</button>
-                <button type="button" class="chip" data-v="bounce">Salto en la palabra</button>
+                <button type="button" class="chip" data-v="bounce" title="Salto en la palabra que se canta">Salto</button>
               </div>
               <label class="check"><input type="checkbox" data-cu="beat" /><span>Late con el ritmo</span></label>
               <label class="check"><input type="checkbox" data-cu="next" /><span>Mostrar la línea que sigue</span></label>
@@ -524,7 +524,7 @@
               <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
               <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
               <span class="opt-label">Efecto</span>
-              <div class="chips cu-fx" data-cu="fx">
+              <div class="chips grid3 cu-fx" data-cu="fx">
                 <button type="button" class="chip" data-v="none">Ninguno</button>
                 <button type="button" class="chip" data-v="snow">Nieve</button>
                 <button type="button" class="chip" data-v="rain">Lluvia</button>
@@ -540,7 +540,6 @@
                 <button type="button" class="chip" data-v="leak">Luz cálida</button>
                 <button type="button" class="chip" data-v="flare">Destello</button>
                 <button type="button" class="chip" data-v="stars">Estrellas</button>
-                <button type="button" class="chip" data-v="confetti">Confeti</button>
               </div>
               <label class="cu-range" id="cu-fxamount"><span class="opt-label">Intensidad</span><input type="range" data-cu="fxAmount" min="10" max="100" step="5" /><output></output></label>
             </details>
@@ -585,10 +584,11 @@
             <span id="bgv-name" class="bgv-name"></span>
             <div id="bgv-filters" class="bgv-filters" hidden>
               <span class="opt-label">Filtro</span>
-              <div id="bgv-filter-list" class="chips" role="group" aria-label="Filtro del fondo"></div>
+              <div id="bgv-filter-list" class="flt-list" role="group" aria-label="Filtro del fondo"></div>
+              <label class="cu-range flt-amount" id="bgv-filter-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="100" /><output>100%</output></label>
               <div id="bgv-fx">
                 <span class="opt-label">Efecto</span>
-                <div id="bgv-fx-list" class="chips" role="group" aria-label="Efecto sobre el fondo"></div>
+                <div id="bgv-fx-list" class="chips grid3" role="group" aria-label="Efecto sobre el fondo"></div>
                 <label class="cu-range" id="bgv-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
               </div>
             </div>

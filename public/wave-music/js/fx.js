@@ -21,6 +21,7 @@
     { id: "rays", label: "Rayos de luz" },
     { id: "leak", label: "Luz cálida" },
     { id: "flare", label: "Destello" },
+    { id: "stars", label: "Estrellas", drawn: true },
   ];
 
   // one element per effect, so styles and previews never fight over a clip
@@ -105,6 +106,7 @@
       const k = Math.min(1, amount / 100);
       if (id === "rain") return rain(g, W, H, t, k), true;
       if (id === "lightning") return lightning(g, W, H, t, k, pulse), true;
+      if (id === "stars") return stars(g, W, H, t, k), true;
       if (api.quiet) return false;
       api.load(id).catch(() => {});
       const c = clips.get(id);
@@ -122,6 +124,21 @@
       return true;
     },
   };
+
+  // A night sky of twinkling stars
+  function stars(g, W, H, t, k) {
+    const s = W / 1080;
+    g.save();
+    g.fillStyle = "#ffffff";
+    for (let i = 0; i < 120; i++) {
+      const tw = 0.5 + 0.5 * Math.sin(t * (1.5 + rnd(i) * 3) + i * 2.1);
+      g.globalAlpha = k * (0.25 + tw * 0.7);
+      g.beginPath();
+      g.arc(rnd(i + 1) * W, rnd(i + 2) * H, (1 + rnd(i + 3) * 2.2) * s, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+  }
 
   // Lightning (as in the Tormenta style): a fresh bolt on every strong beat
   function lightning(g, W, H, t, k, pulse) {

@@ -133,29 +133,55 @@
   };
   // Filters are colour layers blended over the footage (not canvas
   // filters), so they look the same in every browser, Safari included.
+  // CapCut-style looks, as blend layers ([mode, colour, opacity]).
+  // "lighten" with a dark colour lifts the blacks: the faded film look.
   const FILTERS = {
     none: { label: "Original", layers: [] },
-    bn: { label: "B/N", layers: [["saturation", "#808080", 1], ["soft-light", "#000", 0.25]] },
+    cine: { label: "Cine", layers: [["soft-light", "#0f7f8f", 0.55], ["soft-light", "#ff8a3d", 0.22], ["multiply", "#e9e2d8", 0.2]] },
+    pelicula: { label: "Película", layers: [["soft-light", "#ffb070", 0.4], ["saturation", "#808080", 0.18], ["lighten", "#261c16", 1]] },
+    dorado: { label: "Dorado", layers: [["soft-light", "#ffb347", 0.6], ["screen", "#ff9a3c", 0.07]] },
+    moody: { label: "Moody", layers: [["saturation", "#808080", 0.35], ["soft-light", "#23415e", 0.55], ["multiply", "#c8d0dc", 0.4]] },
+    noir: { label: "Noir", layers: [["saturation", "#808080", 1], ["soft-light", "#000", 0.6], ["lighten", "#141414", 1]] },
+    retro: { label: "Retro 70s", layers: [["saturation", "#808080", 0.3], ["soft-light", "#e8a060", 0.55], ["lighten", "#2e2219", 1], ["multiply", "#f2e2c4", 0.25]] },
+    cyber: { label: "Cyber", layers: [["soft-light", "cyber", 0.7], ["screen", "#2a0a4a", 0.25]] },
+    pastel: { label: "Pastel", layers: [["saturation", "#808080", 0.3], ["screen", "#ffd6e8", 0.2], ["lighten", "#3a3440", 1]] },
     calido: { label: "Cálido", layers: [["soft-light", "#ff8a2a", 0.6]] },
     frio: { label: "Frío", layers: [["soft-light", "#2a7bff", 0.6]] },
     vintage: { label: "Vintage", layers: [["saturation", "#808080", 0.45], ["soft-light", "#ffb45a", 0.55], ["source-over", "#3a2410", 0.12]] },
     drama: { label: "Dramático", layers: [["soft-light", "#000", 0.55], ["saturation", "#ff2a2a", 0.15]] },
+    bn: { label: "B/N", layers: [["saturation", "#808080", 1], ["soft-light", "#000", 0.25]] },
     oscuro: { label: "Oscuro", layers: [["source-over", "#000", 0.45]] },
     duotono: { label: "Duotono", layers: [["color", "duo", 0.75]] },
   };
   api.FILTERS = FILTERS;
-  /** Paint the chosen filter over a frame of the user's footage. */
-  api.paintFilter = (g, W, H) => {
-    const fl = FILTERS[api.filter];
-    if (!fl || !fl.layers.length) return;
+  // how strongly the filter is applied, 0..1
+  api.filterAmount = 1;
+  const GRADIENTS = {
+    duo: ["#ff2d95", "#2d6bff"],
+    cyber: ["#ff2bd6", "#22e4ff"],
+  };
+  /** Paint a filter (the chosen one by default) over a frame of footage. */
+  api.paintFilter = (g, W, H, id = api.filter, amount = api.filterAmount) => {
+    const fl = FILTERS[id];
+    if (!fl || !fl.layers.length || amount <= 0) return;
     g.save();
     fl.layers.forEach(([op, col, a]) => {
+      // a black-lifting "lighten" scales by darkening its colour instead
+      if (op === "lighten") {
+        const n = parseInt(col.slice(1), 16);
+        const k = Math.min(1, amount);
+        g.globalCompositeOperation = op;
+        g.globalAlpha = 1;
+        g.fillStyle = `rgb(${((n >> 16) & 255) * k},${((n >> 8) & 255) * k},${(n & 255) * k})`;
+        g.fillRect(0, 0, W, H);
+        return;
+      }
       g.globalCompositeOperation = op;
-      g.globalAlpha = a;
-      if (col === "duo") {
+      g.globalAlpha = a * Math.min(1, amount);
+      if (GRADIENTS[col]) {
         const gr = g.createLinearGradient(0, 0, W, H);
-        gr.addColorStop(0, "#ff2d95");
-        gr.addColorStop(1, "#2d6bff");
+        gr.addColorStop(0, GRADIENTS[col][0]);
+        gr.addColorStop(1, GRADIENTS[col][1]);
         g.fillStyle = gr;
       } else g.fillStyle = col;
       g.fillRect(0, 0, W, H);
