@@ -2468,49 +2468,6 @@
     setInterval(() => cards.forEach((c) => c.classList.contains("folded") && paint(c)), 1000);
   }
 
-  // ---------- mini vista previa (móvil) ----------
-  // On a phone the styles sit far below the picture: while you browse and
-  // edit them, a small live copy of the video floats in the corner.
-  {
-    const mq = window.matchMedia("(max-width: 899px)");
-    const pip = document.createElement("button");
-    pip.type = "button";
-    pip.className = "pip";
-    pip.setAttribute("aria-label", "Ver la vista previa");
-    const pc = document.createElement("canvas");
-    pip.append(pc);
-    document.body.append(pip);
-    let stageSeen = true;
-    let stepSeen = false;
-    let raf = 0;
-    const loop = () => {
-      raf = 0;
-      if (!pip.classList.contains("on")) return;
-      const src = preview.motionCanvas;
-      if (src && src.width > 2) {
-        const w = Math.round(pip.clientWidth * Math.min(2, window.devicePixelRatio || 1));
-        const h = Math.round(w * (src.height / src.width));
-        if (pc.width !== w || pc.height !== h) {
-          pc.width = w;
-          pc.height = h;
-        }
-        try {
-          pc.getContext("2d").drawImage(src, 0, 0, w, h);
-        } catch {}
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    const update = () => {
-      const on = mq.matches && stepSeen && !stageSeen && !!preview.motionCanvas && !document.fullscreenElement;
-      pip.classList.toggle("on", on);
-      if (on && !raf) raf = requestAnimationFrame(loop);
-    };
-    new IntersectionObserver((l) => l.forEach((en) => (stageSeen = en.isIntersecting)) || update(), { threshold: 0.25 }).observe($("stage-host"));
-    new IntersectionObserver((l) => l.forEach((en) => (stepSeen = en.isIntersecting)) || update()).observe(document.querySelector('#lyrics-view .card[data-step="5"]'));
-    mq.addEventListener("change", update);
-    pip.onclick = () => $("stage-host").scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-
   // ---------- categorías de estilos (Lyrics) ----------
   // each one fills whole rows of the 4-column grid
   const STYLE_CATS = [
