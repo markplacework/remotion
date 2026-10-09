@@ -2173,10 +2173,14 @@
     cuEditing();
     toast(`Guardada: ${name}`);
   };
+  // back to Personalizado's own look: clean, centred, no effects (a saved
+  // template comes back as saved by tapping it in "Mis plantillas")
   $("cu-reset").onclick = () => {
-    CU.restore();
+    CU.apply({});
+    // a video or photo brought to Personalizado stays as its background
     if (ownFootage()) CU.set({ bg: "media" });
     cuApplied();
+    toast("Personalizado, como al principio");
   };
   $("cu-usemedia").onclick = () => cuChange({ bg: "media" });
   $("cu-replace").onclick = () => {
