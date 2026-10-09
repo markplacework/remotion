@@ -3233,8 +3233,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
 .cu-sec {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px 14px;
   border-top: 1px solid var(--line);
 }
 .cu-sec:first-child {
@@ -3291,6 +3291,27 @@ details.cu-sec:not([open]) {
 }
 .cu-tpls {
   margin-top: 0;
+}
+.cu .chips {
+  margin-top: 0;
+  gap: 8px;
+}
+.cu .opt-label {
+  margin: 6px 0 -4px;
+}
+.cu .cu-range .opt-label,
+.cu .cu-row .opt-label,
+.cu .cu-head .opt-label {
+  margin: 0;
+}
+#cu-media {
+  padding-bottom: 4px;
+}
+#cu-media .bgv-row {
+  gap: 8px;
+}
+.cu .check {
+  margin-top: 2px;
 }
 .cu-tpls:empty {
   display: none;
@@ -3386,6 +3407,10 @@ details.cu-sec:not([open]) {
 }
 #cu-media .style-opts {
   margin-top: 0;
+}
+#cu-media #video-opts > .opt-label:first-child,
+#cu-media #bgv-fx {
+  display: none;
 }
 #cu-reset {
   margin: 4px 14px 14px;

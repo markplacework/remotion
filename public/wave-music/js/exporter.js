@@ -37,6 +37,8 @@
     const type = pickType();
     if (!type) throw new Error("Este navegador no puede grabar video");
 
+    // a realistic effect still downloading would be missing from the first frames
+    if (WM.Fx) await WM.Fx.ready();
     const renderer = await WM.VideoRenderer.create(o.timeline, o.backgroundSrc, o.style);
     if (o.onCanvas) o.onCanvas(renderer.canvas);
     const sync = new WM.SyncEngine();

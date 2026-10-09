@@ -495,6 +495,8 @@
             </details>
             <details class="cu-sec" open>
               <summary>Fondo</summary>
+              <div id="cu-media"></div>
+              <span class="opt-label">Qué va de fondo</span>
               <div class="chips" data-cu="bg">
                 <button type="button" class="chip" data-v="solid">Color</button>
                 <button type="button" class="chip" data-v="gradient">Degradé</button>
@@ -505,19 +507,28 @@
                 <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
                 <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
               </div>
-              <div id="cu-media"></div>
               <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
               <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
-              <span class="opt-label">Partículas</span>
-              <div class="chips" data-cu="particles">
-                <button type="button" class="chip" data-v="none">Ninguna</button>
-                <button type="button" class="chip" data-v="sparkles">Brillos</button>
-                <button type="button" class="chip" data-v="stars">Estrellas</button>
+              <span class="opt-label">Efecto</span>
+              <div class="chips cu-fx" data-cu="fx">
+                <button type="button" class="chip" data-v="none">Ninguno</button>
                 <button type="button" class="chip" data-v="snow">Nieve</button>
                 <button type="button" class="chip" data-v="rain">Lluvia</button>
+                <button type="button" class="chip" data-v="fog">Niebla</button>
+                <button type="button" class="chip" data-v="smoke">Humo</button>
+                <button type="button" class="chip" data-v="lightning">Relámpagos</button>
+                <button type="button" class="chip" data-v="embers">Brasas</button>
+                <button type="button" class="chip" data-v="sparks">Chispas</button>
                 <button type="button" class="chip" data-v="bokeh">Bokeh</button>
+                <button type="button" class="chip" data-v="golddust">Polvo dorado</button>
+                <button type="button" class="chip" data-v="rays">Rayos de luz</button>
+                <button type="button" class="chip" data-v="leak">Luz cálida</button>
+                <button type="button" class="chip" data-v="flare">Destello</button>
+                <button type="button" class="chip" data-v="sparkles">Brillos</button>
+                <button type="button" class="chip" data-v="stars">Estrellas</button>
                 <button type="button" class="chip" data-v="confetti">Confeti</button>
               </div>
+              <label class="cu-range" id="cu-fxamount"><span class="opt-label">Intensidad</span><input type="range" data-cu="fxAmount" min="10" max="100" step="5" /><output></output></label>
             </details>
             <details class="cu-sec">
               <summary>Extras</summary>
@@ -527,7 +538,7 @@
                 <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
               </div>
             </details>
-            <button type="button" id="cu-reset" class="btn-link">Volver a empezar</button>
+            <button type="button" id="cu-reset" class="btn-link">Restaurar estilo</button>
           </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
@@ -559,6 +570,11 @@
             <div id="bgv-filters" class="bgv-filters" hidden>
               <span class="opt-label">Filtro</span>
               <div id="bgv-filter-list" class="chips" role="group" aria-label="Filtro del fondo"></div>
+              <div id="bgv-fx">
+                <span class="opt-label">Efecto</span>
+                <div id="bgv-fx-list" class="chips" role="group" aria-label="Efecto sobre el fondo"></div>
+                <label class="cu-range" id="bgv-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
+              </div>
             </div>
             <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
             <input id="file-bgv" type="file" accept="video/*" hidden />
@@ -862,6 +878,7 @@
     <script src="js/custom.js"></script>
     <script src="js/chrome.js"></script>
     <script src="js/bgvideo.js"></script>
+    <script src="js/fx.js"></script>
     <script src="js/preview.js"></script>
     <script src="js/video-renderer.js"></script>
     <script src="js/exporter.js"></script>

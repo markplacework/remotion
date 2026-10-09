@@ -428,6 +428,7 @@
       this.font = style.font || null;
       this.video = WM.BgVideo.showsIn(theme) && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
+      if (WM.Fx) WM.Fx.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
@@ -436,11 +437,13 @@
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
+      if (WM.Fx) WM.Fx.sync(t, true, true);
       this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
       return this.canvas;
     }
     dispose() {
       if (this.video) WM.BgVideo.exporting = false;
+      if (WM.Fx) WM.Fx.exporting = false;
     }
   }
 

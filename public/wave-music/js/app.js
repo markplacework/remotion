@@ -787,6 +787,7 @@
       listenUntil = null;
     }
     const state = sync.stateAt(t);
+    WM.songDuration = audio.duration;
     preview.render(state, { playing: audio.playing, time: t, duration: audio.duration });
     needsSnap = false;
     renderAdjust(t, state);
@@ -1480,6 +1481,16 @@
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
+    // in Personalizado a new video or photo goes straight to the background
+    if (on && WM.BgVideo.name !== cuSeenBg) {
+      cuSeenBg = WM.BgVideo.name;
+      if (preview.theme.id === "custom" && WM.Custom.cfg.bg !== "media") {
+        WM.Custom.set({ bg: "media" });
+        cuPaint();
+      }
+    }
+    $("bgv-fx-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === WM.Fx.current.id));
+    $("bgv-fx-amount").hidden = WM.Fx.current.id === "none";
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
@@ -1491,6 +1502,31 @@
     if (WM.LiveChat.onBg) WM.LiveChat.onBg();
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
+  var cuSeenBg = "";
+  // realistic effects over the background (fx.js)
+  WM.Fx.LIST.forEach((fx) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.fx = fx.id;
+    b.textContent = fx.label;
+    b.onclick = () => {
+      WM.Fx.current.id = fx.id;
+      WM.Fx.load(fx.id).catch((e) => toast(e.message));
+      updateBgv();
+      needsSnap = true;
+    };
+    $("bgv-fx-list").appendChild(b);
+  });
+  {
+    const r = $("bgv-fx-amount").querySelector("input");
+    r.oninput = () => {
+      WM.Fx.current.amount = Number(r.value);
+      $("bgv-fx-amount").querySelector("output").textContent = r.value + "%";
+      needsSnap = true;
+    };
+  }
+  WM.Fx.onchange = () => (needsSnap = true);
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1852,6 +1888,7 @@
     spacing: (v) => (v > 0 ? "+" : "") + v,
     lineHeight: (v) => Number(v).toFixed(2),
     darken: (v) => v + "%",
+    fxAmount: (v) => v + "%",
   };
   document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
     const key = el.dataset.cu;
@@ -1884,6 +1921,7 @@
     $("cu-bgcolors").hidden = media;
     $("cu-bg2").hidden = c.bg === "solid";
     $("cu-darken").hidden = !media;
+    $("cu-fxamount").hidden = c.fx === "none";
     $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
     $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
     cuPlaceBgv();
@@ -1893,7 +1931,7 @@
     const v = $("video-opts");
     if (custom) {
       $("cu-media").appendChild(v);
-      v.hidden = CU.cfg.bg !== "media";
+      v.hidden = false; // uploading is always at hand
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
@@ -1909,6 +1947,7 @@
       if (ev.target.classList.contains("cu-x")) return;
       CU.apply(cfg);
       cuPaint();
+      cuNeedsFootage();
       needsSnap = true;
     };
     if (onDelete) {
@@ -1920,6 +1959,18 @@
       b.append(x);
     }
     return b;
+  }
+  /** A look made for footage, with none loaded: the sample clip stands in. */
+  async function cuNeedsFootage() {
+    if (CU.cfg.bg !== "media" || WM.BgVideo.enabled) return;
+    try {
+      await WM.BgVideo.loadSample();
+      cuSeenBg = WM.BgVideo.name;
+    } catch {
+      /* the gradient shows instead */
+    }
+    updateBgv();
+    needsSnap = true;
   }
   function cuTemplates() {
     $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
@@ -1951,7 +2002,8 @@
     toast(`Guardada: ${name}`);
   };
   $("cu-reset").onclick = () => {
-    CU.apply({});
+    CU.restore();
+    cuNeedsFootage();
     cuPaint();
     needsSnap = true;
   };
@@ -1965,6 +2017,7 @@
     if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
     CU.apply(base);
     cuPaint();
+    cuNeedsFootage();
     showCat("todos");
     chooseStyle("custom");
     toast(`Partimos de ${from.label}: cambiá lo que quieras`);

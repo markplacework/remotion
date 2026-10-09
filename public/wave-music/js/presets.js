@@ -855,9 +855,14 @@
     if (fl) g.filter = "none";
     // the look the user picked, only on their own footage
     const bg = WM.BgVideo;
-    if (bg && (v === bg.el || v === bg.img)) bg.paintFilter(g, W, H);
+    if (bg && (v === bg.el || v === bg.img)) {
+      bg.paintFilter(g, W, H);
+      // and the realistic effect picked for it (Personalizado paints its own)
+      if (WM.Fx && !cuOwnFx) WM.Fx.paint(g, W, H, WM.Fx.current.id, WM.Fx.current.amount, t);
+    }
     return true;
   }
+  let cuOwnFx = false;
   const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
   // capped: a word stretched over a long held note still "lands" on time
@@ -4774,6 +4779,7 @@
   // PERSONALIZADO — every choice is the user's (custom.js holds the options)
   // ======================================================================
   const CU_WORD_ANIMS = { words: 1, karaoke: 1, bounce: 1 };
+  const CU_DRAWN_FX = { sparkles: 1, stars: 1, confetti: 1 };
   const cuCfg = () => (WM.Custom ? WM.Custom.cfg : {});
   const cuFont = (c, size) => `${(WM.Custom && WM.Custom.weightOf(c.font)) || 800} ${size}px ${WM.Custom ? WM.Custom.familyOf(c.font) : "Montserrat, sans-serif"}`;
   /** Particles over the background: a pure function of time, like the rest. */
@@ -4893,6 +4899,14 @@
         });
       }
     }
+    // one effect: real footage (fx.js) or one of the drawn ones
+    const fx = c.fx || "none";
+    if (CU_DRAWN_FX[fx]) {
+      g.save();
+      g.globalAlpha = Math.min(1, (c.fxAmount == null ? 80 : c.fxAmount) / 100);
+      cuParticles(g, f, fx, c.accent);
+      g.restore();
+    } else if (WM.Fx) WM.Fx.paint(g, W, H, fx, c.fxAmount == null ? 80 : c.fxAmount, t);
     if (c.vignette) {
       const v = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.75);
       v.addColorStop(0, "rgba(0,0,0,0)");
@@ -4900,7 +4914,6 @@
       g.fillStyle = v;
       g.fillRect(0, 0, W, H);
     }
-    if (c.particles && c.particles !== "none") cuParticles(g, f, c.particles, c.accent);
   }
   /** One word with the chosen effect (shadow, outline, glow). */
   function cuWord(g, c, label, x, y, size, col) {
@@ -4937,7 +4950,12 @@
       const c = cuCfg();
       const { W, H, safe, t } = f;
       const u = safe.w / 825;
-      cuBackground(g, f, c, u);
+      cuOwnFx = true;
+      try {
+        cuBackground(g, f, c, u);
+      } finally {
+        cuOwnFx = false;
+      }
       // song title and artist, small at the top
       if (c.showMeta && (f.meta.title || f.meta.artist)) {
         g.save();
@@ -4951,19 +4969,80 @@
         g.fillText(fitText(g, f.meta.artist || "", safe.w * 0.9), W / 2, safe.y + u * 86);
         g.restore();
       }
-      // progress through the song
+      // progress through the song, like a music player: bar, knob, times, controls
       const last = f.lines[f.lines.length - 1];
       if (c.progress && last) {
-        const end = Math.max(last.end || 0, last.start + 3);
-        const bw = safe.w * 0.7;
+        const end = WM.songDuration > 0 ? WM.songDuration : Math.max(last.end || 0, last.start + 3);
+        const k = clamp(t / end);
+        const bw = safe.w * 0.86;
         const bx = (W - bw) / 2;
-        const by = safe.y + safe.h - u * 40;
-        g.fillStyle = hexA(c.color, 0.22);
-        rrect(g, bx, by, bw, u * 6, u * 3);
+        const by = safe.y + safe.h - u * 150;
+        g.save();
+        g.fillStyle = hexA(c.color, 0.28);
+        rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
         g.fill();
-        g.fillStyle = c.accent;
-        rrect(g, bx, by, Math.max(u * 6, bw * clamp(t / end)), u * 6, u * 3);
+        g.fillStyle = c.color;
+        rrect(g, bx, by - u * 3, Math.max(u * 6, bw * k), u * 6, u * 3);
         g.fill();
+        g.beginPath();
+        g.arc(bx + bw * k, by, u * 12, 0, Math.PI * 2);
+        g.fill();
+        g.font = `500 ${u * 22}px Inter, sans-serif`;
+        g.fillStyle = hexA(c.color, 0.7);
+        g.textBaseline = "top";
+        g.textAlign = "left";
+        g.fillText(fmt(Math.min(t, end)), bx, by + u * 18);
+        g.textAlign = "right";
+        g.fillText("-" + fmt(Math.max(0, end - t)), bx + bw, by + u * 18);
+        // shuffle · previous · pause · next · repeat
+        const cy = by + u * 92;
+        const cx = W / 2;
+        g.fillStyle = c.color;
+        g.beginPath();
+        g.arc(cx, cy, u * 40, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = c.bg === "solid" || c.bg === "gradient" || c.bg === "animated" ? c.bg1 : "#000000";
+        g.fillRect(cx - u * 12, cy - u * 15, u * 8, u * 30);
+        g.fillRect(cx + u * 4, cy - u * 15, u * 8, u * 30);
+        g.fillStyle = c.color;
+        [-1, 1].forEach((d) => {
+          const x = cx + d * u * 120;
+          g.beginPath();
+          g.moveTo(x - d * u * 12, cy - u * 15);
+          g.lineTo(x + d * u * 10, cy);
+          g.lineTo(x - d * u * 12, cy + u * 15);
+          g.closePath();
+          g.fill();
+          g.fillRect(x + d * u * 10 - (d > 0 ? 0 : u * 5), cy - u * 15, u * 5, u * 30);
+        });
+        g.strokeStyle = hexA(c.color, 0.75);
+        g.lineWidth = u * 3.5;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        // shuffle: two crossing arrows
+        const sx = cx - u * 230;
+        g.beginPath();
+        g.moveTo(sx - u * 16, cy - u * 10);
+        g.bezierCurveTo(sx, cy - u * 10, sx, cy + u * 10, sx + u * 16, cy + u * 10);
+        g.moveTo(sx - u * 16, cy + u * 10);
+        g.bezierCurveTo(sx, cy + u * 10, sx, cy - u * 10, sx + u * 16, cy - u * 10);
+        g.moveTo(sx + u * 10, cy - u * 16);
+        g.lineTo(sx + u * 16, cy - u * 10);
+        g.lineTo(sx + u * 10, cy - u * 4);
+        g.moveTo(sx + u * 10, cy + u * 4);
+        g.lineTo(sx + u * 16, cy + u * 10);
+        g.lineTo(sx + u * 10, cy + u * 16);
+        g.stroke();
+        // repeat: a rounded loop with an arrow
+        const rx = cx + u * 230;
+        rrect(g, rx - u * 17, cy - u * 11, u * 34, u * 22, u * 8);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(rx + u * 2, cy - u * 17);
+        g.lineTo(rx + u * 8, cy - u * 11);
+        g.lineTo(rx + u * 2, cy - u * 5);
+        g.stroke();
+        g.restore();
       }
       if (c.handle) {
         g.save();
@@ -4971,7 +5050,7 @@
         g.textBaseline = "bottom";
         g.font = `600 ${u * 26}px Inter, sans-serif`;
         g.fillStyle = hexA(c.color, 0.7);
-        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 64 : u * 24));
+        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 190 : u * 24));
         g.restore();
       }
       const L = f.lines[f.current];
@@ -5009,7 +5088,7 @@
       const next = !o.exit && c.next ? f.lines[L.index + 1] : null;
       const nextSize = size * 0.5;
       const blockH = rows.length * lineH + (next ? nextSize * 1.9 : 0);
-      let y0 = c.pos === "top" ? safe.y + safe.h * 0.16 : c.pos === "bottom" ? safe.y + safe.h * 0.86 - blockH : safe.y + (safe.h - blockH) / 2;
+      let y0 = c.pos === "top" ? safe.y + safe.h * 0.16 : c.pos === "bottom" ? safe.y + safe.h * (c.progress ? 0.76 : 0.86) - blockH : safe.y + (safe.h - blockH) / 2;
       const xOf = (row) => (c.align === "left" ? safe.x + (safe.w - maxW) / 2 : c.align === "right" ? safe.x + (safe.w + maxW) / 2 - row.width : safe.x + (safe.w - row.width) / 2);
       // line-level motion
       const a = ease.out((t - L.start) / 0.4);

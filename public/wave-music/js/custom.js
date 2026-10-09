@@ -26,7 +26,8 @@
     bg2: "#5b2bd6",
     darken: 35,
     vignette: true,
-    particles: "none",
+    fx: "none",
+    fxAmount: 80,
     showMeta: false,
     progress: false,
     handle: "",
@@ -37,47 +38,57 @@
   // Ready looks to start from
   const STARTERS = [
     { name: "Clásico", cfg: {} },
-    { name: "Neón", cfg: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#2a0a5e", particles: "stars", size: 88 } },
-    { name: "Karaoke", cfg: { font: "poppins", color: "#ffffff", accent: "#22d3f5", effect: "outline", effectColor: "#0a0a14", anim: "karaoke", bg: "gradient", bg1: "#0a1030", bg2: "#30106a", next: true, particles: "none" } },
+    { name: "Neón", cfg: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#2a0a5e", fx: "stars", size: 88 } },
+    { name: "Karaoke", cfg: { font: "poppins", color: "#ffffff", accent: "#22d3f5", effect: "outline", effectColor: "#0a0a14", anim: "karaoke", bg: "gradient", bg1: "#0a1030", bg2: "#30106a", next: true, fx: "none" } },
     { name: "Minimal", cfg: { font: "instrument", upper: false, color: "#16140f", accent: "#c0392b", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 } },
-    { name: "Cine", cfg: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 45, vignette: true, particles: "none", size: 105, spacing: 1 } },
+    { name: "Cine", cfg: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 45, vignette: true, fx: "leak", fxAmount: 60, size: 105, spacing: 1 } },
     { name: "Marcador", cfg: { font: "poppins", color: "#ffffff", accent: "#ffe600", effect: "marker", effectColor: "#111111", anim: "words", bg: "media", darken: 25, vignette: false } },
     { name: "Calle", cfg: { font: "anton", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 20, size: 110 } },
-    { name: "Sueño", cfg: { font: "montserrat", upper: false, color: "#ffffff", accent: "#ffb3d9", effect: "glow", anim: "words", bg: "animated", bg1: "#1a0f2e", bg2: "#ff6fb5", particles: "bokeh", beat: false } },
+    { name: "Invierno", cfg: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", beat: false, bg: "media", darken: 30, fx: "snow", size: 110 } },
+    { name: "Fuego", cfg: { font: "anton", color: "#fff3e0", accent: "#ff7a1a", effect: "shadow", anim: "pop", bg: "media", darken: 45, fx: "embers", size: 115 } },
+    { name: "Sueño", cfg: { font: "montserrat", upper: false, color: "#ffffff", accent: "#ffb3d9", effect: "glow", anim: "words", bg: "animated", bg1: "#1a0f2e", bg2: "#ff6fb5", fx: "bokeh", beat: false } },
   ];
 
   // Each style as a starting point for Personalizado (the closest look)
   const BASES = {
     kinetic: { font: "anton", accent: "#ffe14d", effect: "none", anim: "pop", bg: "animated", bg1: "#08080c", bg2: "#3a0f2a", size: 115 },
     cinematic: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 40, size: 105 },
-    neon: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#1b0b4a", particles: "stars", size: 88 },
+    neon: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#1b0b4a", fx: "stars", size: 88 },
     minimal: { font: "instrument", upper: false, color: "#16140f", accent: "#16140f", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 },
     karaoke: { font: "montserrat", color: "#ffffff", accent: "#ffd23f", effect: "outline", effectColor: "#0b0b16", anim: "karaoke", bg: "media", darken: 40, next: true },
     notes: { font: "inter", upper: false, color: "#1d1d1f", accent: "#e8a400", effect: "none", anim: "words", beat: false, bg: "solid", bg1: "#fffaf0", vignette: false, align: "left", pos: "top", size: 80 },
-    aurora: { font: "inter", upper: false, color: "#ffffff", accent: "#7df9c4", effect: "glow", anim: "rise", bg: "media", darken: 30, particles: "stars" },
+    aurora: { font: "inter", upper: false, color: "#ffffff", accent: "#7df9c4", effect: "glow", anim: "rise", bg: "media", darken: 30, fx: "stars" },
     couture: { font: "bodoni", color: "#ffffff", accent: "#ffffff", effect: "none", anim: "fade", beat: false, bg: "media", darken: 30, spacing: 4, size: 95 },
     blackout: { font: "league", color: "#ffffff", accent: "#ff2d2d", effect: "none", anim: "words", bg: "solid", bg1: "#000000", vignette: false, size: 140 },
     vhs: { font: "vt323", color: "#f2f2f2", accent: "#ff4fd8", effect: "glow", anim: "typewriter", bg: "media", darken: 35, size: 120 },
-    vinilo: { font: "instrument", upper: false, color: "#f6e7c8", accent: "#ff9a3c", effect: "shadow", anim: "fade", beat: false, bg: "gradient", bg1: "#1a0e08", bg2: "#5a2a12", particles: "bokeh" },
+    vinilo: { font: "instrument", upper: false, color: "#f6e7c8", accent: "#ff9a3c", effect: "shadow", anim: "fade", beat: false, bg: "gradient", bg1: "#1a0e08", bg2: "#5a2a12", fx: "bokeh" },
     adrenalina: { font: "barlow", color: "#ffffff", accent: "#ff3b1f", effect: "shadow", anim: "pop", bg: "media", darken: 15, size: 120 },
     street: { font: "poppins", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 15 },
     broadcast: { font: "barlow", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#0b2a6b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left", showMeta: true },
     recorte: { font: "anton", color: "#ffffff", accent: "#ff4d8d", effect: "outline", anim: "pop", bg: "media", darken: 25, size: 125 },
-    lluvia: { font: "montserrat", upper: false, color: "#e9f1ff", accent: "#8cc7ff", effect: "shadow", anim: "fade", bg: "media", darken: 35, particles: "rain", beat: false },
-    nieve: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", bg: "media", darken: 25, particles: "snow", beat: false },
-    tormenta: { font: "league", color: "#eaf2ff", accent: "#9ecbff", effect: "glow", anim: "pop", bg: "media", darken: 40, particles: "rain", size: 130 },
-    otono: { font: "cormorant", upper: false, color: "#fff4e6", accent: "#ff9a3c", effect: "shadow", anim: "rise", bg: "media", darken: 30, beat: false },
+    lluvia: { font: "montserrat", upper: false, color: "#e9f1ff", accent: "#8cc7ff", effect: "shadow", anim: "fade", bg: "media", darken: 35, fx: "rain", beat: false },
+    nieve: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", bg: "media", darken: 25, fx: "snow", beat: false },
+    tormenta: { font: "league", color: "#eaf2ff", accent: "#9ecbff", effect: "glow", anim: "pop", bg: "media", darken: 40, fx: "lightning", size: 130 },
+    otono: { font: "cormorant", upper: false, color: "#fff4e6", accent: "#ff9a3c", effect: "shadow", anim: "rise", bg: "media", darken: 30, beat: false, fx: "leak", fxAmount: 60 },
     live: { font: "montserrat", color: "#ffffff", accent: "#ff2d55", effect: "box", effectColor: "#000000", anim: "words", bg: "media", darken: 0, pos: "bottom" },
     noticiero: { font: "montserrat", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#b3001b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left" },
     radio: { font: "montserrat", color: "#ffffff", accent: "#ff9500", effect: "shadow", anim: "words", bg: "media", darken: 30, showMeta: true },
     stream: { font: "poppins", color: "#ffffff", accent: "#9146ff", effect: "box", effectColor: "#9146ff", anim: "words", bg: "media", darken: 0, pos: "bottom" },
     karasing: { font: "poppins", color: "#ffffff", accent: "#ff3d8b", effect: "outline", effectColor: "#14001f", anim: "karaoke", bg: "animated", bg1: "#14001f", bg2: "#ff3d8b", next: true },
     kararetro: { font: "barlow", color: "#ffffff", accent: "#ffe600", effect: "outline", effectColor: "#1a0033", anim: "karaoke", bg: "gradient", bg1: "#1a0033", bg2: "#ff2fa0", next: true },
-    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", particles: "sparkles", next: true },
+    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", fx: "sparkles", next: true },
   };
 
   const KEY_CUR = "wm-custom-cur";
   const KEY_TPL = "wm-custom-tpls";
+  const KEY_ORIGIN = "wm-custom-origin";
+  /** Older saves had "particles"; now there is one effect slot. */
+  function migrate(c) {
+    c = { ...DEFAULTS, ...c };
+    if (c.particles && c.particles !== "none" && (!c.fx || c.fx === "none")) c.fx = c.particles;
+    delete c.particles;
+    return c;
+  }
   const read = (k, d) => {
     try {
       const v = JSON.parse(localStorage.getItem(k));
@@ -98,7 +109,9 @@
     DEFAULTS,
     STARTERS,
     BASES,
-    cfg: { ...DEFAULTS, ...read(KEY_CUR, {}) },
+    cfg: migrate(read(KEY_CUR, {})),
+    // the look it started from ("Restaurar estilo" goes back to it)
+    origin: read(KEY_ORIGIN, {}),
     familyOf(id) {
       const f = WM.Presets && WM.Presets.FONTS.find((x) => x.id === id);
       return f ? f.family : "Montserrat, sans-serif";
@@ -111,13 +124,21 @@
     },
     /** Start over from a look: the defaults plus its own choices. */
     apply(patch) {
-      api.cfg = { ...DEFAULTS, ...patch };
+      api.cfg = migrate(patch);
+      api.origin = { ...patch };
       write(KEY_CUR, api.cfg);
+      write(KEY_ORIGIN, api.origin);
+    },
+    /** Back to the look it started from. */
+    restore() {
+      api.apply(api.origin);
     },
     templates: () => read(KEY_TPL, []),
     saveTemplate(name) {
       const list = api.templates().filter((x) => x.name !== name);
       list.push({ name, cfg: { ...api.cfg } });
+      api.origin = { ...api.cfg };
+      write(KEY_ORIGIN, api.origin);
       write(KEY_TPL, list);
     },
     deleteTemplate(name) {

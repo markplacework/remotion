@@ -3368,8 +3368,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
 .cu-sec {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px 14px;
   border-top: 1px solid var(--line);
 }
 .cu-sec:first-child {
@@ -3426,6 +3426,27 @@ details.cu-sec:not([open]) {
 }
 .cu-tpls {
   margin-top: 0;
+}
+.cu .chips {
+  margin-top: 0;
+  gap: 8px;
+}
+.cu .opt-label {
+  margin: 6px 0 -4px;
+}
+.cu .cu-range .opt-label,
+.cu .cu-row .opt-label,
+.cu .cu-head .opt-label {
+  margin: 0;
+}
+#cu-media {
+  padding-bottom: 4px;
+}
+#cu-media .bgv-row {
+  gap: 8px;
+}
+.cu .check {
+  margin-top: 2px;
 }
 .cu-tpls:empty {
   display: none;
@@ -3521,6 +3542,10 @@ details.cu-sec:not([open]) {
 }
 #cu-media .style-opts {
   margin-top: 0;
+}
+#cu-media #video-opts > .opt-label:first-child,
+#cu-media #bgv-fx {
+  display: none;
 }
 #cu-reset {
   margin: 4px 14px 14px;
@@ -4012,6 +4037,8 @@ details.cu-sec:not([open]) {
             </details>
             <details class="cu-sec" open>
               <summary>Fondo</summary>
+              <div id="cu-media"></div>
+              <span class="opt-label">Qué va de fondo</span>
               <div class="chips" data-cu="bg">
                 <button type="button" class="chip" data-v="solid">Color</button>
                 <button type="button" class="chip" data-v="gradient">Degradé</button>
@@ -4022,19 +4049,28 @@ details.cu-sec:not([open]) {
                 <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
                 <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
               </div>
-              <div id="cu-media"></div>
               <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
               <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
-              <span class="opt-label">Partículas</span>
-              <div class="chips" data-cu="particles">
-                <button type="button" class="chip" data-v="none">Ninguna</button>
-                <button type="button" class="chip" data-v="sparkles">Brillos</button>
-                <button type="button" class="chip" data-v="stars">Estrellas</button>
+              <span class="opt-label">Efecto</span>
+              <div class="chips cu-fx" data-cu="fx">
+                <button type="button" class="chip" data-v="none">Ninguno</button>
                 <button type="button" class="chip" data-v="snow">Nieve</button>
                 <button type="button" class="chip" data-v="rain">Lluvia</button>
+                <button type="button" class="chip" data-v="fog">Niebla</button>
+                <button type="button" class="chip" data-v="smoke">Humo</button>
+                <button type="button" class="chip" data-v="lightning">Relámpagos</button>
+                <button type="button" class="chip" data-v="embers">Brasas</button>
+                <button type="button" class="chip" data-v="sparks">Chispas</button>
                 <button type="button" class="chip" data-v="bokeh">Bokeh</button>
+                <button type="button" class="chip" data-v="golddust">Polvo dorado</button>
+                <button type="button" class="chip" data-v="rays">Rayos de luz</button>
+                <button type="button" class="chip" data-v="leak">Luz cálida</button>
+                <button type="button" class="chip" data-v="flare">Destello</button>
+                <button type="button" class="chip" data-v="sparkles">Brillos</button>
+                <button type="button" class="chip" data-v="stars">Estrellas</button>
                 <button type="button" class="chip" data-v="confetti">Confeti</button>
               </div>
+              <label class="cu-range" id="cu-fxamount"><span class="opt-label">Intensidad</span><input type="range" data-cu="fxAmount" min="10" max="100" step="5" /><output></output></label>
             </details>
             <details class="cu-sec">
               <summary>Extras</summary>
@@ -4044,7 +4080,7 @@ details.cu-sec:not([open]) {
                 <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
               </div>
             </details>
-            <button type="button" id="cu-reset" class="btn-link">Volver a empezar</button>
+            <button type="button" id="cu-reset" class="btn-link">Restaurar estilo</button>
           </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
@@ -4076,6 +4112,11 @@ details.cu-sec:not([open]) {
             <div id="bgv-filters" class="bgv-filters" hidden>
               <span class="opt-label">Filtro</span>
               <div id="bgv-filter-list" class="chips" role="group" aria-label="Filtro del fondo"></div>
+              <div id="bgv-fx">
+                <span class="opt-label">Efecto</span>
+                <div id="bgv-fx-list" class="chips" role="group" aria-label="Efecto sobre el fondo"></div>
+                <label class="cu-range" id="bgv-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
+              </div>
             </div>
             <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
             <input id="file-bgv" type="file" accept="video/*" hidden />
@@ -7319,9 +7360,14 @@ details.cu-sec:not([open]) {
     if (fl) g.filter = "none";
     // the look the user picked, only on their own footage
     const bg = WM.BgVideo;
-    if (bg && (v === bg.el || v === bg.img)) bg.paintFilter(g, W, H);
+    if (bg && (v === bg.el || v === bg.img)) {
+      bg.paintFilter(g, W, H);
+      // and the realistic effect picked for it (Personalizado paints its own)
+      if (WM.Fx && !cuOwnFx) WM.Fx.paint(g, W, H, WM.Fx.current.id, WM.Fx.current.amount, t);
+    }
     return true;
   }
+  let cuOwnFx = false;
   const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
   // capped: a word stretched over a long held note still "lands" on time
@@ -11238,6 +11284,7 @@ details.cu-sec:not([open]) {
   // PERSONALIZADO — every choice is the user's (custom.js holds the options)
   // ======================================================================
   const CU_WORD_ANIMS = { words: 1, karaoke: 1, bounce: 1 };
+  const CU_DRAWN_FX = { sparkles: 1, stars: 1, confetti: 1 };
   const cuCfg = () => (WM.Custom ? WM.Custom.cfg : {});
   const cuFont = (c, size) => `${(WM.Custom && WM.Custom.weightOf(c.font)) || 800} ${size}px ${WM.Custom ? WM.Custom.familyOf(c.font) : "Montserrat, sans-serif"}`;
   /** Particles over the background: a pure function of time, like the rest. */
@@ -11357,6 +11404,14 @@ details.cu-sec:not([open]) {
         });
       }
     }
+    // one effect: real footage (fx.js) or one of the drawn ones
+    const fx = c.fx || "none";
+    if (CU_DRAWN_FX[fx]) {
+      g.save();
+      g.globalAlpha = Math.min(1, (c.fxAmount == null ? 80 : c.fxAmount) / 100);
+      cuParticles(g, f, fx, c.accent);
+      g.restore();
+    } else if (WM.Fx) WM.Fx.paint(g, W, H, fx, c.fxAmount == null ? 80 : c.fxAmount, t);
     if (c.vignette) {
       const v = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.75);
       v.addColorStop(0, "rgba(0,0,0,0)");
@@ -11364,7 +11419,6 @@ details.cu-sec:not([open]) {
       g.fillStyle = v;
       g.fillRect(0, 0, W, H);
     }
-    if (c.particles && c.particles !== "none") cuParticles(g, f, c.particles, c.accent);
   }
   /** One word with the chosen effect (shadow, outline, glow). */
   function cuWord(g, c, label, x, y, size, col) {
@@ -11401,7 +11455,12 @@ details.cu-sec:not([open]) {
       const c = cuCfg();
       const { W, H, safe, t } = f;
       const u = safe.w / 825;
-      cuBackground(g, f, c, u);
+      cuOwnFx = true;
+      try {
+        cuBackground(g, f, c, u);
+      } finally {
+        cuOwnFx = false;
+      }
       // song title and artist, small at the top
       if (c.showMeta && (f.meta.title || f.meta.artist)) {
         g.save();
@@ -11415,19 +11474,80 @@ details.cu-sec:not([open]) {
         g.fillText(fitText(g, f.meta.artist || "", safe.w * 0.9), W / 2, safe.y + u * 86);
         g.restore();
       }
-      // progress through the song
+      // progress through the song, like a music player: bar, knob, times, controls
       const last = f.lines[f.lines.length - 1];
       if (c.progress && last) {
-        const end = Math.max(last.end || 0, last.start + 3);
-        const bw = safe.w * 0.7;
+        const end = WM.songDuration > 0 ? WM.songDuration : Math.max(last.end || 0, last.start + 3);
+        const k = clamp(t / end);
+        const bw = safe.w * 0.86;
         const bx = (W - bw) / 2;
-        const by = safe.y + safe.h - u * 40;
-        g.fillStyle = hexA(c.color, 0.22);
-        rrect(g, bx, by, bw, u * 6, u * 3);
+        const by = safe.y + safe.h - u * 150;
+        g.save();
+        g.fillStyle = hexA(c.color, 0.28);
+        rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
         g.fill();
-        g.fillStyle = c.accent;
-        rrect(g, bx, by, Math.max(u * 6, bw * clamp(t / end)), u * 6, u * 3);
+        g.fillStyle = c.color;
+        rrect(g, bx, by - u * 3, Math.max(u * 6, bw * k), u * 6, u * 3);
         g.fill();
+        g.beginPath();
+        g.arc(bx + bw * k, by, u * 12, 0, Math.PI * 2);
+        g.fill();
+        g.font = `500 ${u * 22}px Inter, sans-serif`;
+        g.fillStyle = hexA(c.color, 0.7);
+        g.textBaseline = "top";
+        g.textAlign = "left";
+        g.fillText(fmt(Math.min(t, end)), bx, by + u * 18);
+        g.textAlign = "right";
+        g.fillText("-" + fmt(Math.max(0, end - t)), bx + bw, by + u * 18);
+        // shuffle · previous · pause · next · repeat
+        const cy = by + u * 92;
+        const cx = W / 2;
+        g.fillStyle = c.color;
+        g.beginPath();
+        g.arc(cx, cy, u * 40, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = c.bg === "solid" || c.bg === "gradient" || c.bg === "animated" ? c.bg1 : "#000000";
+        g.fillRect(cx - u * 12, cy - u * 15, u * 8, u * 30);
+        g.fillRect(cx + u * 4, cy - u * 15, u * 8, u * 30);
+        g.fillStyle = c.color;
+        [-1, 1].forEach((d) => {
+          const x = cx + d * u * 120;
+          g.beginPath();
+          g.moveTo(x - d * u * 12, cy - u * 15);
+          g.lineTo(x + d * u * 10, cy);
+          g.lineTo(x - d * u * 12, cy + u * 15);
+          g.closePath();
+          g.fill();
+          g.fillRect(x + d * u * 10 - (d > 0 ? 0 : u * 5), cy - u * 15, u * 5, u * 30);
+        });
+        g.strokeStyle = hexA(c.color, 0.75);
+        g.lineWidth = u * 3.5;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        // shuffle: two crossing arrows
+        const sx = cx - u * 230;
+        g.beginPath();
+        g.moveTo(sx - u * 16, cy - u * 10);
+        g.bezierCurveTo(sx, cy - u * 10, sx, cy + u * 10, sx + u * 16, cy + u * 10);
+        g.moveTo(sx - u * 16, cy + u * 10);
+        g.bezierCurveTo(sx, cy + u * 10, sx, cy - u * 10, sx + u * 16, cy - u * 10);
+        g.moveTo(sx + u * 10, cy - u * 16);
+        g.lineTo(sx + u * 16, cy - u * 10);
+        g.lineTo(sx + u * 10, cy - u * 4);
+        g.moveTo(sx + u * 10, cy + u * 4);
+        g.lineTo(sx + u * 16, cy + u * 10);
+        g.lineTo(sx + u * 10, cy + u * 16);
+        g.stroke();
+        // repeat: a rounded loop with an arrow
+        const rx = cx + u * 230;
+        rrect(g, rx - u * 17, cy - u * 11, u * 34, u * 22, u * 8);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(rx + u * 2, cy - u * 17);
+        g.lineTo(rx + u * 8, cy - u * 11);
+        g.lineTo(rx + u * 2, cy - u * 5);
+        g.stroke();
+        g.restore();
       }
       if (c.handle) {
         g.save();
@@ -11435,7 +11555,7 @@ details.cu-sec:not([open]) {
         g.textBaseline = "bottom";
         g.font = `600 ${u * 26}px Inter, sans-serif`;
         g.fillStyle = hexA(c.color, 0.7);
-        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 64 : u * 24));
+        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 190 : u * 24));
         g.restore();
       }
       const L = f.lines[f.current];
@@ -11473,7 +11593,7 @@ details.cu-sec:not([open]) {
       const next = !o.exit && c.next ? f.lines[L.index + 1] : null;
       const nextSize = size * 0.5;
       const blockH = rows.length * lineH + (next ? nextSize * 1.9 : 0);
-      let y0 = c.pos === "top" ? safe.y + safe.h * 0.16 : c.pos === "bottom" ? safe.y + safe.h * 0.86 - blockH : safe.y + (safe.h - blockH) / 2;
+      let y0 = c.pos === "top" ? safe.y + safe.h * 0.16 : c.pos === "bottom" ? safe.y + safe.h * (c.progress ? 0.76 : 0.86) - blockH : safe.y + (safe.h - blockH) / 2;
       const xOf = (row) => (c.align === "left" ? safe.x + (safe.w - maxW) / 2 : c.align === "right" ? safe.x + (safe.w + maxW) / 2 - row.width : safe.x + (safe.w - row.width) / 2);
       // line-level motion
       const a = ease.out((t - L.start) / 0.4);
@@ -11670,7 +11790,8 @@ details.cu-sec:not([open]) {
     bg2: "#5b2bd6",
     darken: 35,
     vignette: true,
-    particles: "none",
+    fx: "none",
+    fxAmount: 80,
     showMeta: false,
     progress: false,
     handle: "",
@@ -11681,47 +11802,57 @@ details.cu-sec:not([open]) {
   // Ready looks to start from
   const STARTERS = [
     { name: "Clásico", cfg: {} },
-    { name: "Neón", cfg: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#2a0a5e", particles: "stars", size: 88 } },
-    { name: "Karaoke", cfg: { font: "poppins", color: "#ffffff", accent: "#22d3f5", effect: "outline", effectColor: "#0a0a14", anim: "karaoke", bg: "gradient", bg1: "#0a1030", bg2: "#30106a", next: true, particles: "none" } },
+    { name: "Neón", cfg: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#2a0a5e", fx: "stars", size: 88 } },
+    { name: "Karaoke", cfg: { font: "poppins", color: "#ffffff", accent: "#22d3f5", effect: "outline", effectColor: "#0a0a14", anim: "karaoke", bg: "gradient", bg1: "#0a1030", bg2: "#30106a", next: true, fx: "none" } },
     { name: "Minimal", cfg: { font: "instrument", upper: false, color: "#16140f", accent: "#c0392b", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 } },
-    { name: "Cine", cfg: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 45, vignette: true, particles: "none", size: 105, spacing: 1 } },
+    { name: "Cine", cfg: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 45, vignette: true, fx: "leak", fxAmount: 60, size: 105, spacing: 1 } },
     { name: "Marcador", cfg: { font: "poppins", color: "#ffffff", accent: "#ffe600", effect: "marker", effectColor: "#111111", anim: "words", bg: "media", darken: 25, vignette: false } },
     { name: "Calle", cfg: { font: "anton", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 20, size: 110 } },
-    { name: "Sueño", cfg: { font: "montserrat", upper: false, color: "#ffffff", accent: "#ffb3d9", effect: "glow", anim: "words", bg: "animated", bg1: "#1a0f2e", bg2: "#ff6fb5", particles: "bokeh", beat: false } },
+    { name: "Invierno", cfg: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", beat: false, bg: "media", darken: 30, fx: "snow", size: 110 } },
+    { name: "Fuego", cfg: { font: "anton", color: "#fff3e0", accent: "#ff7a1a", effect: "shadow", anim: "pop", bg: "media", darken: 45, fx: "embers", size: 115 } },
+    { name: "Sueño", cfg: { font: "montserrat", upper: false, color: "#ffffff", accent: "#ffb3d9", effect: "glow", anim: "words", bg: "animated", bg1: "#1a0f2e", bg2: "#ff6fb5", fx: "bokeh", beat: false } },
   ];
 
   // Each style as a starting point for Personalizado (the closest look)
   const BASES = {
     kinetic: { font: "anton", accent: "#ffe14d", effect: "none", anim: "pop", bg: "animated", bg1: "#08080c", bg2: "#3a0f2a", size: 115 },
     cinematic: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 40, size: 105 },
-    neon: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#1b0b4a", particles: "stars", size: 88 },
+    neon: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#1b0b4a", fx: "stars", size: 88 },
     minimal: { font: "instrument", upper: false, color: "#16140f", accent: "#16140f", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 },
     karaoke: { font: "montserrat", color: "#ffffff", accent: "#ffd23f", effect: "outline", effectColor: "#0b0b16", anim: "karaoke", bg: "media", darken: 40, next: true },
     notes: { font: "inter", upper: false, color: "#1d1d1f", accent: "#e8a400", effect: "none", anim: "words", beat: false, bg: "solid", bg1: "#fffaf0", vignette: false, align: "left", pos: "top", size: 80 },
-    aurora: { font: "inter", upper: false, color: "#ffffff", accent: "#7df9c4", effect: "glow", anim: "rise", bg: "media", darken: 30, particles: "stars" },
+    aurora: { font: "inter", upper: false, color: "#ffffff", accent: "#7df9c4", effect: "glow", anim: "rise", bg: "media", darken: 30, fx: "stars" },
     couture: { font: "bodoni", color: "#ffffff", accent: "#ffffff", effect: "none", anim: "fade", beat: false, bg: "media", darken: 30, spacing: 4, size: 95 },
     blackout: { font: "league", color: "#ffffff", accent: "#ff2d2d", effect: "none", anim: "words", bg: "solid", bg1: "#000000", vignette: false, size: 140 },
     vhs: { font: "vt323", color: "#f2f2f2", accent: "#ff4fd8", effect: "glow", anim: "typewriter", bg: "media", darken: 35, size: 120 },
-    vinilo: { font: "instrument", upper: false, color: "#f6e7c8", accent: "#ff9a3c", effect: "shadow", anim: "fade", beat: false, bg: "gradient", bg1: "#1a0e08", bg2: "#5a2a12", particles: "bokeh" },
+    vinilo: { font: "instrument", upper: false, color: "#f6e7c8", accent: "#ff9a3c", effect: "shadow", anim: "fade", beat: false, bg: "gradient", bg1: "#1a0e08", bg2: "#5a2a12", fx: "bokeh" },
     adrenalina: { font: "barlow", color: "#ffffff", accent: "#ff3b1f", effect: "shadow", anim: "pop", bg: "media", darken: 15, size: 120 },
     street: { font: "poppins", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 15 },
     broadcast: { font: "barlow", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#0b2a6b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left", showMeta: true },
     recorte: { font: "anton", color: "#ffffff", accent: "#ff4d8d", effect: "outline", anim: "pop", bg: "media", darken: 25, size: 125 },
-    lluvia: { font: "montserrat", upper: false, color: "#e9f1ff", accent: "#8cc7ff", effect: "shadow", anim: "fade", bg: "media", darken: 35, particles: "rain", beat: false },
-    nieve: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", bg: "media", darken: 25, particles: "snow", beat: false },
-    tormenta: { font: "league", color: "#eaf2ff", accent: "#9ecbff", effect: "glow", anim: "pop", bg: "media", darken: 40, particles: "rain", size: 130 },
-    otono: { font: "cormorant", upper: false, color: "#fff4e6", accent: "#ff9a3c", effect: "shadow", anim: "rise", bg: "media", darken: 30, beat: false },
+    lluvia: { font: "montserrat", upper: false, color: "#e9f1ff", accent: "#8cc7ff", effect: "shadow", anim: "fade", bg: "media", darken: 35, fx: "rain", beat: false },
+    nieve: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", bg: "media", darken: 25, fx: "snow", beat: false },
+    tormenta: { font: "league", color: "#eaf2ff", accent: "#9ecbff", effect: "glow", anim: "pop", bg: "media", darken: 40, fx: "lightning", size: 130 },
+    otono: { font: "cormorant", upper: false, color: "#fff4e6", accent: "#ff9a3c", effect: "shadow", anim: "rise", bg: "media", darken: 30, beat: false, fx: "leak", fxAmount: 60 },
     live: { font: "montserrat", color: "#ffffff", accent: "#ff2d55", effect: "box", effectColor: "#000000", anim: "words", bg: "media", darken: 0, pos: "bottom" },
     noticiero: { font: "montserrat", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#b3001b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left" },
     radio: { font: "montserrat", color: "#ffffff", accent: "#ff9500", effect: "shadow", anim: "words", bg: "media", darken: 30, showMeta: true },
     stream: { font: "poppins", color: "#ffffff", accent: "#9146ff", effect: "box", effectColor: "#9146ff", anim: "words", bg: "media", darken: 0, pos: "bottom" },
     karasing: { font: "poppins", color: "#ffffff", accent: "#ff3d8b", effect: "outline", effectColor: "#14001f", anim: "karaoke", bg: "animated", bg1: "#14001f", bg2: "#ff3d8b", next: true },
     kararetro: { font: "barlow", color: "#ffffff", accent: "#ffe600", effect: "outline", effectColor: "#1a0033", anim: "karaoke", bg: "gradient", bg1: "#1a0033", bg2: "#ff2fa0", next: true },
-    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", particles: "sparkles", next: true },
+    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", fx: "sparkles", next: true },
   };
 
   const KEY_CUR = "wm-custom-cur";
   const KEY_TPL = "wm-custom-tpls";
+  const KEY_ORIGIN = "wm-custom-origin";
+  /** Older saves had "particles"; now there is one effect slot. */
+  function migrate(c) {
+    c = { ...DEFAULTS, ...c };
+    if (c.particles && c.particles !== "none" && (!c.fx || c.fx === "none")) c.fx = c.particles;
+    delete c.particles;
+    return c;
+  }
   const read = (k, d) => {
     try {
       const v = JSON.parse(localStorage.getItem(k));
@@ -11742,7 +11873,9 @@ details.cu-sec:not([open]) {
     DEFAULTS,
     STARTERS,
     BASES,
-    cfg: { ...DEFAULTS, ...read(KEY_CUR, {}) },
+    cfg: migrate(read(KEY_CUR, {})),
+    // the look it started from ("Restaurar estilo" goes back to it)
+    origin: read(KEY_ORIGIN, {}),
     familyOf(id) {
       const f = WM.Presets && WM.Presets.FONTS.find((x) => x.id === id);
       return f ? f.family : "Montserrat, sans-serif";
@@ -11755,13 +11888,21 @@ details.cu-sec:not([open]) {
     },
     /** Start over from a look: the defaults plus its own choices. */
     apply(patch) {
-      api.cfg = { ...DEFAULTS, ...patch };
+      api.cfg = migrate(patch);
+      api.origin = { ...patch };
       write(KEY_CUR, api.cfg);
+      write(KEY_ORIGIN, api.origin);
+    },
+    /** Back to the look it started from. */
+    restore() {
+      api.apply(api.origin);
     },
     templates: () => read(KEY_TPL, []),
     saveTemplate(name) {
       const list = api.templates().filter((x) => x.name !== name);
       list.push({ name, cfg: { ...api.cfg } });
+      api.origin = { ...api.cfg };
+      write(KEY_ORIGIN, api.origin);
       write(KEY_TPL, list);
     },
     deleteTemplate(name) {
@@ -12022,6 +12163,161 @@ details.cu-sec:not([open]) {
     g.restore();
   };
   WM.BgVideo = api;
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
+// Wave Music · EFECTOS REALISTAS
+// Real footage of snow, fog, smoke, embers, light… shot over black and
+// blended with "screen" on top of the background, the way editors use
+// overlay packs. The clips (Pixabay, cropped to 720x1280 and made to loop
+// seamlessly) are served by the media service; rain is drawn instead.
+// Like the background video, the clip follows the song's clock, so the
+// preview, seeking and the export show the same frame.
+(function (WM) {
+  const LIST = [
+    { id: "none", label: "Ninguno" },
+    { id: "snow", label: "Nieve" },
+    { id: "rain", label: "Lluvia", drawn: true },
+    { id: "fog", label: "Niebla" },
+    { id: "smoke", label: "Humo" },
+    { id: "lightning", label: "Relámpagos" },
+    { id: "embers", label: "Brasas" },
+    { id: "sparks", label: "Chispas" },
+    { id: "bokeh", label: "Bokeh" },
+    { id: "golddust", label: "Polvo dorado" },
+    { id: "rays", label: "Rayos de luz" },
+    { id: "leak", label: "Luz cálida" },
+    { id: "flare", label: "Destello" },
+  ];
+
+  const el = document.createElement("video");
+  el.muted = true;
+  el.loop = true;
+  el.playsInline = true;
+  el.preload = "auto";
+  const blobs = new Map(); // id -> object URL (kept: switching back is instant)
+  let loaded = ""; // id whose clip is in the element
+  let loading = null;
+
+  const api = {
+    LIST,
+    el,
+    // the choice for the styles with a background video (Personalizado keeps its own)
+    current: { id: "none", amount: 80 },
+    exporting: false,
+    onchange: null,
+    /** Make sure the clip for an effect is in the element. */
+    load(id) {
+      const fx = LIST.find((x) => x.id === id);
+      if (!fx || fx.drawn || id === "none" || loaded === id) return loading || Promise.resolve();
+      loaded = id;
+      loading = (async () => {
+        try {
+          let url = blobs.get(id);
+          if (!url) {
+            const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/fx${id}.mp4`);
+            if (!res.ok) throw new Error("No se pudo cargar el efecto");
+            url = URL.createObjectURL(await res.blob());
+            blobs.set(id, url);
+          }
+          if (loaded !== id) return;
+          await new Promise((res, rej) => {
+            el.onloadeddata = res;
+            el.onerror = () => rej(new Error("No se pudo leer el efecto"));
+            el.src = url;
+          });
+        } catch (e) {
+          if (loaded === id) loaded = "";
+          throw e;
+        } finally {
+          loading = null;
+          if (api.onchange) api.onchange();
+        }
+      })();
+      return loading;
+    },
+    /** Resolves once the current clip can be drawn (before an export). */
+    ready: () => (loading ? loading.catch(() => {}) : Promise.resolve()),
+    get busy() {
+      return !!loading;
+    },
+    /** Keep the clip on the song's clock (called once per drawn frame). */
+    sync(t, playing, fromExport = false) {
+      if (!loaded || !el.duration) return;
+      if (api.exporting && !fromExport) return;
+      const d = el.duration;
+      const want = ((t % d) + d) % d;
+      const drift = Math.abs(el.currentTime - want);
+      if (playing) {
+        if (el.paused) el.play().catch(() => {});
+        if (drift > 0.35 && drift < d - 0.35 && !el.seeking) el.currentTime = want;
+      } else {
+        if (!el.paused) el.pause();
+        if (drift > 0.04 && !el.seeking) el.currentTime = want;
+      }
+    },
+    /** Paint an effect over what is already on the canvas. amount: 0..100 */
+    paint(g, W, H, id, amount, t) {
+      if (!id || id === "none" || amount <= 0) return;
+      const k = Math.min(1, amount / 100);
+      if (id === "rain") return rain(g, W, H, t, k);
+      api.load(id).catch(() => {});
+      if (loaded !== id || el.readyState < 2 || !el.videoWidth) return;
+      const vw = el.videoWidth;
+      const vh = el.videoHeight;
+      const s = Math.max(W / vw, H / vh);
+      g.save();
+      g.globalCompositeOperation = "screen";
+      g.globalAlpha = k;
+      g.drawImage(el, (W - vw * s) / 2, (H - vh * s) / 2, vw * s, vh * s);
+      g.restore();
+    },
+  };
+
+  // Rain: three depths of motion-blurred streaks with a little wind; the
+  // near ones longer, wider and brighter, like drops passing the lens.
+  const rnd = (i) => {
+    const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const LAYERS = [
+    { n: 170, len: 26, w: 1, speed: 1500, a: 0.22 },
+    { n: 90, len: 52, w: 1.6, speed: 2300, a: 0.32 },
+    { n: 26, len: 110, w: 2.6, speed: 3400, a: 0.4 },
+  ];
+  function rain(g, W, H, t, k) {
+    const s = W / 1080;
+    const wind = 0.16;
+    g.save();
+    g.globalCompositeOperation = "screen";
+    g.lineCap = "round";
+    // a cool, wet haze over the whole frame
+    g.fillStyle = `rgba(120,140,170,${0.07 * k})`;
+    g.fillRect(0, 0, W, H);
+    LAYERS.forEach((L, li) => {
+      g.lineWidth = L.w * s;
+      for (let i = 0; i < L.n; i++) {
+        const seed = li * 1000 + i;
+        const len = L.len * s * (0.7 + rnd(seed) * 0.6);
+        const sp = L.speed * s * (0.85 + rnd(seed + 1) * 0.3);
+        const span = H + len * 2;
+        const y = ((rnd(seed + 2) * span + t * sp) % span) - len;
+        const x = ((rnd(seed + 3) * (W + H * wind) - y * wind) % (W + 60 * s)) - 30 * s;
+        const grd = g.createLinearGradient(x, y, x - len * wind, y + len);
+        const a = L.a * k * (0.6 + rnd(seed + 4) * 0.4);
+        grd.addColorStop(0, "rgba(210,225,245,0)");
+        grd.addColorStop(1, `rgba(220,232,250,${a})`);
+        g.strokeStyle = grd;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x - len * wind, y + len);
+        g.stroke();
+      }
+    });
+    g.restore();
+  }
+
+  WM.Fx = api;
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -12435,6 +12731,7 @@ details.cu-sec:not([open]) {
       }
       const g = c.getContext("2d");
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
+      if (WM.Fx) WM.Fx.sync(t, playing);
       preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: WM.BgVideo.showsIn(this.theme) ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
       if (this.guides) this.drawGuides(g, L);
     }
@@ -13053,6 +13350,7 @@ details.cu-sec:not([open]) {
       this.font = style.font || null;
       this.video = WM.BgVideo.showsIn(theme) && WM.BgVideo.enabled;
       if (this.video) WM.BgVideo.exporting = true;
+      if (WM.Fx) WM.Fx.exporting = true;
       this.canvas = document.createElement("canvas");
       this.canvas.width = 1080;
       this.canvas.height = 1920;
@@ -13061,11 +13359,13 @@ details.cu-sec:not([open]) {
     }
     draw(t) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
+      if (WM.Fx) WM.Fx.sync(t, true, true);
       this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
       return this.canvas;
     }
     dispose() {
       if (this.video) WM.BgVideo.exporting = false;
+      if (WM.Fx) WM.Fx.exporting = false;
     }
   }
 
@@ -13112,6 +13412,8 @@ details.cu-sec:not([open]) {
     const type = pickType();
     if (!type) throw new Error("Este navegador no puede grabar video");
 
+    // a realistic effect still downloading would be missing from the first frames
+    if (WM.Fx) await WM.Fx.ready();
     const renderer = await WM.VideoRenderer.create(o.timeline, o.backgroundSrc, o.style);
     if (o.onCanvas) o.onCanvas(renderer.canvas);
     const sync = new WM.SyncEngine();
@@ -14019,6 +14321,7 @@ details.cu-sec:not([open]) {
       listenUntil = null;
     }
     const state = sync.stateAt(t);
+    WM.songDuration = audio.duration;
     preview.render(state, { playing: audio.playing, time: t, duration: audio.duration });
     needsSnap = false;
     renderAdjust(t, state);
@@ -14712,6 +15015,16 @@ details.cu-sec:not([open]) {
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
+    // in Personalizado a new video or photo goes straight to the background
+    if (on && WM.BgVideo.name !== cuSeenBg) {
+      cuSeenBg = WM.BgVideo.name;
+      if (preview.theme.id === "custom" && WM.Custom.cfg.bg !== "media") {
+        WM.Custom.set({ bg: "media" });
+        cuPaint();
+      }
+    }
+    $("bgv-fx-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === WM.Fx.current.id));
+    $("bgv-fx-amount").hidden = WM.Fx.current.id === "none";
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
@@ -14723,6 +15036,31 @@ details.cu-sec:not([open]) {
     if (WM.LiveChat.onBg) WM.LiveChat.onBg();
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
+  var cuSeenBg = "";
+  // realistic effects over the background (fx.js)
+  WM.Fx.LIST.forEach((fx) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.fx = fx.id;
+    b.textContent = fx.label;
+    b.onclick = () => {
+      WM.Fx.current.id = fx.id;
+      WM.Fx.load(fx.id).catch((e) => toast(e.message));
+      updateBgv();
+      needsSnap = true;
+    };
+    $("bgv-fx-list").appendChild(b);
+  });
+  {
+    const r = $("bgv-fx-amount").querySelector("input");
+    r.oninput = () => {
+      WM.Fx.current.amount = Number(r.value);
+      $("bgv-fx-amount").querySelector("output").textContent = r.value + "%";
+      needsSnap = true;
+    };
+  }
+  WM.Fx.onchange = () => (needsSnap = true);
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -15084,6 +15422,7 @@ details.cu-sec:not([open]) {
     spacing: (v) => (v > 0 ? "+" : "") + v,
     lineHeight: (v) => Number(v).toFixed(2),
     darken: (v) => v + "%",
+    fxAmount: (v) => v + "%",
   };
   document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
     const key = el.dataset.cu;
@@ -15116,6 +15455,7 @@ details.cu-sec:not([open]) {
     $("cu-bgcolors").hidden = media;
     $("cu-bg2").hidden = c.bg === "solid";
     $("cu-darken").hidden = !media;
+    $("cu-fxamount").hidden = c.fx === "none";
     $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
     $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
     cuPlaceBgv();
@@ -15125,7 +15465,7 @@ details.cu-sec:not([open]) {
     const v = $("video-opts");
     if (custom) {
       $("cu-media").appendChild(v);
-      v.hidden = CU.cfg.bg !== "media";
+      v.hidden = false; // uploading is always at hand
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
@@ -15141,6 +15481,7 @@ details.cu-sec:not([open]) {
       if (ev.target.classList.contains("cu-x")) return;
       CU.apply(cfg);
       cuPaint();
+      cuNeedsFootage();
       needsSnap = true;
     };
     if (onDelete) {
@@ -15152,6 +15493,18 @@ details.cu-sec:not([open]) {
       b.append(x);
     }
     return b;
+  }
+  /** A look made for footage, with none loaded: the sample clip stands in. */
+  async function cuNeedsFootage() {
+    if (CU.cfg.bg !== "media" || WM.BgVideo.enabled) return;
+    try {
+      await WM.BgVideo.loadSample();
+      cuSeenBg = WM.BgVideo.name;
+    } catch {
+      /* the gradient shows instead */
+    }
+    updateBgv();
+    needsSnap = true;
   }
   function cuTemplates() {
     $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
@@ -15183,7 +15536,8 @@ details.cu-sec:not([open]) {
     toast(`Guardada: ${name}`);
   };
   $("cu-reset").onclick = () => {
-    CU.apply({});
+    CU.restore();
+    cuNeedsFootage();
     cuPaint();
     needsSnap = true;
   };
@@ -15197,6 +15551,7 @@ details.cu-sec:not([open]) {
     if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
     CU.apply(base);
     cuPaint();
+    cuNeedsFootage();
     showCat("todos");
     chooseStyle("custom");
     toast(`Partimos de ${from.label}: cambiá lo que quieras`);
