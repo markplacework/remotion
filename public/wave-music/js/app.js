@@ -1539,10 +1539,12 @@
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
-    // a new video or photo they bring goes straight to the background, Personalizado included
+    // each style keeps the video or photo brought to it (and its filter)
+    rememberBg();
+    // in Personalizado a new video or photo goes straight to the background
     if (on && WM.BgVideo.name !== cuSeenBg) {
       cuSeenBg = WM.BgVideo.name;
-      if (ownFootage() && WM.Custom.cfg.bg !== "media") {
+      if (preview.theme.id === "custom" && ownFootage() && WM.Custom.cfg.bg !== "media") {
         WM.Custom.set({ bg: "media" });
         cuPaint();
       }
@@ -1565,6 +1567,38 @@
     if (on) requestAnimationFrame(paintFilterThumbs);
   }
   var cuSeenBg = "";
+  // ---------- un fondo propio por estilo ----------
+  // What they upload (or pick from the library) belongs to the style it was
+  // brought to: other styles keep their own, and coming back finds it again.
+  var styleBg = new Map(); // style id -> { file, filter, amount }
+  var bgSwitch = 0; // >0 while a style's own background is being put back
+  function rememberBg() {
+    if (bgSwitch || !preview || !preview.theme) return;
+    if (ownFootage() && WM.BgVideo.file) styleBg.set(preview.theme.id, { file: WM.BgVideo.file, filter: WM.BgVideo.filter, amount: WM.BgVideo.filterAmount });
+  }
+  /** Leaving one style for another: put back the new style's own background, or none of theirs. */
+  function swapStyleBg(from, to) {
+    if (from) rememberBg();
+    const mine = styleBg.get(to);
+    if (mine) {
+      const my = ++bgSwitch;
+      const done = () => {
+        if (my !== bgSwitch) return;
+        WM.BgVideo.filter = mine.filter;
+        WM.BgVideo.filterAmount = mine.amount;
+        bgSwitch = 0;
+        updateBgv();
+        needsSnap = true;
+      };
+      if (WM.BgVideo.file === mine.file) return done();
+      WM.BgVideo.load(mine.file).then(done, done);
+      return;
+    }
+    bgSwitch = 0;
+    if (ownFootage()) WM.BgVideo.clear();
+    WM.BgVideo.filter = "none";
+    WM.BgVideo.filterAmount = 1;
+  }
   /** A video or photo the user brought (uploaded or from the library), not an example. */
   function ownFootage() {
     return WM.BgVideo.enabled && !WM.BgVideo.sample && WM.BgVideo.name !== WM.DEMO_BG.name;
@@ -1662,7 +1696,10 @@
     needsSnap = true;
   };
   $("bgv-clear").onclick = () => {
+    styleBg.delete(preview.theme.id);
     WM.BgVideo.clear();
+    WM.BgVideo.filter = "none";
+    WM.BgVideo.filterAmount = 1;
     updateBgv();
     needsSnap = true;
   };
@@ -2331,12 +2368,15 @@
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     preview.font = null;
+    const fromStyle = preview.theme && preview.theme.id;
+    if (fromStyle !== id) swapStyleBg(fromStyle, id);
     preview.setTheme(id);
     cuPlaceBgv();
-    // Backgrounds, one rule: their own video or photo stays in every style
-    // until they remove it; an example clip belongs to its style, so it
-    // swaps for the new style's example (the weather styles open on theirs).
-    if (WM.Themes.get(id).video && !ownFootage() && WM.BgVideo.sample !== id) {
+    // Backgrounds: each style keeps its own (what they brought to it, or its
+    // example clip; the weather styles open on theirs).
+    // another style's example clip never shows here
+    if (!styleBg.has(id) && WM.BgVideo.sample && WM.BgVideo.sample !== id && !WM.STYLE_SAMPLES[id]) WM.BgVideo.clear();
+    if (!styleBg.has(id) && WM.Themes.get(id).video && !ownFootage() && WM.BgVideo.sample !== id) {
       const showingExample = WM.BgVideo.enabled;
       if ((showingExample || WEATHER.includes(id)) && WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
     }

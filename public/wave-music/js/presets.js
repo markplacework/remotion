@@ -115,7 +115,9 @@
           for (let r = 0; r < 3; r++) {
             const dir = r % 2 ? 1 : -1;
             const off = (((t - L.start) * u * 140 + r * tw * 0.37) % tw + tw) % tw;
+            g.__free = true; // scrolls past the edges on purpose
             for (let x = dir > 0 ? off - tw : -off; x < W; x += tw) g.strokeText(big, x, H * (0.18 + 0.32 * r));
+            g.__free = false;
           }
         }
         g.restore();
@@ -441,18 +443,39 @@
       }
       // the title tracks in, wide to tight
       const k = ease.out(clamp(t / 2.2));
+      // a long title goes on two lines, sized once at its settled tracking
       let size = u * 84;
-      if (has) g.letterSpacing = `${size * (0.5 - 0.32 * k)}px`;
-      g.font = `600 ${size}px ${fam(CINE_TITLE)}`;
-      const tw = g.measureText(title).width;
-      if (tw > safe.w * 0.92) {
-        size *= (safe.w * 0.92) / tw;
-        g.font = `600 ${size}px ${fam(CINE_TITLE)}`;
+      const widthAt = (txt, sz) => {
+        if (has) g.letterSpacing = `${sz * 0.18}px`;
+        g.font = `600 ${sz}px ${fam(CINE_TITLE)}`;
+        return g.measureText(txt).width;
+      };
+      let rowsT = [title];
+      if (widthAt(title, size) > safe.w * 0.9) {
+        const ws = title.split(" ");
+        let best = 1;
+        let bestW = Infinity;
+        for (let i = 1; i < ws.length; i++) {
+          const w = Math.max(widthAt(ws.slice(0, i).join(" "), size), widthAt(ws.slice(i).join(" "), size));
+          if (w < bestW) {
+            bestW = w;
+            best = i;
+          }
+        }
+        if (ws.length > 1) rowsT = [ws.slice(0, best).join(" "), ws.slice(best).join(" ")];
       }
+      const widest = Math.max(...rowsT.map((r) => widthAt(r, size)));
+      if (widest > safe.w * 0.9) size *= (safe.w * 0.9) / widest;
+      if (has) g.letterSpacing = `${size * (0.18 + 0.32 * (1 - k))}px`;
+      g.font = `600 ${size}px ${fam(CINE_TITLE)}`;
       g.shadowColor = "rgba(255,214,160,0.45)";
       g.shadowBlur = u * 30;
-      g.fillStyle = cineGold(g, size);
-      g.fillText(title, 0, 0);
+      const lh = size * 1.15;
+      rowsT.forEach((row, i) => {
+        const yy = (i - (rowsT.length - 1) / 2) * lh;
+        g.fillStyle = cineGold(g, size, yy);
+        g.fillText(row, 0, yy);
+      });
       g.restore();
       if (has) g.letterSpacing = "0px";
       // a flare sweeps through the title as it lands
@@ -804,12 +827,16 @@
         const fade = (t - lines[first].start) / 0.6;
         if (fade < 1) {
           g.save();
+          g.translate(f.shift.x, f.shift.y);
           g.globalAlpha = 1 - ease.inOut(fade);
           this.writing(g, f, u, page - 1, lay, size, gap, top, first - 1, true);
           g.restore();
         }
       }
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
       this.writing(g, f, u, page, lay, size, gap, top, f.current, false);
+      g.restore();
     },
     /** A clean, warm sheet: fine grain, soft light, the song's title on top. */
     canvas(g, f, u) {
@@ -2283,7 +2310,9 @@
       g.textAlign = "left";
       g.fillStyle = ghost;
       const gx = safe.x - u * 60 - (t - L.start) * u * 70;
+      g.__free = true; // a giant ghost that drifts past the edges on purpose
       g.fillText(upper(L.text), gx, cy + u * 10);
+      g.__free = false;
       g.restore();
 
       g.save();
@@ -3182,6 +3211,17 @@
       const lh = size * 1.42;
       const top = safe.y + safe.h * 0.46 - (rows.length * lh) / 2;
       const off = wordOffset(f.lines, line.index);
+      // a word longer than the frame shrinks the whole line, stickers included
+      const widest = Math.max(...rows.map((r) => r.width)) + size * 0.5;
+      const fit = Math.min(1, (safe.w * 0.92) / widest);
+      g.save();
+      if (fit < 1) {
+        const cx = safe.x + safe.w / 2;
+        const cy = top + (rows.length * lh) / 2;
+        g.translate(cx, cy);
+        g.scale(fit, fit);
+        g.translate(-cx, -cy);
+      }
       g.font = STREET_FONT(size);
       g.textBaseline = "middle";
       g.textAlign = "center";
@@ -3217,6 +3257,7 @@
           g.restore();
         });
       });
+      g.restore();
     },
     tape(g, x, y, w, h, u, seed) {
       const teeth = 6;
@@ -3330,7 +3371,9 @@
       g.fillStyle = "#ffffff";
       const mw = g.measureText(msg).width;
       const ox = -((t * u * 90) % mw);
+      g.__free = true; // the ticker runs across
       for (let x = u * 160 + ox; x < W; x += mw) g.fillText(msg, x, ty + u * 25);
+      g.__free = false;
       g.restore();
       const L = f.lines[f.current];
       if (!L || !L.words.length) return;
@@ -4797,7 +4840,9 @@
       g.fillStyle = "#ffffff";
       g.textAlign = "left";
       const mw = g.measureText(msg).width;
+      g.__free = true; // the crawl runs across
       for (let x = safe.x + u * 130 - ((t * u * 110) % mw); x < W; x += mw) g.fillText(msg, x, crawlY + u * 26);
+      g.__free = false;
       g.restore();
       g.restore();
       if (!L || !L.words.length) return;
@@ -5672,7 +5717,7 @@
   }
   const diario = {
     id: "diario",
-    label: "Diario",
+    label: "News",
     tag: "Noticias",
     // the headline sets word by word, as it is sung
     wordBased: "spread",
@@ -5683,22 +5728,24 @@
       const meta = f.meta || {};
       const L = lines[f.current];
       const ed = Math.max(0, f.current);
-      // newsprint: off-white, fibres, yellowed edges
-      g.fillStyle = NEWS.paper;
+      // a clean sheet, like Manuscrito's: warm white, fine grain, soft light
+      g.fillStyle = "#f6f1e7";
       g.fillRect(0, 0, W, H);
       g.save();
-      g.globalAlpha = 0.8;
+      g.globalAlpha = 0.6;
       g.fillStyle = g.createPattern(diaryTexture(), "repeat");
       g.fillRect(0, 0, W, H);
       g.restore();
-      const age = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8);
-      age.addColorStop(0, "rgba(150,120,70,0)");
-      age.addColorStop(1, "rgba(150,120,70,0.22)");
-      g.fillStyle = age;
+      const light = g.createRadialGradient(W * 0.3, H * 0.15, 0, W * 0.3, H * 0.15, H * 1.05);
+      light.addColorStop(0, "rgba(255,248,232,0.4)");
+      light.addColorStop(0.65, "rgba(255,248,232,0)");
+      light.addColorStop(1, "rgba(70,50,30,0.16)");
+      g.fillStyle = light;
       g.fillRect(0, 0, W, H);
       // each new line is a new edition: a slight push-in
       const e = L ? clamp((t - L.start) / 0.5) : 1;
       g.save();
+      g.translate(f.shift.x, f.shift.y);
       const zoom = 1.025 - 0.025 * ease.out(e);
       g.translate(W / 2, H / 2);
       g.scale(zoom, zoom);
@@ -5814,15 +5861,6 @@
       // three columns of copy: the story so far, then the rest of the report
       this.body(g, f, u, x0, y, cw, bottom);
       g.restore();
-      // the fold across the middle of the page
-      const fold = g.createLinearGradient(0, H * 0.5 - u * 30, 0, H * 0.5 + u * 30);
-      fold.addColorStop(0, "rgba(0,0,0,0)");
-      fold.addColorStop(0.5, "rgba(60,45,25,0.12)");
-      fold.addColorStop(0.52, "rgba(255,255,255,0.18)");
-      fold.addColorStop(1, "rgba(0,0,0,0)");
-      g.fillStyle = fold;
-      g.fillRect(0, H * 0.5 - u * 30, W, u * 60);
-      grainOver(g, W, H, t, 0.035);
     },
     /** The sung line as the headline; each word presses onto the page as it is sung. Returns the y below it. */
     headline(g, f, u, L, x0, y, cw) {
@@ -5917,10 +5955,72 @@
 
 
   const PRESETS = { custom, diario, kinetic, cinematic, neon, minimal, editorial, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
+  // ---------- borders: no text ever leaves the picture ----------
+  // Every piece of text a style draws is checked against the frame (with
+  // a small margin); one that would cross an edge is scaled down around
+  // its centre and nudged back inside. Long words, long titles and big
+  // entrances all stay on screen, in every style. Text that scrolls past
+  // the edges on purpose (tickers, ghost words) sets g.__free.
+  const nativeFill = CanvasRenderingContext2D.prototype.fillText;
+  const nativeStroke = CanvasRenderingContext2D.prototype.strokeText;
+  function keepInside(native) {
+    return function (txt, x, y, maxWidth) {
+      const call = () => (maxWidth === undefined ? native.call(this, txt, x, y) : native.call(this, txt, x, y, maxWidth));
+      if (this.__free || !txt) return call();
+      const m = this.measureText(txt);
+      const T = this.getTransform();
+      const W = this.canvas.width;
+      const H = this.canvas.height;
+      // the visible box, in device pixels (a far shadow offset draws only the shadow)
+      const sx = Math.abs(this.shadowOffsetX) > 1000 ? this.shadowOffsetX : 0;
+      const sy = Math.abs(this.shadowOffsetY) > 1000 ? this.shadowOffsetY : 0;
+      const l = x - m.actualBoundingBoxLeft;
+      const r = x + m.actualBoundingBoxRight;
+      const tp = y - m.actualBoundingBoxAscent;
+      const bt = y + m.actualBoundingBoxDescent;
+      let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+      [[l, tp], [r, tp], [l, bt], [r, bt]].forEach(([a, b]) => {
+        const px = T.a * a + T.c * b + T.e + sx;
+        const py = T.b * a + T.d * b + T.f + sy;
+        if (px < minx) minx = px;
+        if (px > maxx) maxx = px;
+        if (py < miny) miny = py;
+        if (py > maxy) maxy = py;
+      });
+      const mx = W * 0.025;
+      const my = H * 0.015;
+      if (minx >= mx && maxx <= W - mx && miny >= my && maxy <= H - my) return call();
+      // completely off screen (an exit animation): leave it be
+      if (maxx < 0 || minx > W || maxy < 0 || miny > H) return call();
+      const bw = maxx - minx;
+      const bh = maxy - miny;
+      const k = Math.min(1, (W - 2 * mx) / bw, (H - 2 * my) / bh);
+      const cx = (minx + maxx) / 2;
+      const cy = (miny + maxy) / 2;
+      const hw = (bw * k) / 2;
+      const hh = (bh * k) / 2;
+      const nx = Math.min(Math.max(cx, mx + hw), W - mx - hw);
+      const ny = Math.min(Math.max(cy, my + hh), H - my - hh);
+      this.save();
+      this.setTransform(new DOMMatrix().translate(nx, ny).scale(k).translate(-cx, -cy).multiply(T));
+      call();
+      this.restore();
+    };
+  }
+  function guard(g) {
+    if (g.fillText !== nativeFill && g.fillText.__wm) return;
+    const f = keepInside(nativeFill);
+    const s = keepInside(nativeStroke);
+    f.__wm = s.__wm = true;
+    g.fillText = f;
+    g.strokeText = s;
+  }
+
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
     p.draw = function (g, f) {
+      guard(g);
       lyricFamily = f.font || null;
       curFrame = f;
       // a canvas shared between styles must not carry one style's tracking into the next

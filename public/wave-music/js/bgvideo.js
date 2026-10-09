@@ -82,6 +82,8 @@
     },
     async load(file, sample) {
       api.clear();
+      // the user's own file (kept so each style can have its own background)
+      api.file = file || null;
       url = file ? URL.createObjectURL(file) : null;
       api.name = file ? file.name : sample.name;
       api.kind = file && /^image\//.test(file.type) ? "image" : "video";
@@ -102,8 +104,10 @@
       }
       api.enabled = true;
     },
+    file: null,
     clear() {
       api.enabled = false;
+      api.file = null;
       api.sample = "";
       api.name = "";
       el.pause();
