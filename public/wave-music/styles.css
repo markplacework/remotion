@@ -3230,18 +3230,32 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   background: var(--surface);
   overflow: hidden;
 }
+/* spacing by margins, not flex gap: Safari (and older Chrome) lay out a
+   <details> as a plain block and ignore gap on it */
 .cu-sec {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: block;
   padding: 16px 14px;
   border-top: 1px solid var(--line);
 }
 .cu-sec:first-child {
   border-top: 0;
 }
-details.cu-sec:not([open]) {
-  gap: 0;
+.cu .cu-sec > * {
+  margin-top: 12px;
+}
+.cu .cu-sec > :first-child {
+  margin-top: 0;
+}
+.cu .cu-sec > .opt-label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: -4px;
+}
+.cu .cu-sec > .chips + .check {
+  margin-top: 14px;
+}
+.cu .cu-sec > .check + .check {
+  margin-top: 10px;
 }
 .cu-sec summary {
   list-style: none;
@@ -3289,35 +3303,17 @@ details.cu-sec:not([open]) {
   padding: 0 14px;
   height: 38px;
 }
-.cu-tpls {
-  margin-top: 0;
-}
 .cu .chips {
-  margin-top: 0;
   gap: 8px;
 }
-.cu .opt-label {
-  margin: 6px 0 -4px;
-}
-.cu .cu-range .opt-label,
-.cu .cu-row .opt-label,
-.cu .cu-head .opt-label {
-  margin: 0;
+.cu .cu-sec > .cu-range + .cu-range {
+  margin-top: 6px;
 }
 #cu-media {
   padding-bottom: 4px;
 }
 #cu-media .bgv-row {
   gap: 8px;
-}
-.cu .check {
-  margin-top: 0;
-}
-.cu .chips + .check {
-  margin-top: 2px;
-}
-.cu .check + .check {
-  margin-top: -2px;
 }
 .cu-tpls:empty {
   display: none;
@@ -3418,8 +3414,8 @@ details.cu-sec:not([open]) {
   display: none;
 }
 #cu-media {
-  margin-top: 2px;
-  padding-top: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
 }
 .cu-editing {
@@ -3454,9 +3450,9 @@ details.cu-sec:not([open]) {
   opacity: 0.55;
   cursor: default;
 }
-.cu-replace {
-  align-self: flex-start;
-  margin: -4px 0 0;
+.cu .cu-sec > .cu-replace {
+  display: block;
+  margin: 8px 0 0;
   padding: 0;
   font-size: 12px;
 }
@@ -3471,6 +3467,9 @@ details.cu-sec:not([open]) {
   gap: 8px;
 }
 .cu-usemedia {
+  display: flex;
+  width: 100%;
+  justify-content: center;
   height: 38px;
 }
 .cu .cu-bgtabs .chip {
