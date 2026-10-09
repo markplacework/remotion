@@ -984,21 +984,51 @@
   // snaps to the centre lines, which show while dragging. A tap without
   // movement still opens full screen.
   const SNAP = 0.03;
+  // where the extras were dragged: Personalizado keeps them in its look,
+  // other styles in their own list (remembered in this browser)
+  WM.StyleOffsets = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("wm-style-offsets")) || {};
+    } catch {
+      return {};
+    }
+  })();
+  function extraOffset(key) {
+    if (preview.theme.id === "custom") return WM.Custom.cfg[key];
+    const s = WM.StyleOffsets[preview.theme.preset];
+    return s && s[key];
+  }
+  function setExtraOffset(key, o) {
+    if (preview.theme.id === "custom") {
+      WM.Custom.set({ [key]: o });
+      cuEditing();
+      return;
+    }
+    const id = preview.theme.preset;
+    WM.StyleOffsets[id] = { ...(WM.StyleOffsets[id] || {}), [key]: o };
+    try {
+      localStorage.setItem("wm-style-offsets", JSON.stringify(WM.StyleOffsets));
+    } catch {
+      /* kept for this visit */
+    }
+  }
   const LIMIT = 0.45;
   let drag = null;
   let justDragged = false;
   host.addEventListener("pointerdown", (e) => {
     if (!preview.draggable || !timeline || e.button > 0 || e.target.closest(".empty-cta, button")) return;
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false, el: null };
-    // Personalizado: the player, the title or the signature move on their own
-    if (preview.theme.id === "custom") {
+    // extras that move on their own (Personalizado's player, title and
+    // signature; Manuscrito's heading)
+    const P = WM.Presets.get(preview.theme.preset);
+    if (P && P.boxes) {
       const p = preview.pointerToCanvas(e.clientX, e.clientY);
       const L = preview.layout;
-      const hit = p && WM.Presets.get("custom").boxes(L.bg.w, L.bg.h, L.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      const hit = p && P.boxes(L.bg.w, L.bg.h, L.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
       if (hit) {
         drag.el = hit.key;
         drag.box = hit;
-        drag.from = { ...(WM.Custom.cfg[hit.key] || { x: 0, y: 0 }) };
+        drag.from = { ...(extraOffset(hit.key) || { x: 0, y: 0 }) };
       }
     }
   });
@@ -1023,9 +1053,8 @@
       const y = lim(drag.from.y + d.y, drag.from.y - bx.y / L.safe.h, drag.from.y + (L.bg.h - bx.h - bx.y) / L.safe.h);
       const snapX = Math.abs(x) < SNAP;
       if (snapX) x = 0;
-      WM.Custom.set({ [drag.el]: { x, y } });
+      setExtraOffset(drag.el, { x, y });
       preview.guides = { x: snapX, y: false };
-      cuEditing();
       needsSnap = true;
       e.preventDefault();
       return;
@@ -2019,6 +2048,7 @@
     lineHeight: (v) => Number(v).toFixed(2),
     darken: (v) => v + "%",
     fxAmount: (v) => v + "%",
+    handleSize: (v) => v + "%",
   };
   document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
     const key = el.dataset.cu;
@@ -2054,6 +2084,7 @@
     $("cu-bg2").hidden = c.bg === "solid";
     $("cu-darken").hidden = !media;
     $("cu-fxamount").hidden = c.fx === "none";
+    $("cu-handlesize").hidden = !c.handle;
     $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
     $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
     cuPlaceBgv();
@@ -2277,6 +2308,7 @@
       fx: WM.Fx.current,
       sp: preview.spotifyColor,
       colors: WM.StyleColors,
+      offsets: WM.StyleOffsets,
     });
   }
   function histPaint() {
@@ -2326,6 +2358,7 @@
       }
       preview.setOffset(o.off);
       WM.StyleColors = JSON.parse(JSON.stringify(o.colors || {}));
+      WM.StyleOffsets = JSON.parse(JSON.stringify(o.offsets || {}));
       saveColors();
       paintColors();
       WM.BgVideo.filter = o.filter;

@@ -31,6 +31,7 @@
     showMeta: false,
     progress: false,
     handle: "",
+    handleSize: 100,
   };
   // the weight each typeface looks best in (and that is self-hosted)
   const WEIGHTS = { anton: 400, montserrat: 800, poppins: 900, inter: 800, league: 400, barlow: 700, bodoni: 600, cormorant: 600, instrument: 400, orbitron: 900, shrikhand: 400, vt323: 400, hand: 400, caveat: 600 };

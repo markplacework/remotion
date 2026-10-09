@@ -856,9 +856,13 @@
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
       const meta = f.meta || {};
+      if (f.video) this.polaroid(g, f, u);
       if (!meta.title && !meta.artist) return;
       const cx = safe.x + safe.w / 2;
       g.save();
+      // the heading can be dragged on its own
+      const off = styleOffset("minimal", "title", safe);
+      g.translate(off.x, off.y);
       g.fillStyle = DIA.ink;
       g.textAlign = "center";
       g.textBaseline = "alphabetic";
@@ -882,7 +886,13 @@
       g.bezierCurveTo(cx - u * 30, safe.y + u * 204, cx + u * 30, safe.y + u * 224, cx + u * 70, safe.y + u * 212);
       g.stroke();
       g.restore();
-      if (f.video) this.polaroid(g, f, u);
+    },
+    /** Draggable extras: the heading. */
+    boxes(W, H, safe, meta) {
+      if (!meta || (!meta.title && !meta.artist)) return [];
+      const u = safe.w / 825;
+      const off = styleOffset("minimal", "title", safe);
+      return [{ key: "title", x: safe.x + off.x, y: safe.y + u * 50 + off.y, w: safe.w, h: u * 185 }];
     },
     /** The lines of one page written so far, centred, in pen. */
     writing(g, f, u, page, lay, size, gap, top, upto, done) {
@@ -5305,6 +5315,11 @@
     g.shadowBlur = 0;
     g.shadowOffsetY = 0;
   }
+  /** A style's own draggable extra (not the lyric), in canvas units. */
+  const styleOffset = (style, key, safe) => {
+    const o = WM.StyleOffsets && WM.StyleOffsets[style] && WM.StyleOffsets[style][key];
+    return o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 };
+  };
   /** Where the user dragged an element, in canvas units (from safe-area fractions). */
   const cuOff = (o, safe) => (o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 });
   let cuScratch = null;
@@ -5336,10 +5351,11 @@
         at("offMeta", W / 2 - w / 2, safe.y + u * 30, w, u * 92);
       }
       if (c.handle) {
-        g.font = `600 ${u * 26}px Inter, sans-serif`;
+        const hs = (c.handleSize || 100) / 100;
+        g.font = `600 ${u * 26 * hs}px Inter, sans-serif`;
         const w = g.measureText(c.handle).width + u * 24;
         const bottom = safe.y + safe.h - (c.progress ? u * 190 : u * 24);
-        at("offHandle", safe.x + safe.w - u * 20 - w + u * 12, bottom - u * 36, w, u * 44);
+        at("offHandle", safe.x + safe.w - u * 20 - w + u * 12, bottom - u * 10 - u * 26 * hs, w, u * 18 + u * 26 * hs);
       }
       return out;
     },
@@ -5458,7 +5474,7 @@
         g.translate(oh.x, oh.y);
         g.textAlign = "right";
         g.textBaseline = "bottom";
-        g.font = `600 ${u * 26}px Inter, sans-serif`;
+        g.font = `600 ${u * 26 * ((c.handleSize || 100) / 100)}px Inter, sans-serif`;
         g.fillStyle = hexA(c.color, 0.7);
         g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 190 : u * 24));
         g.restore();
@@ -5655,67 +5671,6 @@
     (m) => `Fans gather across the country to hear every word`,
     (m) => `Critics agree: this is the line of the year`,
   ];
-  const EN_MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-  // generic newspaper copy that fills the columns after the lyric
-  const NEWS_COPY = [
-    "Fans gathered across the city late last night as the song climbed to the top of the charts, with many of them singing every word from memory.",
-    "Radio stations reported an unusual number of requests within hours of the release, and several confirmed that the track had been played back to back.",
-    "Speaking to reporters outside the venue, one listener described the chorus as the kind of line you carry with you for the rest of the week.",
-    "Industry analysts say the numbers are unlike anything seen this season, pointing to streaming totals that doubled between Friday and Sunday.",
-    "The recording was made in a small studio over a single weekend, according to people familiar with the sessions, who asked not to be named.",
-    "Local musicians have already begun covering the song in bars and on street corners, adding verses of their own to the familiar melody.",
-    "Asked about the response, a spokesperson for the label said only that the music speaks for itself and that more dates would be announced soon.",
-    "Meanwhile, videos featuring the lyric have spread quickly on social media, where users pair the words with clips of rain, city lights and empty roads.",
-    "Historians of popular music note that few songs reach this many listeners so quickly, and fewer still are remembered a decade later.",
-    "Tickets for the upcoming shows sold out in minutes, prompting organizers to consider a second night at a larger venue later this month.",
-  ];
-  const newsLayouts = new Map();
-  /** Set paragraphs into columns, justified; cached per edition. */
-  function newsSet(g, key, paras, cols, size, lh) {
-    let lay = newsLayouts.get(key);
-    if (lay) return lay;
-    lay = [];
-    g.font = NEWS_BODY(size);
-    const space = g.measureText(" ").width;
-    let ci = 0;
-    let y = cols[0].y;
-    const nextLine = () => {
-      y += lh;
-      if (y + lh > cols[ci].y + cols[ci].h) {
-        ci++;
-        if (ci < cols.length) y = cols[ci].y;
-      }
-      return ci < cols.length;
-    };
-    for (const p of paras) {
-      if (ci >= cols.length) break;
-      const words = p.text.split(/\s+/).filter(Boolean).map((w) => ({ w, width: g.measureText(w).width }));
-      let i = 0;
-      let first = true;
-      while (i < words.length && ci < cols.length) {
-        const c = cols[ci];
-        const indent = first ? size * 1.2 : 0;
-        const line = [];
-        let width = 0;
-        while (i < words.length) {
-          const add = (line.length ? space : 0) + words[i].width;
-          if (line.length && indent + width + add > c.w) break;
-          line.push(words[i]);
-          width += add;
-          i++;
-        }
-        const last = i >= words.length;
-        lay.push({ x: c.x + indent, y, w: c.w - indent, words: line, justify: !last && line.length > 1, lead: first && p.lead });
-        first = false;
-        if (!nextLine()) break;
-      }
-      // a blank half line between paragraphs
-      if (ci < cols.length) y += lh * 0.35;
-    }
-    if (newsLayouts.size > 30) newsLayouts.clear();
-    newsLayouts.set(key, lay);
-    return lay;
-  }
   const diario = {
     id: "diario",
     label: "News",
@@ -5743,138 +5698,84 @@
       light.addColorStop(1, "rgba(70,50,30,0.16)");
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
-      // each new line is a new edition: a slight push-in
-      const e = L ? clamp((t - L.start) / 0.5) : 1;
-      g.save();
-      g.translate(f.shift.x, f.shift.y);
-      const zoom = 1.025 - 0.025 * ease.out(e);
-      g.translate(W / 2, H / 2);
-      g.scale(zoom, zoom);
-      g.translate(-W / 2, -H / 2);
+      if (!L || !L.words.length) return;
+      // only the headline's type: kicker, headline, a rule, the deck and the byline
       const x0 = safe.x;
       const cw = safe.w;
       const has = "letterSpacing" in g;
-      let y = safe.y + u * 6;
-      // top strip
-      g.fillStyle = NEWS.ink;
-      g.textBaseline = "top";
-      g.font = NEWS_SANS(700, u * 17);
-      if (has) g.letterSpacing = `${u * 2.5}px`;
-      const d = new Date();
-      g.textAlign = "left";
-      g.fillText("SPECIAL EDITION", x0, y);
-      g.textAlign = "center";
-      g.fillText(`${EN_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`, x0 + cw / 2, y);
-      g.textAlign = "right";
-      g.fillText("$1.00", x0 + cw, y);
-      if (has) g.letterSpacing = "0px";
-      y += u * 30;
-      g.fillRect(x0, y, cw, u * 3);
-      g.fillRect(x0, y + u * 6, cw, u * 1.2);
-      y += u * 14;
-      // masthead and motto
-      g.textAlign = "center";
-      let ms = u * 112;
-      g.font = NEWS_MAST(ms);
-      const mast = "The Daily Lyric";
-      const mw = g.measureText(mast).width;
-      if (mw > cw) {
-        ms *= cw / mw;
-        g.font = NEWS_MAST(ms);
-      }
-      g.__keepColor = true; // the paper's name keeps its ink
-      g.fillText(mast, x0 + cw / 2, y);
-      g.__keepColor = false;
-      y += ms * 1.04;
-      g.font = `italic ${NEWS_BODY(u * 22)}`;
-      g.fillStyle = NEWS.mute;
-      g.fillText("“All the lyrics that are fit to print”", x0 + cw / 2, y);
-      y += u * 32;
-      g.fillStyle = NEWS.ink;
-      g.fillRect(x0, y, cw, u * 1.2);
-      y += u * 8;
-      // section index
-      g.font = NEWS_SANS(700, u * 16);
-      if (has) g.letterSpacing = `${u * 2}px`;
-      g.fillText(fitText(g, `VOL. I · NO. ${ed + 1}   ·   WORLD · MUSIC · CULTURE · OPINION · SPORTS`, cw), x0 + cw / 2, y);
-      if (has) g.letterSpacing = "0px";
-      y += u * 26;
-      g.fillRect(x0, y, cw, u * 1.2);
-      g.fillRect(x0, y + u * 5, cw, u * 3);
-      y += u * 30;
-      g.textAlign = "left";
-      if (L && L.words.length) {
-        // kicker
-        g.font = NEWS_SANS(800, u * 20);
-        if (has) g.letterSpacing = `${u * 2}px`;
-        const kick = KICKERS[ed % KICKERS.length];
-        const kw = g.measureText(kick).width + u * 22;
-        g.fillStyle = NEWS.red;
-        g.fillRect(x0, y - u * 4, kw, u * 32);
-        g.fillStyle = "#fff";
-        g.fillText(kick, x0 + u * 11, y + u * 2);
-        if (has) g.letterSpacing = "0px";
-        y += u * 44;
-        y = this.headline(g, f, u, L, x0, y, cw);
-        // deck and byline
-        g.font = `italic ${NEWS_BODY(u * 32)}`;
-        g.fillStyle = NEWS.ink;
-        g.globalAlpha = 0.85;
-        g.fillText(fitText(g, DECKS[ed % DECKS.length](meta), cw), x0, y + u * 6);
-        g.globalAlpha = 1;
-        y += u * 48;
-        g.font = NEWS_SANS(700, u * 16);
-        if (has) g.letterSpacing = `${u * 1.5}px`;
-        g.fillStyle = NEWS.mute;
-        g.fillText(meta.artist ? `BY ${upper(meta.artist)}, STAFF WRITER` : "BY STAFF WRITERS", x0, y);
-        if (has) g.letterSpacing = "0px";
-        y += u * 34;
-      } else y += u * 20;
-      const bottom = safe.y + safe.h;
-      // the photo (their footage, halftone) or a pull quote from the song
-      if (f.video) {
-        const ph = Math.min(u * 400, bottom - y - u * 260);
-        if (ph > u * 120) {
-          g.save();
-          g.beginPath();
-          g.rect(x0, y, cw, ph);
-          g.clip();
-          g.translate(x0, y);
-          coverTo(g, f.video, cw, ph, "grayscale(1) contrast(1.25)", t);
-          g.globalCompositeOperation = "saturation";
-          g.fillStyle = "#808080";
-          g.fillRect(0, 0, cw, ph);
-          g.globalCompositeOperation = "multiply";
-          g.globalAlpha = 0.35;
-          g.fillStyle = g.createPattern(newsDotTile(), "repeat");
-          g.fillRect(0, 0, cw, ph);
-          g.globalAlpha = 1;
-          g.fillStyle = "#e8dcc4";
-          g.fillRect(0, 0, cw, ph);
-          g.restore();
-          y += ph + u * 8;
-          g.font = `italic ${NEWS_BODY(u * 21)}`;
-          g.fillStyle = NEWS.mute;
-          g.fillText(fitText(g, `Pictured: the scene as the first notes rang out${meta.title ? ` — “${meta.title}”` : ""}.`, cw), x0, y);
-          y += u * 38;
-        }
-      } else {
-        y = this.quote(g, f, u, x0, y, cw);
-      }
-      // three columns of copy: the story so far, then the rest of the report
-      this.body(g, f, u, x0, y, cw, bottom);
-      g.restore();
-    },
-    /** The sung line as the headline; each word presses onto the page as it is sung. Returns the y below it. */
-    headline(g, f, u, L, x0, y, cw) {
-      const { t } = f;
-      let size = u * 96;
+      // measure the block to centre it
+      let size = u * 104;
       const words = L.words.map((w) => ({ ...w, label: w.text }));
       let rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
-      while (rows.length > 3 && size > u * 54) {
+      while (rows.length > 4 && size > u * 60) {
         size *= 0.88;
         rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       }
+      const photoH = f.video ? u * 380 : 0;
+      const blockH = u * 46 + rows.length * size * 1.02 + u * 30 + u * 46 + u * 34 + (photoH ? photoH + u * 30 : 0);
+      // each new line is a new edition: a slight settle
+      const e = clamp((t - L.start) / 0.5);
+      g.save();
+      g.translate(f.shift.x, f.shift.y + (1 - ease.out(e)) * u * 14);
+      let y = safe.y + (safe.h - blockH) / 2;
+      g.textBaseline = "top";
+      g.textAlign = "left";
+      // kicker
+      g.font = NEWS_SANS(800, u * 20);
+      if (has) g.letterSpacing = `${u * 2}px`;
+      const kick = KICKERS[ed % KICKERS.length];
+      const kw = g.measureText(kick).width + u * 22;
+      g.fillStyle = NEWS.red;
+      g.fillRect(x0, y - u * 4, kw, u * 32);
+      g.fillStyle = "#fff";
+      g.__keepColor = true;
+      g.fillText(kick, x0 + u * 11, y + u * 2);
+      g.__keepColor = false;
+      if (has) g.letterSpacing = "0px";
+      y += u * 46;
+      y = this.headline(g, f, u, L, x0, y, cw, size, rows);
+      // a fine double rule, the deck and the byline
+      y += u * 14;
+      g.fillStyle = NEWS.ink;
+      g.fillRect(x0, y, cw * 0.32, u * 3);
+      y += u * 16;
+      g.font = `italic ${NEWS_BODY(u * 34)}`;
+      g.globalAlpha = 0.82;
+      g.fillText(fitText(g, DECKS[ed % DECKS.length](meta), cw), x0, y);
+      g.globalAlpha = 1;
+      y += u * 46;
+      g.font = NEWS_SANS(700, u * 16);
+      if (has) g.letterSpacing = `${u * 1.5}px`;
+      g.fillStyle = NEWS.mute;
+      g.fillText(meta.artist ? `BY ${upper(meta.artist)}, STAFF WRITER` : "BY STAFF WRITERS", x0, y);
+      if (has) g.letterSpacing = "0px";
+      y += u * 34;
+      // their photo, printed in black and white
+      if (photoH) {
+        y += u * 10;
+        g.save();
+        g.beginPath();
+        g.rect(x0, y, cw, photoH);
+        g.clip();
+        g.translate(x0, y);
+        coverTo(g, f.video, cw, photoH, "grayscale(1) contrast(1.25)", t);
+        g.globalCompositeOperation = "saturation";
+        g.fillStyle = "#808080";
+        g.fillRect(0, 0, cw, photoH);
+        g.globalCompositeOperation = "multiply";
+        g.globalAlpha = 0.3;
+        g.fillStyle = g.createPattern(newsDotTile(), "repeat");
+        g.fillRect(0, 0, cw, photoH);
+        g.globalAlpha = 1;
+        g.fillStyle = "#efe6d4";
+        g.fillRect(0, 0, cw, photoH);
+        g.restore();
+      }
+      g.restore();
+    },
+    /** The sung line as the headline; each word presses onto the page as it is sung. Returns the y below it. */
+    headline(g, f, u, L, x0, y, cw, size, rows) {
+      const { t } = f;
       const lh = size * 1.02;
       g.font = NEWS_HEAD(size);
       g.textBaseline = "top";
@@ -5895,63 +5796,6 @@
         });
       });
       return y + rows.length * lh;
-    },
-    /** With no photo: the line before, as a pull quote between rules. */
-    quote(g, f, u, x0, y, cw) {
-      const prev = f.lines[f.current - 1] || f.lines[f.current + 1];
-      if (!prev) return y;
-      g.fillStyle = NEWS.ink;
-      g.fillRect(x0, y, cw, u * 3);
-      const size = u * 46;
-      g.font = `italic ${NEWS_BODY(size)}`;
-      const words = prev.words.map((w) => ({ ...w, label: w.text }));
-      const rows = wrapCached(g, `nq|${prev.index}|${prev.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => `italic ${NEWS_BODY(size)}`, cw * 0.9, size * 0.28).slice(0, 3);
-      g.textAlign = "center";
-      g.textBaseline = "top";
-      rows.forEach((row, i) => {
-        const txt = row.items.map((it) => it.w.label).join(" ");
-        g.fillText((i === 0 ? "“" : "") + txt + (i === rows.length - 1 ? "”" : ""), x0 + cw / 2, y + u * 22 + i * size * 1.1);
-      });
-      g.textAlign = "left";
-      const end = y + u * 22 + rows.length * size * 1.1 + u * 14;
-      g.fillRect(x0, end, cw, u * 1.2);
-      return end + u * 26;
-    },
-    /** Three justified columns: a dateline and the lines sung so far, then the report. */
-    body(g, f, u, x0, y, cw, bottom) {
-      const { lines } = f;
-      if (bottom - y < u * 60) return;
-      const gutter = u * 22;
-      const colW = (cw - gutter * 2) / 3;
-      const size = u * 21;
-      const lh = size * 1.22;
-      const cols = [0, 1, 2].map((i) => ({ x: x0 + i * (colW + gutter), y, w: colW, h: bottom - y }));
-      const sung = [];
-      for (let i = Math.max(0, f.current - 6); i < f.current; i++) sung.push(lines[i].text);
-      const ed = Math.max(0, f.current);
-      const copy = NEWS_COPY.map((_, i) => NEWS_COPY[(i + ed * 3) % NEWS_COPY.length]);
-      const paras = [{ text: "BUENOS AIRES — " + (sung.length ? `“${sung.join(" / ")}.” ` : "") + copy[0], lead: true }];
-      // the report runs on until the columns are full
-      for (let i = 1; i < copy.length * 4; i += 2) paras.push({ text: copy[i % copy.length] + " " + copy[(i + 1) % copy.length] });
-      const lay = newsSet(g, `nb|${ed}|${sung.join("|")}|${Math.round(size * 10)}|${Math.round(colW)}|${Math.round(y)}|${Math.round(bottom)}`, paras, cols, size, lh);
-      g.font = NEWS_BODY(size);
-      g.textBaseline = "top";
-      g.textAlign = "left";
-      g.fillStyle = NEWS.ink;
-      g.globalAlpha = 0.88;
-      lay.forEach((ln) => {
-        const total = ln.words.reduce((a, w) => a + w.width, 0);
-        const gap = ln.justify ? (ln.w - total) / (ln.words.length - 1) : g.measureText(" ").width;
-        let x = ln.x;
-        ln.words.forEach((w, i) => {
-          g.fillText(w.w, x, ln.y);
-          x += w.width + gap;
-        });
-      });
-      g.globalAlpha = 0.4;
-      g.fillRect(x0 + colW + gutter / 2, y, u * 1, bottom - y);
-      g.fillRect(x0 + 2 * colW + gutter * 1.5, y, u * 1, bottom - y);
-      g.globalAlpha = 1;
     },
   };
 
