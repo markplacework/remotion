@@ -238,6 +238,7 @@
   /** Metallic fills for the trailer type, around a row at y. */
   function cineGold(g, size, y = 0) {
     const gr = g.createLinearGradient(0, y - size * 0.5, 0, y + size * 0.5);
+    gr.__accent = true;
     gr.addColorStop(0, "#fff6dc");
     gr.addColorStop(0.45, "#f1d59b");
     gr.addColorStop(0.55, "#d2a660");
@@ -5781,7 +5782,9 @@
         ms *= cw / mw;
         g.font = NEWS_MAST(ms);
       }
+      g.__keepColor = true; // the paper's name keeps its ink
       g.fillText(mast, x0 + cw / 2, y);
+      g.__keepColor = false;
       y += ms * 1.04;
       g.font = `italic ${NEWS_BODY(u * 22)}`;
       g.fillStyle = NEWS.mute;
@@ -5963,9 +5966,68 @@
   // the edges on purpose (tickers, ghost words) sets g.__free.
   const nativeFill = CanvasRenderingContext2D.prototype.fillText;
   const nativeStroke = CanvasRenderingContext2D.prototype.strokeText;
+  // ---------- the user's text colours for a style ----------
+  // Any style's lyric can take a main and an accent colour: plain (white,
+  // grey, ink) text takes the main one, coloured text the accent, each
+  // keeping its own transparency. Gradients and effects stay as they are.
+  let styleColors = null;
+  const colorCache = new Map();
+  let colorProbe = null;
+  function classify(css) {
+    let c = colorCache.get(css);
+    if (c) return c;
+    if (!colorProbe) colorProbe = document.createElement("canvas").getContext("2d");
+    colorProbe.fillStyle = "#000";
+    colorProbe.fillStyle = css;
+    const v = colorProbe.fillStyle;
+    let r, g, b, a = 1;
+    if (v[0] === "#") {
+      const n = parseInt(v.slice(1), 16);
+      r = (n >> 16) & 255;
+      g = (n >> 8) & 255;
+      b = n & 255;
+    } else {
+      const m = v.match(/[\d.]+/g) || [0, 0, 0, 1];
+      [r, g, b] = m.slice(0, 3).map(Number);
+      if (m[3] != null) a = Number(m[3]);
+    }
+    // chroma, not saturation: dark inks and greys count as plain text
+    const chroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+    c = { kind: chroma < 0.2 ? "main" : "accent", a };
+    if (colorCache.size > 500) colorCache.clear();
+    colorCache.set(css, c);
+    return c;
+  }
+  const fontPx = (font) => {
+    const m = /(\d+(?:\.\d+)?)px/.exec(font);
+    return m ? Number(m[1]) : 0;
+  };
+  function recolor(css) {
+    if (!styleColors) return null;
+    // metallic gradients (Cinematic): the key word's gold is the accent
+    if (typeof css !== "string") {
+      const hex = styleColors[css && css.__accent ? "accent" : "main"];
+      return hex || null;
+    }
+    const c = classify(css);
+    const hex = styleColors[c.kind];
+    if (!hex) return null;
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${c.a})`;
+  }
   function keepInside(native) {
     return function (txt, x, y, maxWidth) {
-      const call = () => (maxWidth === undefined ? native.call(this, txt, x, y) : native.call(this, txt, x, y, maxWidth));
+      const draw = () => (maxWidth === undefined ? native.call(this, txt, x, y) : native.call(this, txt, x, y, maxWidth));
+      const call = () => {
+        // only the lyric takes their colours: big type, not labels or body copy
+        const big = styleColors && !this.__keepColor && fontPx(this.font) >= this.canvas.height * 0.022 / Math.max(0.01, Math.abs(this.getTransform().d));
+        const col = big && native === nativeFill && recolor(this.fillStyle);
+        if (!col) return draw();
+        const was = this.fillStyle;
+        this.fillStyle = col;
+        draw();
+        this.fillStyle = was;
+      };
       if (this.__free || !txt) return call();
       const m = this.measureText(txt);
       const T = this.getTransform();
@@ -6023,6 +6085,7 @@
       guard(g);
       lyricFamily = f.font || null;
       curFrame = f;
+      styleColors = (WM.StyleColors && WM.StyleColors[this.id]) || null;
       // a canvas shared between styles must not carry one style's tracking into the next
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       try {
@@ -6030,6 +6093,7 @@
       } finally {
         lyricFamily = null;
         curFrame = null;
+        styleColors = null;
       }
     };
   });

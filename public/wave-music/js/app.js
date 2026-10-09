@@ -2195,15 +2195,67 @@
     const font = WM.Presets.FONTS.find((x) => x.family === preview.font);
     if (font) base.font = font.id;
     if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
+    const tc = WM.StyleColors[from.preset];
+    if (tc && tc.main) base.color = tc.main;
+    if (tc && tc.accent) base.accent = tc.accent;
+    // the copy keeps the background the style is showing (never a stranger's clip)
+    const bgFile = WM.BgVideo.enabled ? WM.BgVideo.file : null;
+    const bgSample = WM.BgVideo.enabled && WM.BgVideo.sample ? WM.BgVideo.sample : "";
+    if (!bgFile && !bgSample && base.bg === "media") Object.assign(base, { bg: "gradient", bg1: "#0b0b12", bg2: "#2a2233" });
     CU.apply(base);
-    showCat("todos");
-    chooseStyle("custom");
-    cuApplied();
-    toast(`Partimos de ${from.label}: cambiá lo que quieras`);
+    const go = (file) => {
+      if (file) styleBg.set("custom", { file, filter: WM.BgVideo.filter, amount: WM.BgVideo.filterAmount });
+      showCat("todos");
+      chooseStyle("custom");
+      cuApplied();
+    };
+    if (bgFile) go(bgFile);
+    else if (bgSample) WM.BgVideo.prefetch(bgSample).then((blob) => go(new File([blob], `ejemplo-${bgSample}.mp4`, { type: "video/mp4" })), () => go(null));
+    else go(null);
+    toast(`Copia de ${from.label} en Personalizado: cambiá lo que quieras`);
     $("custom-opts").scrollIntoView({ behavior: "smooth", block: "start" });
   };
   cuTemplates();
   cuPaint();
+
+  // ---------- colores de la letra, por estilo ----------
+  WM.StyleColors = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("wm-style-colors")) || {};
+    } catch {
+      return {};
+    }
+  })();
+  const TC_DEFAULT = { main: "#ffffff", accent: "#ffd23f" };
+  function saveColors() {
+    try {
+      localStorage.setItem("wm-style-colors", JSON.stringify(WM.StyleColors));
+    } catch {
+      /* kept for this visit */
+    }
+  }
+  function paintColors() {
+    const id = preview.theme.preset;
+    const c = (id && WM.StyleColors[id]) || {};
+    $("tc-main").value = c.main || TC_DEFAULT.main;
+    $("tc-accent").value = c.accent || TC_DEFAULT.accent;
+    $("tc-reset").hidden = !(c.main || c.accent);
+  }
+  ["main", "accent"].forEach((k) => {
+    $("tc-" + k).oninput = () => {
+      const id = preview.theme.preset;
+      WM.StyleColors[id] = { ...(WM.StyleColors[id] || {}), [k]: $("tc-" + k).value };
+      saveColors();
+      paintColors();
+      needsSnap = true;
+    };
+  });
+  $("tc-reset").onclick = () => {
+    delete WM.StyleColors[preview.theme.preset];
+    saveColors();
+    paintColors();
+    needsSnap = true;
+  };
 
   // ---------- deshacer / rehacer (estilo) ----------
   // Every change to the look (style, typeface, size, colours, background,
@@ -2224,6 +2276,7 @@
       filterAmount: WM.BgVideo.filterAmount,
       fx: WM.Fx.current,
       sp: preview.spotifyColor,
+      colors: WM.StyleColors,
     });
   }
   function histPaint() {
@@ -2272,6 +2325,9 @@
         preview.linesFor = null;
       }
       preview.setOffset(o.off);
+      WM.StyleColors = JSON.parse(JSON.stringify(o.colors || {}));
+      saveColors();
+      paintColors();
       WM.BgVideo.filter = o.filter;
       WM.BgVideo.filterAmount = o.filterAmount == null ? 1 : o.filterAmount;
       $("bgv-filter-amount").querySelector("input").value = Math.round(WM.BgVideo.filterAmount * 100);
@@ -2374,6 +2430,7 @@
     const fromStyle = preview.theme && preview.theme.id;
     if (fromStyle !== id) swapStyleBg(fromStyle, id);
     preview.setTheme(id);
+    paintColors();
     cuPlaceBgv();
     // Backgrounds: each style keeps its own (what they brought to it, or its
     // example clip; the weather styles open on theirs).

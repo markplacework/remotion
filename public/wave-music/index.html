@@ -445,10 +445,6 @@
             <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
             <div id="styles-classic" class="styles"></div>
           </div>
-          <button type="button" id="btn-customize" class="btn btn-ghost wide customize-btn" hidden>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
-            <span>Personalizar este estilo</span>
-          </button>
           <div id="custom-opts" class="style-opts cu" hidden>
             <section class="cu-sec">
               <div class="cu-head"><span class="opt-label">Plantillas</span><button type="button" id="cu-save" class="btn-link">+ Guardar la mía</button></div>
@@ -617,6 +613,15 @@
               <input id="text-size" type="range" min="50" max="150" step="5" value="100" aria-label="Tamaño del texto" />
               <span id="text-size-val" class="text-size-val">100%</span>
             </div>
+            <div class="text-colors">
+              <span class="opt-label">Colores de la letra</span>
+              <div class="cu-colors">
+                <label class="cu-color"><input type="color" id="tc-main" value="#ffffff" /><span>Principal</span></label>
+                <label class="cu-color"><input type="color" id="tc-accent" value="#ffd23f" /><span>Destacado</span></label>
+              </div>
+              <button type="button" id="tc-reset" class="btn-link tc-reset" hidden>Volver a los colores del estilo</button>
+            </div>
+            <button type="button" id="btn-customize" class="btn-link customize-link" hidden>Crear una copia editable en Personalizado</button>
           </div>
           <div id="meta-opts" class="style-opts" hidden>
             <div class="fields">

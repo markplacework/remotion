@@ -3566,3 +3566,21 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* each style's own text colours */
+.text-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.tc-reset,
+.customize-link {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+.customize-link {
+  margin-top: 6px;
+}
