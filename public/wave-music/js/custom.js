@@ -163,6 +163,12 @@
       write(KEY_CUR, api.cfg);
       write(KEY_ACTIVE, active);
     },
+    /** Chosen straight from its card: "Restaurar estilo" means its own original look. */
+    fromScratch() {
+      if (api.active) return;
+      api.origin = {};
+      write(KEY_ORIGIN, api.origin);
+    },
     /** Back to the look it started from (a saved template: as it was saved). */
     restore() {
       api.apply(api.origin, api.active);

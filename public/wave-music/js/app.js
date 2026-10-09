@@ -2173,14 +2173,13 @@
     cuEditing();
     toast(`Guardada: ${name}`);
   };
-  // back to Personalizado's own look: clean, centred, no effects (a saved
-  // template comes back as saved by tapping it in "Mis plantillas")
+  // back to where this look started: Personalizado's own original, the style
+  // it was customised from, or a saved template as it was saved
   $("cu-reset").onclick = () => {
-    CU.apply({});
+    CU.restore();
     // a video or photo brought to Personalizado stays as its background
     if (ownFootage()) CU.set({ bg: "media" });
     cuApplied();
-    toast("Personalizado, como al principio");
   };
   $("cu-usemedia").onclick = () => cuChange({ bg: "media" });
   $("cu-replace").onclick = () => {
@@ -2398,7 +2397,11 @@
     const thumb = t.kind === "motion" ? `<canvas class="th th-pro" aria-hidden="true"></canvas>` : THUMB[t.id];
     const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
     b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
-    b.onclick = () => chooseStyle(t.id);
+    b.onclick = () => {
+      // Personalizado picked from its own card starts from its original look
+      if (t.id === "custom" && preview.theme.id !== "custom") WM.Custom.fromScratch();
+      chooseStyle(t.id);
+    };
     if (t.kind === "motion") proThumbs.push({ canvas: b.querySelector("canvas"), preset: WM.Presets.get(t.preset) });
     return b;
   }
