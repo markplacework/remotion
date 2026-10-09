@@ -5663,14 +5663,6 @@
     c.fill();
     return newsDots;
   }
-  const KICKERS = ["BREAKING NEWS", "EXCLUSIVE", "TOP STORY", "DEVELOPING STORY", "LATE EDITION", "ON THE RECORD"];
-  const DECKS = [
-    (m) => `${m.artist || "The artist"} returns with a song the whole city is already singing`,
-    (m) => `Witnesses describe the chorus as "impossible to forget"`,
-    (m) => `${m.title ? `"${m.title}"` : "The new single"} climbs the charts overnight`,
-    (m) => `Fans gather across the country to hear every word`,
-    (m) => `Critics agree: this is the line of the year`,
-  ];
   const diario = {
     id: "diario",
     label: "News",
@@ -5681,9 +5673,7 @@
     draw(g, f) {
       const { W, H, t, safe, lines } = f;
       const u = safe.w / 825;
-      const meta = f.meta || {};
       const L = lines[f.current];
-      const ed = Math.max(0, f.current);
       // a clean sheet, like Manuscrito's: warm white, fine grain, soft light
       g.fillStyle = "#f6f1e7";
       g.fillRect(0, 0, W, H);
@@ -5699,12 +5689,10 @@
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
       if (!L || !L.words.length) return;
-      // only the headline's type: kicker, headline, a rule, the deck and the byline
+      // only the lyric, in the headline's type, centred
       const x0 = safe.x;
       const cw = safe.w;
-      const has = "letterSpacing" in g;
-      // measure the block to centre it
-      let size = u * 104;
+      let size = u * 108;
       const words = L.words.map((w) => ({ ...w, label: w.text }));
       let rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       while (rows.length > 4 && size > u * 60) {
@@ -5712,44 +5700,14 @@
         rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       }
       const photoH = f.video ? u * 380 : 0;
-      const blockH = u * 46 + rows.length * size * 1.02 + u * 30 + u * 46 + u * 34 + (photoH ? photoH + u * 30 : 0);
-      // each new line is a new edition: a slight settle
+      const blockH = rows.length * size * 1.02 + (photoH ? photoH + u * 50 : 0);
+      // each new line settles in gently
       const e = clamp((t - L.start) / 0.5);
       g.save();
       g.translate(f.shift.x, f.shift.y + (1 - ease.out(e)) * u * 14);
       let y = safe.y + (safe.h - blockH) / 2;
-      g.textBaseline = "top";
-      g.textAlign = "left";
-      // kicker
-      g.font = NEWS_SANS(800, u * 20);
-      if (has) g.letterSpacing = `${u * 2}px`;
-      const kick = KICKERS[ed % KICKERS.length];
-      const kw = g.measureText(kick).width + u * 22;
-      g.fillStyle = NEWS.red;
-      g.fillRect(x0, y - u * 4, kw, u * 32);
-      g.fillStyle = "#fff";
-      g.__keepColor = true;
-      g.fillText(kick, x0 + u * 11, y + u * 2);
-      g.__keepColor = false;
-      if (has) g.letterSpacing = "0px";
-      y += u * 46;
-      y = this.headline(g, f, u, L, x0, y, cw, size, rows);
-      // a fine double rule, the deck and the byline
-      y += u * 14;
-      g.fillStyle = NEWS.ink;
-      g.fillRect(x0, y, cw * 0.32, u * 3);
-      y += u * 16;
-      g.font = `italic ${NEWS_BODY(u * 34)}`;
-      g.globalAlpha = 0.82;
-      g.fillText(fitText(g, DECKS[ed % DECKS.length](meta), cw), x0, y);
-      g.globalAlpha = 1;
-      y += u * 46;
-      g.font = NEWS_SANS(700, u * 16);
-      if (has) g.letterSpacing = `${u * 1.5}px`;
-      g.fillStyle = NEWS.mute;
-      g.fillText(meta.artist ? `BY ${upper(meta.artist)}, STAFF WRITER` : "BY STAFF WRITERS", x0, y);
-      if (has) g.letterSpacing = "0px";
-      y += u * 34;
+      y = this.headline(g, f, u, L, x0, y, cw, size, rows, true);
+      y += u * 50;
       // their photo, printed in black and white
       if (photoH) {
         y += u * 10;
@@ -5774,7 +5732,7 @@
       g.restore();
     },
     /** The sung line as the headline; each word presses onto the page as it is sung. Returns the y below it. */
-    headline(g, f, u, L, x0, y, cw, size, rows) {
+    headline(g, f, u, L, x0, y, cw, size, rows, centre) {
       const { t } = f;
       const lh = size * 1.02;
       g.font = NEWS_HEAD(size);
@@ -5785,7 +5743,7 @@
           const p = clamp((t - it.w.t0 + 0.04) / 0.16);
           if (p <= 0) return;
           const k = 1 + 0.12 * (1 - ease.out(p));
-          const cx = x0 + it.x + it.width / 2;
+          const cx = x0 + (centre ? (cw - row.width) / 2 : 0) + it.x + it.width / 2;
           const cy = y + ri * lh + size * 0.5;
           g.save();
           g.globalAlpha = p;
