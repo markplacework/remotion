@@ -1231,6 +1231,8 @@
       $("export-info").textContent = exported.ext.toUpperCase() + " · " + mb + " MB · " + T.format(audio.duration);
       exportStep("ready");
       $("export-save").focus();
+      // save it right away (the button stays, in case the save is declined)
+      $("export-save").onclick();
     } catch (e) {
       if (e.code !== "cancelled") toast(e.message || "No se pudo exportar el video");
       $("export").hidden = true;

@@ -93,9 +93,19 @@
           if (drift > 0.35 && drift < d - 0.35 && !el.seeking) el.currentTime = want;
         } else {
           if (!el.paused) el.pause();
-          if (drift > 0.04 && !el.seeking) el.currentTime = want;
+          if (drift > (fromExport ? 0.008 : 0.04) && !el.seeking) el.currentTime = want;
         }
       });
+    },
+    /** Whether a filmed effect was drawn lately. */
+    inUse() {
+      const now = performance.now();
+      return [...clips.values()].some((c) => now - c.used < 800);
+    },
+    /** Whether a clip in use is still moving to the frame asked for (an export waits). */
+    busy() {
+      const now = performance.now();
+      return [...clips.values()].some((c) => c.el.duration && now - c.used < 800 && (c.el.seeking || c.el.readyState < 2));
     },
     /**
      * Paint an effect over what is already on the canvas. amount: 0..100;

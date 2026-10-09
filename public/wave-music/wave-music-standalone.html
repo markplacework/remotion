@@ -13479,9 +13479,14 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         if (off && !el.seeking) el.currentTime = want;
       } else {
         if (!el.paused) el.pause();
-        if (drift > 0.04 && !el.seeking) el.currentTime = want;
+        // an export seeks every frame exactly; the paused preview tolerates a little
+        if (drift > (fromExport ? 0.008 : 0.04) && !el.seeking) el.currentTime = want;
       }
       return api.ready ? el : null;
+    },
+    /** Whether the footage is still moving to the frame asked for (an export waits). */
+    busy() {
+      return api.enabled && api.kind !== "image" && !!el.duration && (el.seeking || el.readyState < 2);
     },
   };
   // Filters are colour layers blended over the footage (not canvas
@@ -13640,9 +13645,19 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
           if (drift > 0.35 && drift < d - 0.35 && !el.seeking) el.currentTime = want;
         } else {
           if (!el.paused) el.pause();
-          if (drift > 0.04 && !el.seeking) el.currentTime = want;
+          if (drift > (fromExport ? 0.008 : 0.04) && !el.seeking) el.currentTime = want;
         }
       });
+    },
+    /** Whether a filmed effect was drawn lately. */
+    inUse() {
+      const now = performance.now();
+      return [...clips.values()].some((c) => now - c.used < 800);
+    },
+    /** Whether a clip in use is still moving to the frame asked for (an export waits). */
+    busy() {
+      const now = performance.now();
+      return [...clips.values()].some((c) => c.el.duration && now - c.used < 800 && (c.el.seeking || c.el.readyState < 2));
     },
     /**
      * Paint an effect over what is already on the canvas. amount: 0..100;
@@ -14830,10 +14845,14 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       this.g = this.canvas.getContext("2d");
       this.safe = { x: 140, y: 230, w: 800, h: 1310 }; // = preview.js MOTION_SAFE.video
     }
-    draw(t) {
+    /** offline: the frame is drawn exactly at t, the footage seeked to it (not playing). */
+    get offline() {
+      return true;
+    }
+    draw(t, state, playing = true) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      if (WM.Fx) WM.Fx.sync(t, true, true);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
+      if (WM.Fx) WM.Fx.sync(t, playing, true);
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, playing, true) : null, textScale: this.textScale, font: this.font }));
       return this.canvas;
     }
     dispose() {
@@ -16903,6 +16922,54 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
     };
     let raf = 0;
     let aborted = false;
+    // Lyrics Pro styles without footage render faster than real time: each
+    // frame is drawn at its exact time, no need to play the song. Footage
+    // (a background or a filmed effect) plays along in real time instead,
+    // since seeking a video for every frame is slower than playing it.
+    let fast = !!renderer.offline;
+    if (fast) {
+      renderer.draw(0, null, false);
+      fast = !renderer.video && !(WM.Fx && WM.Fx.inUse());
+    }
+    if (fast) {
+      const settle = async () => {
+        const t0 = performance.now();
+        while ((WM.BgVideo.busy() || (WM.Fx && WM.Fx.busy())) && performance.now() - t0 < 1500) await new Promise((r) => setTimeout(r, 4));
+      };
+      let lastYield = performance.now();
+      try {
+        for (; next < frames; ) {
+          if (failure) break;
+          if (o.signal && o.signal.aborted) {
+            aborted = true;
+            break;
+          }
+          const t = Math.min(next / FPS, end);
+          renderer.draw(t, null, false);
+          // footage still moving to this frame: wait for it, then draw again
+          if (WM.BgVideo.busy() || (WM.Fx && WM.Fx.busy())) {
+            await settle();
+            renderer.draw(t, null, false);
+          }
+          put();
+          // keep the encoder's queue short and the page responsive
+          while (venc.encodeQueueSize > 30) await new Promise((r) => setTimeout(r, 4));
+          if (performance.now() - lastYield > 60) {
+            if (o.onProgress) o.onProgress(t, end);
+            await new Promise((r) => setTimeout(r, 0));
+            lastYield = performance.now();
+          }
+        }
+        if (!aborted && !failure) await venc.flush();
+      } finally {
+        renderer.dispose();
+        if (venc.state !== "closed") venc.close();
+      }
+      if (aborted) throw Object.assign(new Error("Exportación cancelada"), { code: "cancelled" });
+      if (failure) throw failure;
+      muxer.finalize();
+      return { blob: new Blob([target.buffer], { type: "video/mp4" }), ext: "mp4" };
+    }
     try {
       renderer.draw(0, sync.stateAt(0));
       el.currentTime = 0;
@@ -18314,6 +18381,8 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
       $("export-info").textContent = exported.ext.toUpperCase() + " · " + mb + " MB · " + T.format(audio.duration);
       exportStep("ready");
       $("export-save").focus();
+      // save it right away (the button stays, in case the save is declined)
+      $("export-save").onclick();
     } catch (e) {
       if (e.code !== "cancelled") toast(e.message || "No se pudo exportar el video");
       $("export").hidden = true;

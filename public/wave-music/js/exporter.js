@@ -148,6 +148,54 @@
     };
     let raf = 0;
     let aborted = false;
+    // Lyrics Pro styles without footage render faster than real time: each
+    // frame is drawn at its exact time, no need to play the song. Footage
+    // (a background or a filmed effect) plays along in real time instead,
+    // since seeking a video for every frame is slower than playing it.
+    let fast = !!renderer.offline;
+    if (fast) {
+      renderer.draw(0, null, false);
+      fast = !renderer.video && !(WM.Fx && WM.Fx.inUse());
+    }
+    if (fast) {
+      const settle = async () => {
+        const t0 = performance.now();
+        while ((WM.BgVideo.busy() || (WM.Fx && WM.Fx.busy())) && performance.now() - t0 < 1500) await new Promise((r) => setTimeout(r, 4));
+      };
+      let lastYield = performance.now();
+      try {
+        for (; next < frames; ) {
+          if (failure) break;
+          if (o.signal && o.signal.aborted) {
+            aborted = true;
+            break;
+          }
+          const t = Math.min(next / FPS, end);
+          renderer.draw(t, null, false);
+          // footage still moving to this frame: wait for it, then draw again
+          if (WM.BgVideo.busy() || (WM.Fx && WM.Fx.busy())) {
+            await settle();
+            renderer.draw(t, null, false);
+          }
+          put();
+          // keep the encoder's queue short and the page responsive
+          while (venc.encodeQueueSize > 30) await new Promise((r) => setTimeout(r, 4));
+          if (performance.now() - lastYield > 60) {
+            if (o.onProgress) o.onProgress(t, end);
+            await new Promise((r) => setTimeout(r, 0));
+            lastYield = performance.now();
+          }
+        }
+        if (!aborted && !failure) await venc.flush();
+      } finally {
+        renderer.dispose();
+        if (venc.state !== "closed") venc.close();
+      }
+      if (aborted) throw Object.assign(new Error("Exportación cancelada"), { code: "cancelled" });
+      if (failure) throw failure;
+      muxer.finalize();
+      return { blob: new Blob([target.buffer], { type: "video/mp4" }), ext: "mp4" };
+    }
     try {
       renderer.draw(0, sync.stateAt(0));
       el.currentTime = 0;

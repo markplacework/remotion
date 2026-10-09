@@ -435,10 +435,14 @@
       this.g = this.canvas.getContext("2d");
       this.safe = { x: 140, y: 230, w: 800, h: 1310 }; // = preview.js MOTION_SAFE.video
     }
-    draw(t) {
+    /** offline: the frame is drawn exactly at t, the footage seeked to it (not playing). */
+    get offline() {
+      return true;
+    }
+    draw(t, state, playing = true) {
       this.g.setTransform(1, 0, 0, 1, 0, 0);
-      if (WM.Fx) WM.Fx.sync(t, true, true);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, true, true) : null, textScale: this.textScale, font: this.font }));
+      if (WM.Fx) WM.Fx.sync(t, playing, true);
+      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, playing, true) : null, textScale: this.textScale, font: this.font }));
       return this.canvas;
     }
     dispose() {

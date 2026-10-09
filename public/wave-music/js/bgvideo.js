@@ -130,9 +130,14 @@
         if (off && !el.seeking) el.currentTime = want;
       } else {
         if (!el.paused) el.pause();
-        if (drift > 0.04 && !el.seeking) el.currentTime = want;
+        // an export seeks every frame exactly; the paused preview tolerates a little
+        if (drift > (fromExport ? 0.008 : 0.04) && !el.seeking) el.currentTime = want;
       }
       return api.ready ? el : null;
+    },
+    /** Whether the footage is still moving to the frame asked for (an export waits). */
+    busy() {
+      return api.enabled && api.kind !== "image" && !!el.duration && (el.seeking || el.readyState < 2);
     },
   };
   // Filters are colour layers blended over the footage (not canvas
