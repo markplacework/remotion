@@ -210,6 +210,8 @@
   function prefetchWeather() {
     if (weatherFetched) return;
     weatherFetched = true;
+    // wake the media service right away: the first example then starts fast
+    fetch(`${WM.ModalSync.mediaUrl()}/`).catch(() => {});
     setTimeout(() => {
       ["nieve", "lluvia", "otono", "tormenta"].forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
       ["snow", "leak"].forEach((id) => WM.Fx.load(id).catch(() => {}));
@@ -2496,6 +2498,12 @@
     const thumb = t.kind === "motion" ? `<canvas class="th th-pro" aria-hidden="true"></canvas>` : THUMB[t.id];
     const tag = t.kind === "motion" ? `<span class="style-tag">${WM.Presets.get(t.preset).tag}</span>` : "";
     b.innerHTML = `${thumb}<span class="style-name">${t.label}</span>${tag}<span class="style-check" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
+    // its example clip starts downloading as soon as the card is pointed at or touched
+    if (WM.STYLE_SAMPLES && WM.STYLE_SAMPLES[t.id]) {
+      const warm = () => WM.BgVideo.prefetch(t.id).catch(() => {});
+      b.addEventListener("pointerenter", warm, { once: true });
+      b.addEventListener("pointerdown", warm, { once: true });
+    }
     b.onclick = () => {
       // Personalizado picked from its own card starts from its original look
       if (t.id === "custom" && preview.theme.id !== "custom") WM.Custom.fromScratch();

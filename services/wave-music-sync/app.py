@@ -259,7 +259,7 @@ def _items(kind: str, hits: list) -> list:
     return out
 
 
-@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY"), modal.Secret.from_name("openai")], volumes={"/samples": samples}, scaledown_window=60, timeout=120)
+@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY"), modal.Secret.from_name("openai")], volumes={"/samples": samples}, scaledown_window=900, timeout=120)
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def media():

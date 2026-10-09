@@ -11,7 +11,7 @@
   el.preload = "auto";
   const img = new Image();
   let url = null;
-  const SAMPLES_VERSION = 2;
+  const SAMPLES_VERSION = 3;
   const samples = new Map(); // style -> Promise<Blob>
   let sampleSeq = 0;
 
