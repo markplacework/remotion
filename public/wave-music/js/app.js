@@ -1376,7 +1376,7 @@
     // invented lines, two per style, written to fit each one's footage
     const PHRASES = {
       aurora: ["Bajo de la montaña", "Y siento que vuelo"],
-      tormenta: ["Contra el viento", "Voy a encontrarte"],
+      nieve: ["Contra el viento", "Voy a encontrarte"],
       street: ["Nadie nos para", "Seguimos bajando"],
     };
     const pairs = {};
@@ -1390,7 +1390,7 @@
       pairs[id] = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     });
     // styles shown over their own sample footage, the way users will use them
-    const order = ["aurora", "tormenta", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["aurora", "nieve", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
