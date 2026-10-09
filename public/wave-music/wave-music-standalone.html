@@ -13658,10 +13658,9 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     const LOOP = 5.8;
     // invented lines, two per style, written to fit each one's footage
     const PHRASES = {
-      karaoke: ["Cantemos esta noche", "Que se escuche tu voz"],
       aurora: ["Bajo de la montaña", "Y siento que vuelo"],
-      tormenta: ["Las luces de la ciudad", "Me llevan hasta vos"],
-      street: ["Nadie nos para", "Seguimos rodando"],
+      tormenta: ["Contra el viento", "Voy a encontrarte"],
+      street: ["Nadie nos para", "Seguimos bajando"],
     };
     const pairs = {};
     Object.entries(PHRASES).forEach(([id, [a1, a2]]) => {
@@ -13674,12 +13673,14 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       pairs[id] = { line: WM.Motion.prepare(TL, "line"), word: WM.Motion.prepare(TL, "word"), spread: WM.Motion.prepare(TL, "spread") };
     });
     // styles shown over their own sample footage, the way users will use them
-    const order = ["karaoke", "aurora", "tormenta", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
+    const order = ["aurora", "tormenta", "street"].map((id) => WM.Presets.get(id)).filter(Boolean);
     const tag = $("hero-style");
     // Aurora plays over the sample video, like a user's own background
     // one muted, looping clip per style, loaded when it is about to show
     const heroVids = {};
+    // one shared clip: the footage keeps playing while the styles change over it
     const vidFor = (id) => {
+      id = "ski";
       let v = heroVids[id];
       if (!v) {
         v = heroVids[id] = document.createElement("video");
@@ -13687,12 +13688,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         v.loop = true;
         v.playsInline = true;
         v.preload = "auto";
-        // Aurora plays over your own ski clip (bundled); the rest, their Pixabay samples
-        if (id === "aurora") v.src = WM.DEMO_BG.src;
-        else {
-          v.crossOrigin = "anonymous";
-          v.src = `${WM.ModalSync.mediaUrl()}/sample/${id}.mp4`;
-        }
+        // every style plays over the owner's own ski clip (bundled)
+        v.src = WM.DEMO_BG.src;
         // offline: the bundled clip instead
         v.onerror = () => {
           v.onerror = null;
@@ -13738,7 +13735,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       const safe = { x: 26, y: H * 0.16, w: W - 92, h: H * 0.5 };
       const hv = vidFor(preset.id);
       vidFor(order[(k + 1) % order.length].id); // warm up the next one
-      Object.entries(heroVids).forEach(([id, v]) => id !== preset.id && !v.paused && v.pause());
+
       if (hv.paused) hv.play().catch(() => {});
       const video = hv.readyState >= 2 ? hv : null;
       const lines = pairs[preset.id];
