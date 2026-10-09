@@ -4340,7 +4340,8 @@
       }
       g.globalAlpha = 1;
       // comments, newest at the bottom
-      const cs = liveComments(t, 5, 1.1);
+      // a new comment every ~2 s, with air between them
+      const cs = liveComments(t, 4, 2.2);
       g.textAlign = "left";
       let cy = safe.y + safe.h - u * 20;
       for (let k = cs.length - 1; k >= 0; k--) {
@@ -4365,7 +4366,7 @@
         g.font = LIVE_UI(500, u * 24);
         g.fillStyle = "#fff";
         g.fillText(c.msg, safe.x + u * 58 + nw, cy - u * 22);
-        cy -= u * 54 * clamp(c.age / 0.25);
+        cy -= u * 64 * clamp(c.age / 0.25);
       }
       g.globalAlpha = 1;
       g.restore();
@@ -4711,7 +4712,7 @@
       g.beginPath();
       g.rect(cx, cy + u * 44, cw, ch - u * 44);
       g.clip();
-      const cs = liveComments(t, 9, 0.75);
+      const cs = liveComments(t, 7, 1.6);
       let yy = cy + ch - u * 22;
       for (let k = cs.length - 1; k >= 0 && yy > cy + u * 44; k--) {
         const c = cs[k];
@@ -4723,7 +4724,7 @@
         g.font = LIVE_UI(500, u * 21);
         g.fillStyle = "#e9e6f2";
         g.fillText(fitText(g, c.msg, cw - nw - u * 30), cx + u * 16 + nw, yy);
-        yy -= u * 34;
+        yy -= u * 42;
       }
       g.restore();
       g.globalAlpha = 1;
