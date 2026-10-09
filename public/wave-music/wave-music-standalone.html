@@ -3446,10 +3446,13 @@ details.cu-sec:not([open]) {
   gap: 8px;
 }
 .cu .check {
-  margin-top: 2px;
+  margin-top: 0;
 }
 .cu .chips + .check {
-  margin-top: 10px;
+  margin-top: 2px;
+}
+.cu .check + .check {
+  margin-top: -2px;
 }
 .cu-tpls:empty {
   display: none;
@@ -3549,6 +3552,44 @@ details.cu-sec:not([open]) {
 #cu-media #video-opts > .opt-label:first-child,
 #cu-media #bgv-fx {
   display: none;
+}
+.cu-editing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 10px;
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.cu-editing b {
+  color: var(--text);
+  font-weight: 600;
+}
+.cu-editing-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cu-editing .btn {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+.cu-editing .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.cu-replace {
+  align-self: flex-start;
+  margin: -4px 0 0;
+  padding: 0;
+  font-size: 12px;
 }
 #cu-reset {
   margin: 4px 14px 14px;
@@ -3996,6 +4037,10 @@ details.cu-sec:not([open]) {
           <div id="custom-opts" class="style-opts cu" hidden>
             <section class="cu-sec">
               <div class="cu-head"><span class="opt-label">Plantillas</span><button type="button" id="cu-save" class="btn-link">+ Guardar la mía</button></div>
+              <div id="cu-editing" class="cu-editing" hidden>
+                <span class="cu-editing-name">Editando <b id="cu-editing-name"></b></span>
+                <button type="button" id="cu-update" class="btn btn-primary">Guardar cambios</button>
+              </div>
               <form id="cu-save-form" class="cu-save" hidden>
                 <input id="cu-save-name" type="text" maxlength="28" placeholder="Nombre: Mi canal trap" autocomplete="off" />
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -4090,6 +4135,8 @@ details.cu-sec:not([open]) {
               <div class="fields">
                 <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
               </div>
+              <p class="opt-hint">Arrastrá la letra, el reproductor, el título o tu firma en el video para ubicarlos donde quieras.</p>
+              <button type="button" id="cu-replace" class="btn-link cu-replace" hidden>Volver a ubicar todo como al principio</button>
             </details>
             <button type="button" id="cu-reset" class="btn-link">Restaurar estilo</button>
           </div>
@@ -11447,7 +11494,44 @@ details.cu-sec:not([open]) {
     g.shadowBlur = 0;
     g.shadowOffsetY = 0;
   }
+  /** Where the user dragged an element, in canvas units (from safe-area fractions). */
+  const cuOff = (o, safe) => (o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 });
+  let cuScratch = null;
   const custom = {
+    /**
+     * The draggable extras (player, title, signature) as rectangles in
+     * canvas units, where draw() puts them; the lyric is everything else.
+     */
+    boxes(W, H, safe, meta) {
+      const c = cuCfg();
+      const u = safe.w / 825;
+      if (!cuScratch) cuScratch = document.createElement("canvas").getContext("2d");
+      const g = cuScratch;
+      const out = [];
+      const at = (key, x, y, w, h) => {
+        const o = cuOff(c[key], safe);
+        out.push({ key, x: x + o.x, y: y + o.y, w, h });
+      };
+      if (c.progress) {
+        const bw = safe.w * 0.86;
+        const by = safe.y + safe.h - u * 150;
+        at("offPlayer", (W - bw) / 2 - u * 10, by - u * 24, bw + u * 20, u * 162);
+      }
+      if (c.showMeta && meta && (meta.title || meta.artist)) {
+        g.font = cuFont(c, u * 34);
+        let w = g.measureText(upper(meta.title || "")).width;
+        g.font = `500 ${u * 26}px Inter, sans-serif`;
+        w = Math.min(safe.w * 0.9, Math.max(w, g.measureText(meta.artist || "").width)) + u * 30;
+        at("offMeta", W / 2 - w / 2, safe.y + u * 30, w, u * 92);
+      }
+      if (c.handle) {
+        g.font = `600 ${u * 26}px Inter, sans-serif`;
+        const w = g.measureText(c.handle).width + u * 24;
+        const bottom = safe.y + safe.h - (c.progress ? u * 190 : u * 24);
+        at("offHandle", safe.x + safe.w - u * 20 - w + u * 12, bottom - u * 36, w, u * 44);
+      }
+      return out;
+    },
     id: "custom",
     label: "Personalizado",
     tag: "Tu estilo",
@@ -11468,6 +11552,8 @@ details.cu-sec:not([open]) {
       // song title and artist, small at the top
       if (c.showMeta && (f.meta.title || f.meta.artist)) {
         g.save();
+        const om = cuOff(c.offMeta, safe);
+        g.translate(om.x, om.y);
         g.textAlign = "center";
         g.textBaseline = "top";
         g.fillStyle = hexA(c.color, 0.85);
@@ -11487,6 +11573,8 @@ details.cu-sec:not([open]) {
         const bx = (W - bw) / 2;
         const by = safe.y + safe.h - u * 150;
         g.save();
+        const op = cuOff(c.offPlayer, safe);
+        g.translate(op.x, op.y);
         g.fillStyle = hexA(c.color, 0.28);
         rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
         g.fill();
@@ -11555,6 +11643,8 @@ details.cu-sec:not([open]) {
       }
       if (c.handle) {
         g.save();
+        const oh = cuOff(c.offHandle, safe);
+        g.translate(oh.x, oh.y);
         g.textAlign = "right";
         g.textBaseline = "bottom";
         g.font = `600 ${u * 26}px Inter, sans-serif`;
@@ -11852,6 +11942,15 @@ details.cu-sec:not([open]) {
   const KEY_CUR = "wm-custom-cur";
   const KEY_TPL = "wm-custom-tpls";
   const KEY_ORIGIN = "wm-custom-origin";
+  const KEY_ACTIVE = "wm-custom-active";
+  /** A look as text, keys sorted (to compare two of them). */
+  const same = (o) =>
+    JSON.stringify(
+      Object.keys(o)
+        .filter((k) => o[k] != null)
+        .sort()
+        .map((k) => [k, o[k]])
+    );
   /** Older saves had "particles"; now there is one effect slot. */
   function migrate(c) {
     c = { ...DEFAULTS, ...c };
@@ -11894,29 +11993,48 @@ details.cu-sec:not([open]) {
       write(KEY_CUR, api.cfg);
     },
     /** Start over from a look: the defaults plus its own choices. */
-    apply(patch) {
-      api.cfg = migrate(patch);
-      api.origin = { ...patch };
+    apply(patch, template = null) {
+      api.cfg = migrate(JSON.parse(JSON.stringify(patch)));
+      api.origin = JSON.parse(JSON.stringify(patch));
+      api.active = template;
       write(KEY_CUR, api.cfg);
       write(KEY_ORIGIN, api.origin);
+      write(KEY_ACTIVE, api.active);
     },
-    /** Back to the look it started from. */
+    /** Back to the look it started from (a saved template: as it was saved). */
     restore() {
-      api.apply(api.origin);
+      api.apply(api.origin, api.active);
     },
+    // the user's template being edited (null: a ready look or a style)
+    active: read(KEY_ACTIVE, null),
     templates: () => read(KEY_TPL, []),
+    /** Save the current look under a name (replacing one with that name, in place). */
     saveTemplate(name) {
-      const list = api.templates().filter((x) => x.name !== name);
-      list.push({ name, cfg: { ...api.cfg } });
-      api.origin = { ...api.cfg };
-      write(KEY_ORIGIN, api.origin);
+      const list = api.templates();
+      const item = { name, cfg: JSON.parse(JSON.stringify(api.cfg)) };
+      const i = list.findIndex((x) => x.name === name);
+      if (i >= 0) list[i] = item;
+      else list.push(item);
       write(KEY_TPL, list);
+      api.origin = JSON.parse(JSON.stringify(api.cfg));
+      api.active = name;
+      write(KEY_ORIGIN, api.origin);
+      write(KEY_ACTIVE, name);
+    },
+    /** Whether the template being edited has unsaved changes. */
+    get dirty() {
+      const t = api.active && api.templates().find((x) => x.name === api.active);
+      return !!t && same(migrate(t.cfg)) !== same(api.cfg);
     },
     deleteTemplate(name) {
       write(
         KEY_TPL,
         api.templates().filter((x) => x.name !== name)
       );
+      if (api.active === name) {
+        api.active = null;
+        write(KEY_ACTIVE, null);
+      }
     },
   };
   WM.Custom = api;
@@ -12599,6 +12717,14 @@ details.cu-sec:not([open]) {
       return { x: (W / 2 - mid(xs)) / safe.w, y: (H / 2 - mid(ys)) / safe.h };
     }
     /** Map a pointer movement (CSS px) to safe-area fractions. */
+    /** A point on screen in canvas units (Lyrics Pro). */
+    pointerToCanvas(cx, cy) {
+      const c = this.motionCanvas;
+      if (!c) return null;
+      const r = c.getBoundingClientRect();
+      const L = this.layout;
+      return { x: ((cx - r.left) * L.bg.w) / (r.width || 1), y: ((cy - r.top) * L.bg.h) / (r.height || 1) };
+    }
     pointerToOffset(dx, dy) {
       const c = this.motionCanvas;
       if (!c) return { x: 0, y: 0 };
@@ -14565,7 +14691,18 @@ details.cu-sec:not([open]) {
   let justDragged = false;
   host.addEventListener("pointerdown", (e) => {
     if (!preview.draggable || !timeline || e.button > 0 || e.target.closest(".empty-cta, button")) return;
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false };
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false, el: null };
+    // Personalizado: the player, the title or the signature move on their own
+    if (preview.theme.id === "custom") {
+      const p = preview.pointerToCanvas(e.clientX, e.clientY);
+      const L = preview.layout;
+      const hit = p && WM.Presets.get("custom").boxes(L.bg.w, L.bg.h, L.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      if (hit) {
+        drag.el = hit.key;
+        drag.box = hit;
+        drag.from = { ...(WM.Custom.cfg[hit.key] || { x: 0, y: 0 }) };
+      }
+    }
   });
   host.addEventListener("pointermove", (e) => {
     if (!drag || e.pointerId !== drag.id) return;
@@ -14579,6 +14716,22 @@ details.cu-sec:not([open]) {
       hideHint();
     }
     const d = preview.pointerToOffset(dx, dy);
+    if (drag.el) {
+      // anywhere inside the frame; snaps to the vertical centre line
+      const L = preview.layout;
+      const bx = drag.box;
+      const lim = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      let x = lim(drag.from.x + d.x, drag.from.x - bx.x / L.safe.w, drag.from.x + (L.bg.w - bx.w - bx.x) / L.safe.w);
+      const y = lim(drag.from.y + d.y, drag.from.y - bx.y / L.safe.h, drag.from.y + (L.bg.h - bx.h - bx.y) / L.safe.h);
+      const snapX = Math.abs(x) < SNAP;
+      if (snapX) x = 0;
+      WM.Custom.set({ [drag.el]: { x, y } });
+      preview.guides = { x: snapX, y: false };
+      cuEditing();
+      needsSnap = true;
+      e.preventDefault();
+      return;
+    }
     let x = Math.max(-LIMIT, Math.min(LIMIT, drag.from.x + d.x));
     let y = Math.max(-LIMIT, Math.min(LIMIT, drag.from.y + d.y));
     const snapX = Math.abs(x) < SNAP;
@@ -14604,6 +14757,14 @@ details.cu-sec:not([open]) {
   host.addEventListener("pointercancel", endDrag);
   function updateCenterBtn() {
     const o = preview.offset;
+    // Personalizado keeps where the lyric goes (it's part of the template)
+    if (preview.theme.id === "custom") {
+      const was = WM.Custom.cfg.offText || { x: 0, y: 0 };
+      if (was.x !== o.x || was.y !== o.y) {
+        WM.Custom.set({ offText: { x: o.x, y: o.y } });
+        cuEditing();
+      }
+    }
     $("btn-center").hidden = !(preview.draggable && (o.x || o.y));
     $("btn-autocenter").hidden = !preview.draggable;
   }
@@ -15525,6 +15686,7 @@ details.cu-sec:not([open]) {
     $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
     $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
     cuPlaceBgv();
+    cuEditing();
   }
   function cuPlaceBgv() {
     const custom = preview.theme.id === "custom";
@@ -15535,30 +15697,46 @@ details.cu-sec:not([open]) {
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
-  function cuChip(name, cfg, onDelete) {
+  function cuChip(name, cfg, mine) {
     const c = { ...CU.DEFAULTS, ...cfg };
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
+    if (mine) b.setAttribute("aria-pressed", CU.active === name);
     const dot = document.createElement("i");
     dot.style.background = c.bg === "media" ? `linear-gradient(135deg, #3a4a5a 50%, ${c.accent} 50%)` : `linear-gradient(135deg, ${c.bg1} 50%, ${c.accent} 50%)`;
     b.append(dot, name);
     b.onclick = (ev) => {
       if (ev.target.classList.contains("cu-x")) return;
-      CU.apply(cfg);
-      cuPaint();
-      cuNeedsFootage();
-      needsSnap = true;
+      if (CU.dirty && CU.active !== name && !confirm(`Tenés cambios sin guardar en «${CU.active}». ¿Seguir sin guardarlos?`)) return;
+      CU.apply(cfg, mine ? name : null);
+      cuApplied();
     };
-    if (onDelete) {
+    if (mine) {
       const x = document.createElement("i");
       x.className = "cu-x";
       x.textContent = "×";
       x.title = "Borrar plantilla";
-      x.onclick = onDelete;
+      x.onclick = () => {
+        if (!confirm(`¿Borrar la plantilla «${name}»?`)) return;
+        CU.deleteTemplate(name);
+        cuTemplates();
+        cuEditing();
+      };
       b.append(x);
     }
     return b;
+  }
+  /** After a whole look changes: controls, positions, chips, footage. */
+  function cuApplied() {
+    if (preview.theme.id === "custom") {
+      preview.setOffset(CU.cfg.offText || { x: 0, y: 0 });
+      updateCenterBtn();
+    }
+    cuTemplates();
+    cuPaint();
+    cuNeedsFootage();
+    needsSnap = true;
   }
   /** A look made for footage, with none loaded: the sample clip stands in. */
   async function cuNeedsFootage() {
@@ -15573,20 +15751,36 @@ details.cu-sec:not([open]) {
     needsSnap = true;
   }
   function cuTemplates() {
-    $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
+    const sub = document.createElement("span");
+    sub.className = "cu-mine-label";
+    sub.textContent = "Para empezar";
+    $("cu-starters").replaceChildren(sub, ...CU.STARTERS.map((s) => cuChip(s.name, s.cfg, false)));
     const mine = CU.templates();
     const head = document.createElement("span");
     head.className = "cu-mine-label";
     head.textContent = "Mis plantillas";
-    const sub = document.createElement("span");
-    sub.className = "cu-mine-label";
-    sub.textContent = "Para empezar";
-    $("cu-starters").prepend(sub);
-    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, () => {
-      CU.deleteTemplate(m.name);
-      cuTemplates();
-    })));
+    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, true)));
   }
+  /** The template being edited: its name and whether there is something to save. */
+  function cuEditing() {
+    const on = !!CU.active && CU.templates().some((x) => x.name === CU.active);
+    $("cu-editing").hidden = !on;
+    $("cu-save").textContent = on ? "+ Guardar como nueva" : "+ Guardar la mía";
+    if (on) {
+      $("cu-editing-name").textContent = `«${CU.active}»`;
+      const dirty = CU.dirty;
+      $("cu-update").disabled = !dirty;
+      $("cu-update").textContent = dirty ? "Guardar cambios" : "Guardado ✓";
+    }
+    const c = CU.cfg;
+    $("cu-replace").hidden = !(c.offPlayer || c.offMeta || c.offHandle || (c.offText && (c.offText.x || c.offText.y)));
+  }
+  $("cu-update").onclick = () => {
+    CU.saveTemplate(CU.active);
+    cuTemplates();
+    cuEditing();
+    toast(`Cambios guardados en ${CU.active}`);
+  };
   $("cu-save").onclick = () => {
     $("cu-save-form").hidden = !$("cu-save-form").hidden;
     if (!$("cu-save-form").hidden) $("cu-save-name").focus();
@@ -15595,20 +15789,25 @@ details.cu-sec:not([open]) {
     ev.preventDefault();
     const name = $("cu-save-name").value.trim();
     if (!name) return $("cu-save-name").focus();
+    if (CU.templates().some((x) => x.name === name) && name !== CU.active && !confirm(`Ya tenés una plantilla «${name}». ¿Reemplazarla?`)) return;
     CU.saveTemplate(name);
     $("cu-save-name").value = "";
     $("cu-save-form").hidden = true;
     cuTemplates();
+    cuEditing();
     toast(`Guardada: ${name}`);
   };
   $("cu-reset").onclick = () => {
     CU.restore();
-    cuNeedsFootage();
-    cuPaint();
-    needsSnap = true;
+    cuApplied();
+  };
+  $("cu-replace").onclick = () => {
+    CU.set({ offPlayer: null, offMeta: null, offHandle: null, offText: null });
+    cuApplied();
   };
   // any style is a starting point: its look goes to Personalizado
   $("btn-customize").onclick = () => {
+    if (CU.dirty && !confirm(`Tenés cambios sin guardar en «${CU.active}». ¿Seguir sin guardarlos?`)) return;
     const from = preview.theme;
     const base = { ...(CU.BASES[from.id] || {}) };
     // keep what was already changed on that style
@@ -15616,10 +15815,9 @@ details.cu-sec:not([open]) {
     if (font) base.font = font.id;
     if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
     CU.apply(base);
-    cuPaint();
-    cuNeedsFootage();
     showCat("todos");
     chooseStyle("custom");
+    cuApplied();
     toast(`Partimos de ${from.label}: cambiá lo que quieras`);
     $("custom-opts").scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -15699,8 +15897,8 @@ details.cu-sec:not([open]) {
     if (WEATHER.includes(id) && (!WM.BgVideo.enabled || (WM.BgVideo.sample && WM.BgVideo.sample !== id))) $("btn-bgs").onclick();
     updateBgv();
     updateChatOpts();
-    // each style has its own composition: start it centred
-    preview.setOffset({ x: 0, y: 0 });
+    // each style has its own composition: start it centred (Personalizado: where it was left)
+    preview.setOffset(id === "custom" ? WM.Custom.cfg.offText || { x: 0, y: 0 } : { x: 0, y: 0 });
     updateCenterBtn();
     needsSnap = true;
   }

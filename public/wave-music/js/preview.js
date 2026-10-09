@@ -222,6 +222,14 @@
       return { x: (W / 2 - mid(xs)) / safe.w, y: (H / 2 - mid(ys)) / safe.h };
     }
     /** Map a pointer movement (CSS px) to safe-area fractions. */
+    /** A point on screen in canvas units (Lyrics Pro). */
+    pointerToCanvas(cx, cy) {
+      const c = this.motionCanvas;
+      if (!c) return null;
+      const r = c.getBoundingClientRect();
+      const L = this.layout;
+      return { x: ((cx - r.left) * L.bg.w) / (r.width || 1), y: ((cy - r.top) * L.bg.h) / (r.height || 1) };
+    }
     pointerToOffset(dx, dy) {
       const c = this.motionCanvas;
       if (!c) return { x: 0, y: 0 };

@@ -977,7 +977,18 @@
   let justDragged = false;
   host.addEventListener("pointerdown", (e) => {
     if (!preview.draggable || !timeline || e.button > 0 || e.target.closest(".empty-cta, button")) return;
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false };
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, from: { ...preview.offset }, moved: false, el: null };
+    // Personalizado: the player, the title or the signature move on their own
+    if (preview.theme.id === "custom") {
+      const p = preview.pointerToCanvas(e.clientX, e.clientY);
+      const L = preview.layout;
+      const hit = p && WM.Presets.get("custom").boxes(L.bg.w, L.bg.h, L.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      if (hit) {
+        drag.el = hit.key;
+        drag.box = hit;
+        drag.from = { ...(WM.Custom.cfg[hit.key] || { x: 0, y: 0 }) };
+      }
+    }
   });
   host.addEventListener("pointermove", (e) => {
     if (!drag || e.pointerId !== drag.id) return;
@@ -991,6 +1002,22 @@
       hideHint();
     }
     const d = preview.pointerToOffset(dx, dy);
+    if (drag.el) {
+      // anywhere inside the frame; snaps to the vertical centre line
+      const L = preview.layout;
+      const bx = drag.box;
+      const lim = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      let x = lim(drag.from.x + d.x, drag.from.x - bx.x / L.safe.w, drag.from.x + (L.bg.w - bx.w - bx.x) / L.safe.w);
+      const y = lim(drag.from.y + d.y, drag.from.y - bx.y / L.safe.h, drag.from.y + (L.bg.h - bx.h - bx.y) / L.safe.h);
+      const snapX = Math.abs(x) < SNAP;
+      if (snapX) x = 0;
+      WM.Custom.set({ [drag.el]: { x, y } });
+      preview.guides = { x: snapX, y: false };
+      cuEditing();
+      needsSnap = true;
+      e.preventDefault();
+      return;
+    }
     let x = Math.max(-LIMIT, Math.min(LIMIT, drag.from.x + d.x));
     let y = Math.max(-LIMIT, Math.min(LIMIT, drag.from.y + d.y));
     const snapX = Math.abs(x) < SNAP;
@@ -1016,6 +1043,14 @@
   host.addEventListener("pointercancel", endDrag);
   function updateCenterBtn() {
     const o = preview.offset;
+    // Personalizado keeps where the lyric goes (it's part of the template)
+    if (preview.theme.id === "custom") {
+      const was = WM.Custom.cfg.offText || { x: 0, y: 0 };
+      if (was.x !== o.x || was.y !== o.y) {
+        WM.Custom.set({ offText: { x: o.x, y: o.y } });
+        cuEditing();
+      }
+    }
     $("btn-center").hidden = !(preview.draggable && (o.x || o.y));
     $("btn-autocenter").hidden = !preview.draggable;
   }
@@ -1937,6 +1972,7 @@
     $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
     $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
     cuPlaceBgv();
+    cuEditing();
   }
   function cuPlaceBgv() {
     const custom = preview.theme.id === "custom";
@@ -1947,30 +1983,46 @@
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
-  function cuChip(name, cfg, onDelete) {
+  function cuChip(name, cfg, mine) {
     const c = { ...CU.DEFAULTS, ...cfg };
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
+    if (mine) b.setAttribute("aria-pressed", CU.active === name);
     const dot = document.createElement("i");
     dot.style.background = c.bg === "media" ? `linear-gradient(135deg, #3a4a5a 50%, ${c.accent} 50%)` : `linear-gradient(135deg, ${c.bg1} 50%, ${c.accent} 50%)`;
     b.append(dot, name);
     b.onclick = (ev) => {
       if (ev.target.classList.contains("cu-x")) return;
-      CU.apply(cfg);
-      cuPaint();
-      cuNeedsFootage();
-      needsSnap = true;
+      if (CU.dirty && CU.active !== name && !confirm(`Tenés cambios sin guardar en «${CU.active}». ¿Seguir sin guardarlos?`)) return;
+      CU.apply(cfg, mine ? name : null);
+      cuApplied();
     };
-    if (onDelete) {
+    if (mine) {
       const x = document.createElement("i");
       x.className = "cu-x";
       x.textContent = "×";
       x.title = "Borrar plantilla";
-      x.onclick = onDelete;
+      x.onclick = () => {
+        if (!confirm(`¿Borrar la plantilla «${name}»?`)) return;
+        CU.deleteTemplate(name);
+        cuTemplates();
+        cuEditing();
+      };
       b.append(x);
     }
     return b;
+  }
+  /** After a whole look changes: controls, positions, chips, footage. */
+  function cuApplied() {
+    if (preview.theme.id === "custom") {
+      preview.setOffset(CU.cfg.offText || { x: 0, y: 0 });
+      updateCenterBtn();
+    }
+    cuTemplates();
+    cuPaint();
+    cuNeedsFootage();
+    needsSnap = true;
   }
   /** A look made for footage, with none loaded: the sample clip stands in. */
   async function cuNeedsFootage() {
@@ -1985,20 +2037,36 @@
     needsSnap = true;
   }
   function cuTemplates() {
-    $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
+    const sub = document.createElement("span");
+    sub.className = "cu-mine-label";
+    sub.textContent = "Para empezar";
+    $("cu-starters").replaceChildren(sub, ...CU.STARTERS.map((s) => cuChip(s.name, s.cfg, false)));
     const mine = CU.templates();
     const head = document.createElement("span");
     head.className = "cu-mine-label";
     head.textContent = "Mis plantillas";
-    const sub = document.createElement("span");
-    sub.className = "cu-mine-label";
-    sub.textContent = "Para empezar";
-    $("cu-starters").prepend(sub);
-    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, () => {
-      CU.deleteTemplate(m.name);
-      cuTemplates();
-    })));
+    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, true)));
   }
+  /** The template being edited: its name and whether there is something to save. */
+  function cuEditing() {
+    const on = !!CU.active && CU.templates().some((x) => x.name === CU.active);
+    $("cu-editing").hidden = !on;
+    $("cu-save").textContent = on ? "+ Guardar como nueva" : "+ Guardar la mía";
+    if (on) {
+      $("cu-editing-name").textContent = `«${CU.active}»`;
+      const dirty = CU.dirty;
+      $("cu-update").disabled = !dirty;
+      $("cu-update").textContent = dirty ? "Guardar cambios" : "Guardado ✓";
+    }
+    const c = CU.cfg;
+    $("cu-replace").hidden = !(c.offPlayer || c.offMeta || c.offHandle || (c.offText && (c.offText.x || c.offText.y)));
+  }
+  $("cu-update").onclick = () => {
+    CU.saveTemplate(CU.active);
+    cuTemplates();
+    cuEditing();
+    toast(`Cambios guardados en ${CU.active}`);
+  };
   $("cu-save").onclick = () => {
     $("cu-save-form").hidden = !$("cu-save-form").hidden;
     if (!$("cu-save-form").hidden) $("cu-save-name").focus();
@@ -2007,20 +2075,25 @@
     ev.preventDefault();
     const name = $("cu-save-name").value.trim();
     if (!name) return $("cu-save-name").focus();
+    if (CU.templates().some((x) => x.name === name) && name !== CU.active && !confirm(`Ya tenés una plantilla «${name}». ¿Reemplazarla?`)) return;
     CU.saveTemplate(name);
     $("cu-save-name").value = "";
     $("cu-save-form").hidden = true;
     cuTemplates();
+    cuEditing();
     toast(`Guardada: ${name}`);
   };
   $("cu-reset").onclick = () => {
     CU.restore();
-    cuNeedsFootage();
-    cuPaint();
-    needsSnap = true;
+    cuApplied();
+  };
+  $("cu-replace").onclick = () => {
+    CU.set({ offPlayer: null, offMeta: null, offHandle: null, offText: null });
+    cuApplied();
   };
   // any style is a starting point: its look goes to Personalizado
   $("btn-customize").onclick = () => {
+    if (CU.dirty && !confirm(`Tenés cambios sin guardar en «${CU.active}». ¿Seguir sin guardarlos?`)) return;
     const from = preview.theme;
     const base = { ...(CU.BASES[from.id] || {}) };
     // keep what was already changed on that style
@@ -2028,10 +2101,9 @@
     if (font) base.font = font.id;
     if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
     CU.apply(base);
-    cuPaint();
-    cuNeedsFootage();
     showCat("todos");
     chooseStyle("custom");
+    cuApplied();
     toast(`Partimos de ${from.label}: cambiá lo que quieras`);
     $("custom-opts").scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -2111,8 +2183,8 @@
     if (WEATHER.includes(id) && (!WM.BgVideo.enabled || (WM.BgVideo.sample && WM.BgVideo.sample !== id))) $("btn-bgs").onclick();
     updateBgv();
     updateChatOpts();
-    // each style has its own composition: start it centred
-    preview.setOffset({ x: 0, y: 0 });
+    // each style has its own composition: start it centred (Personalizado: where it was left)
+    preview.setOffset(id === "custom" ? WM.Custom.cfg.offText || { x: 0, y: 0 } : { x: 0, y: 0 });
     updateCenterBtn();
     needsSnap = true;
   }

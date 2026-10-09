@@ -82,6 +82,15 @@
   const KEY_CUR = "wm-custom-cur";
   const KEY_TPL = "wm-custom-tpls";
   const KEY_ORIGIN = "wm-custom-origin";
+  const KEY_ACTIVE = "wm-custom-active";
+  /** A look as text, keys sorted (to compare two of them). */
+  const same = (o) =>
+    JSON.stringify(
+      Object.keys(o)
+        .filter((k) => o[k] != null)
+        .sort()
+        .map((k) => [k, o[k]])
+    );
   /** Older saves had "particles"; now there is one effect slot. */
   function migrate(c) {
     c = { ...DEFAULTS, ...c };
@@ -124,29 +133,48 @@
       write(KEY_CUR, api.cfg);
     },
     /** Start over from a look: the defaults plus its own choices. */
-    apply(patch) {
-      api.cfg = migrate(patch);
-      api.origin = { ...patch };
+    apply(patch, template = null) {
+      api.cfg = migrate(JSON.parse(JSON.stringify(patch)));
+      api.origin = JSON.parse(JSON.stringify(patch));
+      api.active = template;
       write(KEY_CUR, api.cfg);
       write(KEY_ORIGIN, api.origin);
+      write(KEY_ACTIVE, api.active);
     },
-    /** Back to the look it started from. */
+    /** Back to the look it started from (a saved template: as it was saved). */
     restore() {
-      api.apply(api.origin);
+      api.apply(api.origin, api.active);
     },
+    // the user's template being edited (null: a ready look or a style)
+    active: read(KEY_ACTIVE, null),
     templates: () => read(KEY_TPL, []),
+    /** Save the current look under a name (replacing one with that name, in place). */
     saveTemplate(name) {
-      const list = api.templates().filter((x) => x.name !== name);
-      list.push({ name, cfg: { ...api.cfg } });
-      api.origin = { ...api.cfg };
-      write(KEY_ORIGIN, api.origin);
+      const list = api.templates();
+      const item = { name, cfg: JSON.parse(JSON.stringify(api.cfg)) };
+      const i = list.findIndex((x) => x.name === name);
+      if (i >= 0) list[i] = item;
+      else list.push(item);
       write(KEY_TPL, list);
+      api.origin = JSON.parse(JSON.stringify(api.cfg));
+      api.active = name;
+      write(KEY_ORIGIN, api.origin);
+      write(KEY_ACTIVE, name);
+    },
+    /** Whether the template being edited has unsaved changes. */
+    get dirty() {
+      const t = api.active && api.templates().find((x) => x.name === api.active);
+      return !!t && same(migrate(t.cfg)) !== same(api.cfg);
     },
     deleteTemplate(name) {
       write(
         KEY_TPL,
         api.templates().filter((x) => x.name !== name)
       );
+      if (api.active === name) {
+        api.active = null;
+        write(KEY_ACTIVE, null);
+      }
     },
   };
   WM.Custom = api;

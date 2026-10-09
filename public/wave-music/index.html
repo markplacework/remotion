@@ -441,6 +441,10 @@
           <div id="custom-opts" class="style-opts cu" hidden>
             <section class="cu-sec">
               <div class="cu-head"><span class="opt-label">Plantillas</span><button type="button" id="cu-save" class="btn-link">+ Guardar la mía</button></div>
+              <div id="cu-editing" class="cu-editing" hidden>
+                <span class="cu-editing-name">Editando <b id="cu-editing-name"></b></span>
+                <button type="button" id="cu-update" class="btn btn-primary">Guardar cambios</button>
+              </div>
               <form id="cu-save-form" class="cu-save" hidden>
                 <input id="cu-save-name" type="text" maxlength="28" placeholder="Nombre: Mi canal trap" autocomplete="off" />
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -535,6 +539,8 @@
               <div class="fields">
                 <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
               </div>
+              <p class="opt-hint">Arrastrá la letra, el reproductor, el título o tu firma en el video para ubicarlos donde quieras.</p>
+              <button type="button" id="cu-replace" class="btn-link cu-replace" hidden>Volver a ubicar todo como al principio</button>
             </details>
             <button type="button" id="cu-reset" class="btn-link">Restaurar estilo</button>
           </div>

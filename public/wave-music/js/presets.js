@@ -4931,7 +4931,44 @@
     g.shadowBlur = 0;
     g.shadowOffsetY = 0;
   }
+  /** Where the user dragged an element, in canvas units (from safe-area fractions). */
+  const cuOff = (o, safe) => (o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 });
+  let cuScratch = null;
   const custom = {
+    /**
+     * The draggable extras (player, title, signature) as rectangles in
+     * canvas units, where draw() puts them; the lyric is everything else.
+     */
+    boxes(W, H, safe, meta) {
+      const c = cuCfg();
+      const u = safe.w / 825;
+      if (!cuScratch) cuScratch = document.createElement("canvas").getContext("2d");
+      const g = cuScratch;
+      const out = [];
+      const at = (key, x, y, w, h) => {
+        const o = cuOff(c[key], safe);
+        out.push({ key, x: x + o.x, y: y + o.y, w, h });
+      };
+      if (c.progress) {
+        const bw = safe.w * 0.86;
+        const by = safe.y + safe.h - u * 150;
+        at("offPlayer", (W - bw) / 2 - u * 10, by - u * 24, bw + u * 20, u * 162);
+      }
+      if (c.showMeta && meta && (meta.title || meta.artist)) {
+        g.font = cuFont(c, u * 34);
+        let w = g.measureText(upper(meta.title || "")).width;
+        g.font = `500 ${u * 26}px Inter, sans-serif`;
+        w = Math.min(safe.w * 0.9, Math.max(w, g.measureText(meta.artist || "").width)) + u * 30;
+        at("offMeta", W / 2 - w / 2, safe.y + u * 30, w, u * 92);
+      }
+      if (c.handle) {
+        g.font = `600 ${u * 26}px Inter, sans-serif`;
+        const w = g.measureText(c.handle).width + u * 24;
+        const bottom = safe.y + safe.h - (c.progress ? u * 190 : u * 24);
+        at("offHandle", safe.x + safe.w - u * 20 - w + u * 12, bottom - u * 36, w, u * 44);
+      }
+      return out;
+    },
     id: "custom",
     label: "Personalizado",
     tag: "Tu estilo",
@@ -4952,6 +4989,8 @@
       // song title and artist, small at the top
       if (c.showMeta && (f.meta.title || f.meta.artist)) {
         g.save();
+        const om = cuOff(c.offMeta, safe);
+        g.translate(om.x, om.y);
         g.textAlign = "center";
         g.textBaseline = "top";
         g.fillStyle = hexA(c.color, 0.85);
@@ -4971,6 +5010,8 @@
         const bx = (W - bw) / 2;
         const by = safe.y + safe.h - u * 150;
         g.save();
+        const op = cuOff(c.offPlayer, safe);
+        g.translate(op.x, op.y);
         g.fillStyle = hexA(c.color, 0.28);
         rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
         g.fill();
@@ -5039,6 +5080,8 @@
       }
       if (c.handle) {
         g.save();
+        const oh = cuOff(c.offHandle, safe);
+        g.translate(oh.x, oh.y);
         g.textAlign = "right";
         g.textBaseline = "bottom";
         g.font = `600 ${u * 26}px Inter, sans-serif`;
