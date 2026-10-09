@@ -2270,16 +2270,25 @@
     const c = (id && WM.StyleColors[id]) || {};
     $("tc-main").value = c.main || TC_DEFAULT.main;
     $("tc-accent").value = c.accent || TC_DEFAULT.accent;
-    $("tc-reset").hidden = !(c.main || c.accent);
+    $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
+    $("tc-effect-color").value = c.effectColor || "#000000";
+    $("tc-effect-color-row").hidden = !c.effect || c.effect === "glow";
+    $("tc-reset").hidden = !(c.main || c.accent || c.effect);
   }
+  function setLook(patch) {
+    const id = preview.theme.preset;
+    const next = { ...(WM.StyleColors[id] || {}), ...patch };
+    Object.keys(next).forEach((k) => !next[k] && delete next[k]);
+    if (Object.keys(next).length) WM.StyleColors[id] = next;
+    else delete WM.StyleColors[id];
+    saveColors();
+    paintColors();
+    needsSnap = true;
+  }
+  $("tc-effect").querySelectorAll("button").forEach((b) => (b.onclick = () => setLook({ effect: b.dataset.v })));
+  $("tc-effect-color").oninput = () => setLook({ effectColor: $("tc-effect-color").value });
   ["main", "accent"].forEach((k) => {
-    $("tc-" + k).oninput = () => {
-      const id = preview.theme.preset;
-      WM.StyleColors[id] = { ...(WM.StyleColors[id] || {}), [k]: $("tc-" + k).value };
-      saveColors();
-      paintColors();
-      needsSnap = true;
-    };
+    $("tc-" + k).oninput = () => setLook({ [k]: $("tc-" + k).value });
   });
   $("tc-reset").onclick = () => {
     delete WM.StyleColors[preview.theme.preset];

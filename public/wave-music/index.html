@@ -620,7 +620,17 @@
                 <label class="cu-color"><input type="color" id="tc-main" value="#ffffff" /><span>Principal</span></label>
                 <label class="cu-color"><input type="color" id="tc-accent" value="#ffd23f" /><span>Destacado</span></label>
               </div>
-              <button type="button" id="tc-reset" class="btn-link tc-reset" hidden>Volver a los colores del estilo</button>
+              <span class="opt-label">Efecto de la letra</span>
+              <div class="chips grid3" id="tc-effect" role="group" aria-label="Efecto de la letra">
+                <button type="button" class="chip" data-v="">Original</button>
+                <button type="button" class="chip" data-v="shadow">Sombra</button>
+                <button type="button" class="chip" data-v="outline">Contorno</button>
+                <button type="button" class="chip" data-v="glow">Brillo</button>
+                <button type="button" class="chip" data-v="box">Caja</button>
+                <button type="button" class="chip" data-v="marker">Resaltador</button>
+              </div>
+              <label class="cu-color" id="tc-effect-color-row" hidden><input type="color" id="tc-effect-color" value="#000000" /><span>Color del efecto</span></label>
+              <button type="button" id="tc-reset" class="btn-link tc-reset" hidden>Volver a como era el estilo</button>
             </div>
             <button type="button" id="btn-customize" class="btn-link customize-link" hidden>Crear una copia editable en Personalizado</button>
           </div>

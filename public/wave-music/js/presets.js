@@ -1824,7 +1824,8 @@
       const cw = x1 - x0;
       const navY = safe.y + u * (f.mockup ? 78 : 24);
       const barY = safe.y + safe.h - u * 30;
-      const top = navY + u * 70;
+      // the note starts a little below the bar, clear of the top edge
+      const top = navY + u * 120;
       const bottom = barY - u * 70;
       // a bit larger than the real app, so the lyric reads on a phone feed
       const body = u * 50;
@@ -5817,6 +5818,44 @@
     const n = parseInt(hex.slice(1), 16);
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${c.a})`;
   }
+  /** One of Personalizado's text effects, on any style's lyric. */
+  function textEffect(g, fx, ec, txt, x, y, draw) {
+    const m = g.measureText(txt);
+    const size = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+    g.save();
+    if (fx === "box" || fx === "marker") {
+      const pad = size * (fx === "box" ? 0.3 : 0.14);
+      const fill = g.fillStyle;
+      g.fillStyle = fx === "box" ? ec : (styleColors && styleColors.accent) || "#ffe600";
+      g.globalAlpha *= fx === "box" ? 0.85 : 1;
+      g.beginPath();
+      const bx = x - m.actualBoundingBoxLeft - pad;
+      const by = y - m.actualBoundingBoxAscent - pad * 0.7;
+      g.rect(bx, by, m.actualBoundingBoxLeft + m.actualBoundingBoxRight + pad * 2, size + pad * 1.4);
+      g.fill();
+      g.globalAlpha /= fx === "box" ? 0.85 : 1;
+      g.fillStyle = fx === "marker" ? ec : fill;
+      draw();
+    } else if (fx === "outline") {
+      g.lineJoin = "round";
+      g.lineWidth = Math.max(1, size * 0.12);
+      g.strokeStyle = ec;
+      nativeStroke.call(g, txt, x, y);
+      draw();
+    } else if (fx === "shadow") {
+      g.shadowColor = ec;
+      g.shadowBlur = size * 0.25;
+      g.shadowOffsetY = size * 0.07;
+      draw();
+    } else if (fx === "glow") {
+      g.shadowColor = typeof g.fillStyle === "string" ? g.fillStyle : "#ffffff";
+      g.shadowBlur = size * 0.6;
+      draw();
+      g.shadowBlur = size * 0.2;
+      draw();
+    } else draw();
+    g.restore();
+  }
   function keepInside(native) {
     return function (txt, x, y, maxWidth) {
       const draw = () => (maxWidth === undefined ? native.call(this, txt, x, y) : native.call(this, txt, x, y, maxWidth));
@@ -5824,10 +5863,12 @@
         // only the lyric takes their colours: big type, not labels or body copy
         const big = styleColors && !this.__keepColor && fontPx(this.font) >= this.canvas.height * 0.022 / Math.max(0.01, Math.abs(this.getTransform().d));
         const col = big && native === nativeFill && recolor(this.fillStyle);
-        if (!col) return draw();
+        const fx = big && native === nativeFill && styleColors && styleColors.effect;
+        if (!col && !fx) return draw();
         const was = this.fillStyle;
-        this.fillStyle = col;
-        draw();
+        if (col) this.fillStyle = col;
+        if (fx) textEffect(this, fx, styleColors.effectColor || "#000000", txt, x, y, draw);
+        else draw();
         this.fillStyle = was;
       };
       if (this.__free || !txt) return call();
