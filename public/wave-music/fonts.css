@@ -119,3 +119,17 @@
   font-display: block;
   src: url(fonts/Poppins-normal-900.woff2) format('woff2');
 }
+@font-face {
+  font-family: 'Homemade Apple';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(fonts/HomemadeApple-normal-400.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url(fonts/Caveat-normal-600.woff2) format('woff2');
+}

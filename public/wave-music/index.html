@@ -424,7 +424,18 @@
         </div>
 
         <div class="card" data-step="5">
-          <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
+          <div class="card-head hist-head"><span class="num">5</span><h2>Estilo</h2>
+            <div class="hist" role="group" aria-label="Historial de cambios">
+              <button type="button" id="hist-undo" class="hist-btn" title="Deshacer el último cambio" aria-label="Deshacer" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
+                <span>Deshacer</span>
+              </button>
+              <button type="button" id="hist-redo" class="hist-btn" title="Rehacer" aria-label="Rehacer" disabled>
+                <span>Rehacer</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/></svg>
+              </button>
+            </div>
+          </div>
           <div id="styles" role="group" aria-label="Estilo">
             <div class="style-group-head"><span>Animados</span></div>
             <div id="style-cats" class="chips style-cats" role="group" aria-label="Categorías de estilos"></div>
@@ -520,6 +531,7 @@
                 <button type="button" class="chip" data-v="fog">Niebla</button>
                 <button type="button" class="chip" data-v="smoke">Humo</button>
                 <button type="button" class="chip" data-v="lightning">Relámpagos</button>
+                <button type="button" class="chip" data-v="fire">Fuego</button>
                 <button type="button" class="chip" data-v="embers">Brasas</button>
                 <button type="button" class="chip" data-v="sparks">Chispas</button>
                 <button type="button" class="chip" data-v="bokeh">Bokeh</button>
@@ -580,7 +592,7 @@
                 <label class="cu-range" id="bgv-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
               </div>
             </div>
-            <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
+            <p class="opt-hint">Tu video o foto se mantiene en todos los estilos y plantillas hasta que toques Quitar. El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Mejor en vertical (9:16).</p>
             <input id="file-bgv" type="file" accept="video/*" hidden />
             <input id="file-bgi" type="file" accept="image/*" hidden />
           </div>

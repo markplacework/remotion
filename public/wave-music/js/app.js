@@ -1539,10 +1539,10 @@
   // ---------- video de fondo (Lyrics Pro) ----------
   function updateBgv() {
     const on = WM.BgVideo.enabled;
-    // in Personalizado a new video or photo goes straight to the background
+    // a new video or photo they bring goes straight to the background, Personalizado included
     if (on && WM.BgVideo.name !== cuSeenBg) {
       cuSeenBg = WM.BgVideo.name;
-      if (preview.theme.id === "custom" && WM.Custom.cfg.bg !== "media") {
+      if (ownFootage() && WM.Custom.cfg.bg !== "media") {
         WM.Custom.set({ bg: "media" });
         cuPaint();
       }
@@ -1550,6 +1550,7 @@
     $("bgv-fx-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === WM.Fx.current.id));
     $("bgv-fx-amount").hidden = WM.Fx.current.id === "none";
     $("cu-usemedia").hidden = WM.Custom.cfg.bg === "media" || !on;
+    histRecord();
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
@@ -1562,6 +1563,10 @@
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   var cuSeenBg = "";
+  /** A video or photo the user brought (uploaded or from the library), not an example. */
+  function ownFootage() {
+    return WM.BgVideo.enabled && !WM.BgVideo.sample && WM.BgVideo.name !== WM.DEMO_BG.name;
+  }
   var WEATHER = ["lluvia", "nieve", "otono", "tormenta"];
   // realistic effects over the background (fx.js)
   WM.Fx.LIST.forEach((fx) => {
@@ -2010,7 +2015,12 @@
     b.onclick = (ev) => {
       if (ev.target.classList.contains("cu-x")) return;
       if (CU.dirty && CU.active !== name && !confirm(`Tenés cambios sin guardar en «${CU.active}». ¿Seguir sin guardarlos?`)) return;
-      CU.apply(cfg, mine ? name : null);
+      let look = { ...cfg };
+      // a ready look changes the lyric only: background, effect and positions stay
+      if (!mine) CU.SCENE.forEach((k) => CU.cfg[k] !== undefined && (look[k] = CU.cfg[k]));
+      // their own video or photo follows them everywhere
+      if (ownFootage()) look.bg = "media";
+      CU.apply(look, mine ? name : null, mine ? cfg : { ...cfg });
       cuApplied();
     };
     if (mine) {
@@ -2100,6 +2110,7 @@
   };
   $("cu-reset").onclick = () => {
     CU.restore();
+    if (ownFootage()) CU.set({ bg: "media" });
     cuApplied();
   };
   $("cu-usemedia").onclick = () => cuChange({ bg: "media" });
@@ -2125,6 +2136,101 @@
   };
   cuTemplates();
   cuPaint();
+
+  // ---------- deshacer / rehacer (estilo) ----------
+  // Every change to the look (style, typeface, size, colours, background,
+  // filter, effect, positions, Personalizado) is a step that can be undone
+  // and redone. A step is recorded once things settle, so a slider drag
+  // or a drag on the picture counts as one.
+  var hist = { stack: [], i: -1, lock: false, timer: 0 }; // var: updateBgv may run first
+  function histSnap() {
+    return JSON.stringify({
+      theme: preview.theme.id,
+      cu: WM.Custom.cfg,
+      cuActive: WM.Custom.active,
+      font: preview.font,
+      scale: preview.textScale,
+      mode: WM.Motion.wordMode,
+      off: preview.offset,
+      filter: WM.BgVideo.filter,
+      fx: WM.Fx.current,
+      sp: preview.spotifyColor,
+    });
+  }
+  function histPaint() {
+    $("hist-undo").disabled = hist.i <= 0;
+    $("hist-redo").disabled = hist.i >= hist.stack.length - 1;
+  }
+  function histRecord(now) {
+    if (!hist || hist.lock) return;
+    clearTimeout(hist.timer);
+    const take = () => {
+      const s = histSnap();
+      if (hist.stack[hist.i] === s) return;
+      hist.stack = hist.stack.slice(0, hist.i + 1);
+      hist.stack.push(s);
+      if (hist.stack.length > 120) hist.stack.shift();
+      hist.i = hist.stack.length - 1;
+      histPaint();
+    };
+    if (now) take();
+    else hist.timer = setTimeout(take, 350);
+  }
+  function histGo(step) {
+    // a change still settling becomes a step first
+    if (hist.timer) {
+      clearTimeout(hist.timer);
+      hist.timer = 0;
+      histRecord(true);
+    }
+    const to = hist.i + step;
+    if (to < 0 || to >= hist.stack.length) return;
+    hist.i = to;
+    const o = JSON.parse(hist.stack[to]);
+    hist.lock = true;
+    try {
+      if (preview.theme.id !== o.theme) chooseStyle(o.theme);
+      WM.Custom.replace(o.cu, o.cuActive);
+      preview.font = o.font;
+      const fo = WM.Presets.FONTS.find((x) => x.family === o.font);
+      $("text-font").value = fo ? fo.id : "";
+      preview.textScale = o.scale;
+      $("text-size").value = Math.round(o.scale * 100);
+      $("text-size-val").textContent = Math.round(o.scale * 100) + "%";
+      if (WM.Motion.wordMode !== o.mode) {
+        WM.Motion.wordMode = o.mode;
+        $("text-mode").value = o.mode;
+        preview.linesFor = null;
+      }
+      preview.setOffset(o.off);
+      WM.BgVideo.filter = o.filter;
+      WM.Fx.current = { ...o.fx };
+      $("bgv-fx-amount").querySelector("input").value = o.fx.amount;
+      $("bgv-fx-amount").querySelector("output").textContent = o.fx.amount + "%";
+      if (o.sp && o.sp !== preview.spotifyColor) {
+        const b = document.querySelector(`#sp-colors [data-color="${o.sp}"]`);
+        if (b) b.onclick();
+      }
+      cuTemplates();
+      cuPaint();
+      updateBgv();
+      updateCenterBtn();
+    } finally {
+      hist.lock = false;
+    }
+    histPaint();
+    needsSnap = true;
+  }
+  $("hist-undo").onclick = () => histGo(-1);
+  $("hist-redo").onclick = () => histGo(1);
+  // anything touched in the Style card, or dragged on the picture
+  ["input", "change", "click"].forEach((ev) => document.querySelector('[data-step="5"]').addEventListener(ev, (e) => {
+    if (!e.target.closest(".hist")) histRecord();
+  }));
+  host.addEventListener("pointerup", () => histRecord());
+  $("lib").addEventListener("click", () => histRecord());
+  $("btn-autocenter").addEventListener("click", () => histRecord());
+  $("btn-center").addEventListener("click", () => histRecord());
 
   // ---------- categorías de estilos (Lyrics) ----------
   // each one fills whole rows of the 4-column grid
@@ -2195,8 +2301,13 @@
     preview.font = null;
     preview.setTheme(id);
     cuPlaceBgv();
-    // the weather styles open on their own (real) footage unless the user brought theirs
-    if (WEATHER.includes(id) && (!WM.BgVideo.enabled || (WM.BgVideo.sample && WM.BgVideo.sample !== id))) $("btn-bgs").onclick();
+    // Backgrounds, one rule: their own video or photo stays in every style
+    // until they remove it; an example clip belongs to its style, so it
+    // swaps for the new style's example (the weather styles open on theirs).
+    if (WM.Themes.get(id).video && !ownFootage() && WM.BgVideo.sample !== id) {
+      const showingExample = WM.BgVideo.enabled;
+      if ((showingExample || WEATHER.includes(id)) && WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
+    }
     updateBgv();
     updateChatOpts();
     // each style has its own composition: start it centred (Personalizado: where it was left)
@@ -2244,6 +2355,7 @@
   $("sp-artist").addEventListener("input", syncMeta);
   chooseStyle("whatsapp");
   route();
+  histRecord(true);
 
   // Framing: the mockup is a preview aid; "Video final" is exactly what
   // gets exported (9:16, no device frame).

@@ -13,6 +13,7 @@
     { id: "fog", label: "Niebla" },
     { id: "smoke", label: "Humo" },
     { id: "lightning", label: "Relámpagos", drawn: true },
+    { id: "fire", label: "Fuego" },
     { id: "embers", label: "Brasas" },
     { id: "sparks", label: "Chispas" },
     { id: "bokeh", label: "Bokeh" },

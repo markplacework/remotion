@@ -137,17 +137,18 @@
     custom: { id: "custom", label: "Personalizado", kind: "motion", preset: "custom", background: { type: "motion" }, meta: true, video: true },
     kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", background: { type: "motion" }, video: true },
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", background: { type: "motion" }, meta: true, video: true },
-    neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } },
-    minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true },
+    neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } , video: true },
+    // a notebook page; their own photo or video goes on it as a taped polaroid
+    minimal: { id: "minimal", label: "Diario", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true, video: true, drag: false },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", background: { type: "motion" }, video: true },
     // Saved, not shown: wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
-    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
+    notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true , video: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },
     couture: { id: "couture", label: "Couture", kind: "motion", preset: "couture", background: { type: "motion" }, video: true },
-    blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } },
+    blackout: { id: "blackout", label: "Blackout", kind: "motion", preset: "blackout", background: { type: "motion" } , video: true },
     vhs: { id: "vhs", label: "VHS", kind: "motion", preset: "vhs", background: { type: "motion" }, video: true },
-    vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true },
+    vinilo: { id: "vinilo", label: "Vinilo", kind: "motion", preset: "vinilo", background: { type: "motion" }, meta: true , video: true },
     // extreme sports (they suit action footage: the sample clip included)
     adrenalina: { id: "adrenalina", label: "Adrenalina", kind: "motion", preset: "adrenalina", background: { type: "motion" }, video: true },
     street: { id: "street", label: "Street", kind: "motion", preset: "street", background: { type: "motion" }, video: true },
@@ -164,9 +165,9 @@
     radio: { id: "radio", label: "Radio", kind: "motion", preset: "radio", background: { type: "motion" }, meta: true, video: true },
     stream: { id: "stream", label: "Stream", kind: "motion", preset: "stream", background: { type: "motion" }, video: true },
     // only in the Karaoke tool
-    karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true },
-    kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true },
-    karastage: { id: "karastage", label: "Escenario", kind: "motion", preset: "karastage", background: { type: "motion" }, karaokeOnly: true },
+    karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true , video: true },
+    kararetro: { id: "kararetro", label: "Karaoke 80s", kind: "motion", preset: "kararetro", background: { type: "motion" }, meta: true, karaokeOnly: true , video: true },
+    karastage: { id: "karastage", label: "Escenario", kind: "motion", preset: "karastage", background: { type: "motion" }, karaokeOnly: true , video: true },
   };
 
   WM.Themes = {

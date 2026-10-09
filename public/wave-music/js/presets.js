@@ -489,64 +489,73 @@
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      const bg = g.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#030008");
-      bg.addColorStop(0.62, "#170330");
-      bg.addColorStop(1, "#06000f");
-      g.fillStyle = bg;
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f, "saturate(1.2) contrast(1.1)")) {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#030008");
+        bg.addColorStop(0.62, "#170330");
+        bg.addColorStop(1, "#06000f");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(6,0,18,0.45)";
+        g.fillRect(0, 0, W, H);
+      }
 
       const hz = H * 0.66;
-      // synth sun behind the horizon
       const sunR = W * 0.34;
-      g.save();
-      g.beginPath();
-      g.rect(0, 0, W, hz);
-      g.clip();
-      const sun = g.createLinearGradient(0, hz - sunR, 0, hz);
-      sun.addColorStop(0, "#ffcf3a");
-      sun.addColorStop(1, "#ff2bd6");
-      g.shadowColor = "#ff2bd6";
-      g.shadowBlur = u * 60 * (0.6 + 0.4 * pulse);
-      g.fillStyle = sun;
-      g.beginPath();
-      g.arc(W / 2, hz, sunR, Math.PI, 0);
-      g.fill();
-      g.shadowBlur = 0;
-      g.fillStyle = "#170330";
-      for (let i = 0; i < 6; i++) {
-        const yy = hz - sunR * 0.12 - i * sunR * 0.13;
-        g.fillRect(W / 2 - sunR, yy, sunR * 2, sunR * (0.025 + i * 0.006));
-      }
-      g.restore();
+      // the synthwave scene, unless their own footage is behind
+      if (!f.video) {
+        // synth sun behind the horizon
+        g.save();
+        g.beginPath();
+        g.rect(0, 0, W, hz);
+        g.clip();
+        const sun = g.createLinearGradient(0, hz - sunR, 0, hz);
+        sun.addColorStop(0, "#ffcf3a");
+        sun.addColorStop(1, "#ff2bd6");
+        g.shadowColor = "#ff2bd6";
+        g.shadowBlur = u * 60 * (0.6 + 0.4 * pulse);
+        g.fillStyle = sun;
+        g.beginPath();
+        g.arc(W / 2, hz, sunR, Math.PI, 0);
+        g.fill();
+        g.shadowBlur = 0;
+        g.fillStyle = "#170330";
+        for (let i = 0; i < 6; i++) {
+          const yy = hz - sunR * 0.12 - i * sunR * 0.13;
+          g.fillRect(W / 2 - sunR, yy, sunR * 2, sunR * (0.025 + i * 0.006));
+        }
+        g.restore();
 
-      // perspective grid moving towards the camera
-      g.save();
-      g.globalCompositeOperation = "lighter";
-      g.strokeStyle = `rgba(255,43,214,${0.45 + 0.35 * pulse})`;
-      g.lineWidth = u * 2.2;
-      g.beginPath();
-      for (let i = -12; i <= 12; i++) {
-        g.moveTo(W / 2 + i * u * 14, hz);
-        g.lineTo(W / 2 + i * u * 210, H);
+        // perspective grid moving towards the camera
+        g.save();
+        g.globalCompositeOperation = "lighter";
+        g.strokeStyle = `rgba(255,43,214,${0.45 + 0.35 * pulse})`;
+        g.lineWidth = u * 2.2;
+        g.beginPath();
+        for (let i = -12; i <= 12; i++) {
+          g.moveTo(W / 2 + i * u * 14, hz);
+          g.lineTo(W / 2 + i * u * 210, H);
+        }
+        const N = 14;
+        for (let i = 0; i < N; i++) {
+          const z = ((i + t * 1.2) % N) / N;
+          const y = hz + (H - hz) * z * z;
+          g.moveTo(0, y);
+          g.lineTo(W, y);
+        }
+        g.stroke();
+        // horizon line
+        g.strokeStyle = "#22e4ff";
+        g.shadowColor = "#22e4ff";
+        g.shadowBlur = u * 18;
+        g.beginPath();
+        g.moveTo(0, hz);
+        g.lineTo(W, hz);
+        g.stroke();
+        g.shadowBlur = 0;
       }
-      const N = 14;
-      for (let i = 0; i < N; i++) {
-        const z = ((i + t * 1.2) % N) / N;
-        const y = hz + (H - hz) * z * z;
-        g.moveTo(0, y);
-        g.lineTo(W, y);
-      }
-      g.stroke();
-      // horizon line
-      g.strokeStyle = "#22e4ff";
-      g.shadowColor = "#22e4ff";
-      g.shadowBlur = u * 18;
-      g.beginPath();
-      g.moveTo(0, hz);
-      g.lineTo(W, hz);
-      g.stroke();
-      g.shadowBlur = 0;
       // floating particles
       for (let i = 0; i < 46; i++) {
         const x = rand(i * 4.3) * W;
@@ -667,13 +676,287 @@
   const W2 = (g) => g.canvas.width; // generous clip width
 
   // ======================================================================
+  // 4. DIARIO — a notebook page: the lyric is handwritten as it is sung
+  // ======================================================================
+  const DIA = { paper: "#f4eddd", ink: "#1f2d66", rule: "rgba(70,110,170,0.28)", margin: "rgba(205,70,70,0.55)" };
+  const DIA_HAND = (size) => `400 ${size}px ${fam("'Homemade Apple', 'Caveat', cursive")}`;
+  const DIA_NOTE = (size) => `600 ${size}px Caveat, 'Homemade Apple', cursive`;
+  let diaPaper = null;
+  /** Paper fibres: fixed speckles and soft blotches (static, unlike film grain). */
+  function diaryTexture() {
+    if (diaPaper) return diaPaper;
+    diaPaper = document.createElement("canvas");
+    diaPaper.width = diaPaper.height = 256;
+    const c = diaPaper.getContext("2d");
+    for (let i = 0; i < 1400; i++) {
+      c.fillStyle = `rgba(${rand(i) > 0.5 ? "120,95,60" : "255,255,255"},${0.05 + rand(i * 3.1) * 0.08})`;
+      c.fillRect(rand(i * 1.7) * 256, rand(i * 2.3) * 256, 1 + rand(i * 4.1) * 1.5, 1);
+    }
+    for (let i = 0; i < 40; i++) {
+      c.strokeStyle = `rgba(120,95,60,${0.04 + rand(i * 5.3) * 0.05})`;
+      c.lineWidth = 0.6;
+      c.beginPath();
+      const x = rand(i * 7.7) * 256;
+      const y = rand(i * 8.9) * 256;
+      c.moveTo(x, y);
+      c.quadraticCurveTo(x + (rand(i) - 0.5) * 18, y + (rand(i * 2) - 0.5) * 18, x + (rand(i * 3) - 0.5) * 30, y + (rand(i * 4) - 0.5) * 30);
+      c.stroke();
+    }
+    return diaPaper;
+  }
+  const diaLayouts = new Map();
+  /** Which page and rows every line goes on (each line starts on a new row). */
+  function diaryLayout(g, lines, size, maxW, rowsPerPage) {
+    const key = lines.map((l) => l.text).join("\n") + "|" + Math.round(size * 10) + "|" + Math.round(maxW) + "|" + rowsPerPage + "|" + (lyricFamily || "");
+    let lay = diaLayouts.get(key);
+    if (lay) return lay;
+    lay = [];
+    let page = 0;
+    let row = 0;
+    g.font = DIA_HAND(size);
+    const space = g.measureText(" ").width;
+    lines.forEach((L) => {
+      const words = L.words.map((w) => ({ ...w, label: w.text }));
+      const rows = words.length ? wrapWords(g, words, () => DIA_HAND(size), maxW, space).map((r) => r.items.map((it) => ({ k: words.indexOf(it.w), x: it.x, width: it.width }))) : [];
+      // a long pause in the song leaves an empty row (a new verse)
+      const prev = lay[lay.length - 1];
+      if (prev && prev.rows.length && L.start - (L.index > 0 ? lines[L.index - 1].end || L.start : L.start) > 4) row++;
+      if (row + rows.length > rowsPerPage) {
+        page++;
+        row = 0;
+      }
+      lay.push({ page, row, rows });
+      row += Math.max(1, rows.length);
+    });
+    if (diaLayouts.size > 40) diaLayouts.clear();
+    diaLayouts.set(key, lay);
+    return lay;
+  }
+  const minimal = {
+    id: "minimal",
+    label: "Diario",
+    tag: "Íntimo",
+    // the pen writes word by word, paced inside each line
+    wordBased: "spread",
+    fonts: ["400 100px 'Homemade Apple'", "600 100px Caveat"],
+    draw(g, f) {
+      const { W, H, t, safe, lines } = f;
+      const u = safe.w / 825;
+      const k = f.textScale || 1;
+      const size = u * 64 * k;
+      const gap = u * 112 * k;
+      const top = safe.y + u * 250;
+      // with a photo, the writing stops above it
+      const bottom = f.video ? this.photoBox(f, u).y - u * 30 : safe.y + safe.h - u * 40;
+      const rowsPerPage = Math.max(3, Math.floor((bottom - top) / gap));
+      const x0 = safe.x + u * 70;
+      const maxW = safe.x + safe.w - x0 - u * 10;
+      const lay = diaryLayout(g, lines, size, maxW, rowsPerPage);
+      const cur = Math.max(0, f.current);
+      const page = lay.length ? lay[Math.min(cur, lay.length - 1)].page : 0;
+      this.page(g, f, u, page, lay, size, gap, top, x0, f.current);
+      // page turn: the previous page lifts away to the left
+      if (page > 0 && f.current >= 0) {
+        const first = lay.findIndex((l) => l.page === page);
+        const turn = (t - lines[first].start) / 0.7;
+        if (turn < 1) {
+          const e = ease.inOut(turn);
+          g.save();
+          g.translate(-e * W * 1.15, e * H * 0.04);
+          g.rotate(-e * 0.12);
+          g.shadowColor = "rgba(0,0,0,0.35)";
+          g.shadowBlur = u * 60;
+          g.shadowOffsetX = u * 20;
+          g.fillStyle = DIA.paper;
+          g.fillRect(0, 0, W, H);
+          g.shadowColor = "transparent";
+          const lastPrev = first - 1;
+          this.page(g, f, u, page - 1, lay, size, gap, top, x0, lastPrev, true);
+          g.restore();
+        }
+      }
+    },
+    /** One page: paper, rules, binding, header and the lines written so far. */
+    page(g, f, u, page, lay, size, gap, top, x0, upto, done) {
+      const { W, H, t, safe, lines } = f;
+      g.fillStyle = DIA.paper;
+      g.fillRect(0, 0, W, H);
+      g.save();
+      g.fillStyle = g.createPattern(diaryTexture(), "repeat");
+      g.fillRect(0, 0, W, H);
+      g.restore();
+      // warm desk-lamp light from the top left, darker corners
+      const lamp = g.createRadialGradient(W * 0.2, H * 0.1, 0, W * 0.2, H * 0.1, H * 1.1);
+      lamp.addColorStop(0, "rgba(255,236,200,0.35)");
+      lamp.addColorStop(0.6, "rgba(255,236,200,0)");
+      lamp.addColorStop(1, "rgba(60,40,20,0.28)");
+      g.fillStyle = lamp;
+      g.fillRect(0, 0, W, H);
+      // ruled lines and the red margin
+      g.strokeStyle = DIA.rule;
+      g.lineWidth = Math.max(1, u * 1.6);
+      g.beginPath();
+      let y1 = top + gap * 0.5;
+      while (y1 - gap > u * 110) y1 -= gap;
+      for (let y = y1; y < H; y += gap) {
+        g.moveTo(0, y);
+        g.lineTo(W, y);
+      }
+      g.stroke();
+      g.strokeStyle = DIA.margin;
+      g.beginPath();
+      g.moveTo(x0 - u * 30, 0);
+      g.lineTo(x0 - u * 30, H);
+      g.moveTo(x0 - u * 22, 0);
+      g.lineTo(x0 - u * 22, H);
+      g.stroke();
+      // spiral binding along the top
+      const step = u * 54;
+      for (let x = step * 0.6; x < W; x += step) {
+        g.fillStyle = "rgba(40,30,20,0.55)";
+        g.beginPath();
+        g.ellipse(x, u * 62, u * 9, u * 11, 0, 0, Math.PI * 2);
+        g.fill();
+        const ring = g.createLinearGradient(x - u * 8, 0, x + u * 8, 0);
+        ring.addColorStop(0, "#6d6d72");
+        ring.addColorStop(0.5, "#e6e6ea");
+        ring.addColorStop(1, "#5a5a60");
+        g.strokeStyle = ring;
+        g.lineWidth = u * 5;
+        g.beginPath();
+        g.moveTo(x + u * 2, u * 60);
+        g.bezierCurveTo(x + u * 4, u * 10, x - u * 14, u * 4, x - u * 12, u * 40);
+        g.stroke();
+      }
+      // header: today's date, the song and the artist
+      g.save();
+      g.fillStyle = DIA.ink;
+      g.globalAlpha = 0.85;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "right";
+      g.font = DIA_NOTE(u * 46);
+      const d = new Date();
+      g.fillText(`${d.getDate()} de ${MONTHS[d.getMonth()]}${page ? " · " + (page + 1) : ""}`, safe.x + safe.w - u * 10, safe.y + u * 96);
+      const meta = f.meta || {};
+      if (meta.title) {
+        g.textAlign = "left";
+        g.font = DIA_NOTE(u * 60);
+        const title = fitText(g, meta.title, safe.w * 0.78);
+        g.fillText(title, x0, safe.y + u * 180);
+        const tw = g.measureText(title).width;
+        // a hand-drawn underline
+        g.strokeStyle = DIA.ink;
+        g.lineWidth = u * 2.6;
+        g.lineCap = "round";
+        g.beginPath();
+        g.moveTo(x0, safe.y + u * 196);
+        g.quadraticCurveTo(x0 + tw * 0.5, safe.y + u * 190, x0 + tw + u * 10, safe.y + u * 198);
+        g.stroke();
+        if (meta.artist) {
+          g.font = DIA_NOTE(u * 40);
+          g.globalAlpha = 0.6;
+          g.textAlign = "right";
+          g.fillText("— " + meta.artist, safe.x + safe.w - u * 10, safe.y + u * 236);
+        }
+      }
+      g.restore();
+      // the user's photo or video, taped on the page like a polaroid
+      if (f.video && !done) this.polaroid(g, f, u);
+      // the lyric, in pen
+      g.save();
+      g.fillStyle = DIA.ink;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "left";
+      g.font = DIA_HAND(size);
+      lay.forEach((pl, i) => {
+        if (pl.page !== page || i > upto) return;
+        const L = lines[i];
+        const tilt = (rand(i * 3.7) - 0.5) * 0.012;
+        pl.rows.forEach((items, r) => {
+          // on the ruled line, like real handwriting
+          const y = top + (pl.row + r) * gap + gap * 0.5 - u * 5;
+          g.save();
+          g.translate(x0, y);
+          g.rotate(tilt);
+          items.forEach((it) => {
+            const w = L.words[it.k];
+            if (!w) return;
+            // writing speed: about nine letters a second, never slower than the singing
+            const dur = Math.min(Math.max(0.12, w.t1 - w.t0), 0.05 + w.text.length / 9);
+            const p = done || i < upto ? 1 : clamp((t - w.t0) / dur);
+            if (p <= 0) return;
+            const jy = (rand(i * 31 + it.k) - 0.5) * u * 4;
+            g.save();
+            if (p < 1) {
+              g.beginPath();
+              g.rect(it.x - size * 0.4, -size * 2, size * 0.4 + it.width * p, size * 3.2);
+              g.clip();
+            }
+            g.globalAlpha = 0.92;
+            g.fillText(w.text, it.x, jy);
+            g.restore();
+            // a fresh drop of ink at the pen's tip
+            if (p < 1) {
+              g.globalAlpha = 0.5;
+              g.beginPath();
+              g.arc(it.x + it.width * p, jy - size * 0.25, u * 3, 0, Math.PI * 2);
+              g.fill();
+              g.globalAlpha = 1;
+            }
+          });
+          g.restore();
+        });
+      });
+      g.restore();
+    },
+    photoBox(f, u) {
+      const { safe } = f;
+      const w = u * 300;
+      const h = u * 360;
+      return { x: safe.x + safe.w - w - u * 6, y: safe.y + safe.h - h, w, h };
+    },
+    /** A small instant photo with two strips of tape, bottom right. */
+    polaroid(g, f, u) {
+      const { x, y, w, h } = this.photoBox(f, u);
+      g.save();
+      g.translate(x + w / 2, y + h / 2);
+      g.rotate(-0.05);
+      g.shadowColor = "rgba(40,25,10,0.35)";
+      g.shadowBlur = u * 18;
+      g.shadowOffsetY = u * 6;
+      g.fillStyle = "#fbfaf6";
+      g.fillRect(-w / 2, -h / 2, w, h);
+      g.shadowColor = "transparent";
+      const pw = w - u * 24;
+      const ph = h - u * 70;
+      g.save();
+      g.beginPath();
+      g.rect(-pw / 2, -h / 2 + u * 12, pw, ph);
+      g.clip();
+      g.translate(-pw / 2, -h / 2 + u * 12);
+      coverTo(g, f.video, pw, ph, "sepia(0.15) saturate(0.9)", f.t);
+      g.restore();
+      // tape
+      g.fillStyle = "rgba(240,228,190,0.75)";
+      [[-w * 0.32, -h / 2, -0.5], [w * 0.32, -h / 2, 0.45]].forEach(([tx, ty, r]) => {
+        g.save();
+        g.translate(tx, ty);
+        g.rotate(r);
+        g.fillRect(-u * 40, -u * 12, u * 80, u * 24);
+        g.restore();
+      });
+      g.restore();
+    },
+  };
+
+  // ======================================================================
   // 4. MINIMAL — typography, space and rhythm
   // ======================================================================
   const MIN = { bg: "#f2efe8", ink: "#141311", mute: "#8e877b", accent: "#ff4a1c", rule: "rgba(20,19,17,0.14)" };
   const MIN_SANS = (w, size) => `${w} ${size}px Inter, 'Helvetica Neue', Arial, sans-serif`;
   const MIN_SERIF = (size) => `italic 400 ${size}px 'Instrument Serif', Georgia, serif`;
-  const minimal = {
-    id: "minimal",
+  const editorial = {
+    id: "editorial",
     label: "Minimal",
     tag: "Editorial",
     fonts: ["400 100px 'Instrument Serif'", "italic 400 100px 'Instrument Serif'", "500 100px Inter", "700 100px Inter", "800 100px Inter"],
@@ -1492,8 +1775,14 @@
     draw(g, f) {
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
-      g.fillStyle = NOTE.bg;
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f)) {
+        g.fillStyle = NOTE.bg;
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(0,0,0,0.62)";
+        g.fillRect(0, 0, W, H);
+      }
       // without the phone around it the note needs its own side margins
       const pad = f.mockup ? 0 : u * 48;
       const x0 = safe.x + pad;
@@ -2097,7 +2386,10 @@
       const gi = L ? (phrase ? f.current : wordOffset(lines, f.current) + Math.max(0, j)) : 0;
       const done = !phrase && L && L.words.length && t > L.words[L.words.length - 1].t1 + 1.4;
       const inv = !done && j >= 0 && gi % 2 === 1;
-      g.fillStyle = inv ? "#ffffff" : "#000000";
+      if (videoBg(g, f, "grayscale(1) contrast(1.2)")) {
+        // over their own footage the flash becomes a tint
+        g.fillStyle = inv ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.58)";
+      } else g.fillStyle = inv ? "#ffffff" : "#000000";
       g.fillRect(0, 0, W, H);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
@@ -2321,8 +2613,14 @@
       const u = safe.w / 825;
       const pulse = f.pulse();
       // a dark listening room under one warm spotlight
-      g.fillStyle = "#080808";
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f, "saturate(0.85)")) {
+        g.fillStyle = "#080808";
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(8,8,8,0.62)";
+        g.fillRect(0, 0, W, H);
+      }
       const spot = g.createRadialGradient(W * 0.5, H * 0.05, 0, W * 0.5, H * 0.05, H * 0.95);
       spot.addColorStop(0, "rgba(255,255,255,0.24)");
       spot.addColorStop(0.45, "rgba(255,255,255,0.06)");
@@ -3160,8 +3458,14 @@
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const en = f.energy();
-      g.fillStyle = "#0c0710";
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f)) {
+        g.fillStyle = "#0c0710";
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(12,7,16,0.55)";
+        g.fillRect(0, 0, W, H);
+      }
       // slow colour blobs, like light through a blurred album cover
       g.save();
       g.globalCompositeOperation = "lighter";
@@ -3263,13 +3567,19 @@
       const { W, H, t, safe, meta } = f;
       const u = safe.w / 825;
       // soft "stock footage": drifting sunset clouds
-      const sky = g.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, "#1b2a6b");
-      sky.addColorStop(0.45, "#c2508a");
-      sky.addColorStop(0.7, "#ff9a5a");
-      sky.addColorStop(1, "#2a1238");
-      g.fillStyle = sky;
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f, "saturate(1.1)")) {
+        const sky = g.createLinearGradient(0, 0, 0, H);
+        sky.addColorStop(0, "#1b2a6b");
+        sky.addColorStop(0.45, "#c2508a");
+        sky.addColorStop(0.7, "#ff9a5a");
+        sky.addColorStop(1, "#2a1238");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(40,10,60,0.35)";
+        g.fillRect(0, 0, W, H);
+      }
       g.save();
       g.globalCompositeOperation = "lighter";
       for (let i = 0; i < 9; i++) {
@@ -3283,13 +3593,15 @@
         g.fillRect(0, 0, W, H);
       }
       g.restore();
-      // sun
-      const sunY = H * 0.6;
-      const sun = g.createRadialGradient(W / 2, sunY, 0, W / 2, sunY, H * 0.14);
-      sun.addColorStop(0, "rgba(255,240,200,0.95)");
-      sun.addColorStop(1, "rgba(255,170,90,0)");
-      g.fillStyle = sun;
-      g.fillRect(0, 0, W, H);
+      // sun (the painted sky only)
+      if (!f.video) {
+        const sunY = H * 0.6;
+        const sun = g.createRadialGradient(W / 2, sunY, 0, W / 2, sunY, H * 0.14);
+        sun.addColorStop(0, "rgba(255,240,200,0.95)");
+        sun.addColorStop(1, "rgba(255,170,90,0)");
+        g.fillStyle = sun;
+        g.fillRect(0, 0, W, H);
+      }
       // title card before the first line
       const first = f.lines[0];
       if (first && t < first.start) {
@@ -3392,12 +3704,18 @@
       const { W, H, t, safe } = f;
       const u = safe.w / 825;
       const pulse = f.pulse();
-      const bg = g.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, "#07050d");
-      bg.addColorStop(0.7, "#120a1c");
-      bg.addColorStop(1, "#05040a");
-      g.fillStyle = bg;
-      g.fillRect(0, 0, W, H);
+      // their own footage, when they bring it
+      if (!videoBg(g, f)) {
+        const bg = g.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#07050d");
+        bg.addColorStop(0.7, "#120a1c");
+        bg.addColorStop(1, "#05040a");
+        g.fillStyle = bg;
+        g.fillRect(0, 0, W, H);
+      } else {
+        g.fillStyle = "rgba(7,5,13,0.55)";
+        g.fillRect(0, 0, W, H);
+      }
       const floorY = H * 0.8;
       g.save();
       g.globalCompositeOperation = "lighter";
@@ -4818,6 +5136,12 @@
       g.fillRect(0, 0, W, H);
     }
   }
+  /** A colour taken k of the way to white (#rrggbb in and out). */
+  function mixWhite(hex, k) {
+    const n = parseInt(hex.slice(1, 7), 16);
+    const m = (v) => Math.round(v + (255 - v) * k);
+    return `rgb(${m((n >> 16) & 255)},${m((n >> 8) & 255)},${m(n & 255)})`;
+  }
   /** One word with the chosen effect (shadow, outline, glow). */
   function cuWord(g, c, label, x, y, size, col) {
     if (c.effect === "outline") {
@@ -4829,6 +5153,19 @@
       g.shadowColor = hexA(c.effectColor, 0.75);
       g.shadowBlur = size * 0.2;
       g.shadowOffsetY = size * 0.06;
+    } else if (c.effect === "glow" && col[0] === "#") {
+      // like a neon tube: a wide coloured halo, a tight one, and a hot, paler core
+      g.shadowColor = col;
+      g.fillStyle = col;
+      g.shadowBlur = size * 0.7;
+      g.fillText(label, x, y);
+      g.shadowBlur = size * 0.22;
+      g.fillText(label, x, y);
+      g.shadowColor = "transparent";
+      g.shadowBlur = 0;
+      g.fillStyle = mixWhite(col, 0.55);
+      g.fillText(label, x, y);
+      return;
     } else if (c.effect === "glow") {
       g.shadowColor = col;
       g.shadowBlur = size * 0.5;
@@ -5156,7 +5493,7 @@
     },
   };
 
-  const PRESETS = { custom, kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
+  const PRESETS = { custom, kinetic, cinematic, neon, minimal, editorial, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
@@ -5188,6 +5525,8 @@
     { id: "orbitron", label: "Orbitron", family: "Orbitron, sans-serif" },
     { id: "shrikhand", label: "Shrikhand", family: "Shrikhand, serif" },
     { id: "vt323", label: "VT323", family: "VT323, monospace" },
+    { id: "hand", label: "Manuscrita", family: "'Homemade Apple', cursive" },
+    { id: "caveat", label: "Caveat", family: "Caveat, cursive" },
   ];
 
   WM.Presets = {

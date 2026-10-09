@@ -3477,3 +3477,39 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   text-align: center;
   white-space: nowrap;
 }
+
+/* style history: undo / redo, always at hand while editing the style */
+.hist-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -14px -14px 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.hist {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.hist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.hist-btn:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+.hist-btn:not(:disabled):hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
