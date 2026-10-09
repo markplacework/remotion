@@ -5902,6 +5902,12 @@
       }
       g.restore();
     },
+    /** Draggable extras: the nameplate. */
+    boxes(W, H, safe) {
+      const u = safe.w / 825;
+      const off = styleOffset("diario", "title", safe);
+      return [{ key: "title", x: safe.x + u * 24 + off.x, y: safe.y + u * 30 + off.y, w: safe.w - u * 48, h: u * 190 }];
+    },
     /** The paper's nameplate and folio lines, small and quiet, at the top and bottom of the page. */
     masthead(g, f, u) {
       const { safe } = f;
@@ -5911,6 +5917,10 @@
       let y = safe.y + u * (f.mockup ? 60 : 40);
       g.save();
       g.__keepColor = true;
+      // the nameplate (the song's title) can be dragged on its own
+      const off = styleOffset("diario", "title", safe);
+      g.save();
+      g.translate(off.x, off.y);
       g.textBaseline = "alphabetic";
       g.textAlign = "center";
       g.fillStyle = NEWS.ink;
@@ -5942,7 +5952,9 @@
       spaced(g, "LATE EDITION", x1, y, "right", u * 2);
       g.fillStyle = NEWS.ink;
       g.fillRect(x0, y + u * 16, x1 - x0, u * 1);
+      g.restore();
       // folio at the foot of the page
+      g.fillStyle = NEWS.ink;
       const fy = safe.y + safe.h - u * (f.mockup ? 70 : 50);
       g.fillRect(x0, fy - u * 30, x1 - x0, u * 1);
       g.fillStyle = NEWS.mute;

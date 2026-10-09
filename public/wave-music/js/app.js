@@ -213,7 +213,7 @@
     // wake the media service right away: the first example then starts fast
     fetch(`${WM.ModalSync.mediaUrl()}/`).catch(() => {});
     setTimeout(() => {
-      ["nieve", "lluvia", "otono", "tormenta"].forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
+      ["nieve", "lluvia", "otono", "tormenta", "live", "noticiero", "broadcast", "stream"].forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
       ["snow", "leak"].forEach((id) => WM.Fx.load(id).catch(() => {}));
     }, 2500);
   }
@@ -1635,6 +1635,9 @@
     return WM.BgVideo.enabled && !WM.BgVideo.sample && WM.BgVideo.name !== WM.DEMO_BG.name;
   }
   var WEATHER = ["lluvia", "nieve", "otono", "tormenta"];
+  // these open on their example clip (the weather and the live ones); any
+  // other style starts clean, without another style's example
+  var AUTO_SAMPLE = WEATHER.concat(["live", "noticiero", "broadcast", "stream"]);
   // realistic effects over the background (fx.js)
   WM.Fx.LIST.forEach((fx) => {
     const b = document.createElement("button");
@@ -2579,10 +2582,9 @@
     // Backgrounds: each style keeps its own (what they brought to it, or its
     // example clip; the weather styles open on theirs).
     // another style's example clip never shows here
-    if (!styleBg.has(id) && WM.BgVideo.sample && WM.BgVideo.sample !== id && !WM.STYLE_SAMPLES[id]) WM.BgVideo.clear();
+    if (!styleBg.has(id) && WM.BgVideo.sample && WM.BgVideo.sample !== id) WM.BgVideo.clear();
     if (!styleBg.has(id) && WM.Themes.get(id).video && !ownFootage() && WM.BgVideo.sample !== id) {
-      const showingExample = WM.BgVideo.enabled;
-      if ((showingExample || WEATHER.includes(id)) && WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
+      if (AUTO_SAMPLE.includes(id) && WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
     }
     updateBgv();
     updateChatOpts();
