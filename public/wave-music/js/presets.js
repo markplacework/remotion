@@ -382,6 +382,8 @@
         g.fill();
       }
       g.globalCompositeOperation = "source-over";
+      // real fog drifting through the light (fx.js)
+      if (WM.Fx) WM.Fx.paint(g, W, H, "fog", 75, t);
 
       g.save();
       place(g, f);
@@ -749,6 +751,40 @@
   const DIA = { paper: "#f4eddd", ink: "#1f2d66", rule: "rgba(70,110,170,0.28)", margin: "rgba(205,70,70,0.55)" };
   const DIA_HAND = (size) => `400 ${size}px ${fam("'Homemade Apple', 'Caveat', cursive")}`;
   const DIA_NOTE = (size) => `600 ${size}px Caveat, 'Homemade Apple', cursive`;
+  /**
+   * Window light on a sheet of paper: warm patches and soft shadows that
+   * drift slowly, and specks of dust floating in the light. Made for light
+   * pages, where filmed overlays (added as light) would not show.
+   */
+  function sheetLight(g, W, H, t) {
+    g.save();
+    g.globalCompositeOperation = "multiply";
+    [
+      [0.25, 0.3, 0.6, "rgba(255,196,130,0.22)", 0.05],
+      [0.8, 0.75, 0.55, "rgba(120,90,60,0.12)", 0.04],
+    ].forEach(([x, y, r, col, sp], i) => {
+      const cx = W * (x + 0.12 * Math.sin(t * sp * 6 + i * 2));
+      const cy = H * (y + 0.08 * Math.cos(t * sp * 5 + i));
+      const gr = g.createRadialGradient(cx, cy, 0, cx, cy, H * r);
+      gr.addColorStop(0, col);
+      gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr;
+      g.fillRect(0, 0, W, H);
+    });
+    g.globalCompositeOperation = "source-over";
+    // dust in the light
+    const s = W / 1080;
+    for (let i = 0; i < 46; i++) {
+      const x = ((rand(i * 3.1) * W + t * (6 + rand(i) * 10) * s + Math.sin(t * 0.4 + i) * 20 * s) % W + W) % W;
+      const y = ((rand(i * 7.7) * H - t * (4 + rand(i * 2) * 8) * s) % H + H) % H;
+      g.globalAlpha = 0.12 + 0.18 * (0.5 + 0.5 * Math.sin(t * (0.6 + rand(i * 5)) + i));
+      g.fillStyle = "#6b5a44";
+      g.beginPath();
+      g.arc(x, y, (1 + rand(i * 9) * 2.2) * s, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+  }
   let diaPaper = null;
   /** Paper fibres: fixed speckles and soft blotches (static, unlike film grain). */
   function diaryTexture() {
@@ -822,10 +858,14 @@
       const cur = Math.max(0, f.current);
       const page = lay.length ? lay[Math.min(cur, lay.length - 1)].page : 0;
       this.canvas(g, f, u);
-      // a full page fades away and the writing starts again, as on a fresh sheet
+      // a full page fades away and the writing starts again, as on a fresh
+      // sheet: the new page's first line waits until the old one is gone
+      const CLEAR = 0.3;
+      let firstOfPage = -1;
       if (page > 0 && f.current >= 0) {
         const first = lay.findIndex((l) => l.page === page);
-        const fade = (t - lines[first].start) / 0.6;
+        firstOfPage = first;
+        const fade = (t - lines[first].start) / CLEAR;
         if (fade < 1) {
           g.save();
           g.translate(f.shift.x, f.shift.y);
@@ -836,7 +876,7 @@
       }
       g.save();
       g.translate(f.shift.x, f.shift.y);
-      this.writing(g, f, u, page, lay, size, gap, top, f.current, false);
+      this.writing(g, f, u, page, lay, size, gap, top, f.current, false, firstOfPage, CLEAR);
       g.restore();
     },
     /** A clean, warm sheet: fine grain, soft light, the song's title on top. */
@@ -855,6 +895,7 @@
       light.addColorStop(1, "rgba(70,50,30,0.2)");
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
+      sheetLight(g, W, H, f.t);
       const meta = f.meta || {};
       if (f.video) this.polaroid(g, f, u);
       if (!meta.title && !meta.artist) return;
@@ -895,7 +936,7 @@
       return [{ key: "title", x: safe.x + off.x, y: safe.y + u * 50 + off.y, w: safe.w, h: u * 185 }];
     },
     /** The lines of one page written so far, centred, in pen. */
-    writing(g, f, u, page, lay, size, gap, top, upto, done) {
+    writing(g, f, u, page, lay, size, gap, top, upto, done, waitLine = -1, wait = 0) {
       const { t, safe, lines } = f;
       const cx = safe.x + safe.w / 2;
       g.save();
@@ -917,7 +958,7 @@
             if (!w) return;
             // writing speed: about nine letters a second, never slower than the singing
             const dur = Math.min(Math.max(0.12, w.t1 - w.t0), 0.05 + w.text.length / 9);
-            const p = done || i < upto ? 1 : clamp((t - w.t0) / dur);
+            const p = done || i < upto ? 1 : clamp((t - w.t0 - (i === waitLine ? wait : 0)) / dur);
             if (p <= 0) return;
             const jy = (rand(i * 31 + it.k) - 0.5) * u * 4;
             g.save();
@@ -2311,6 +2352,8 @@
         g.fillStyle = look === 0 ? "rgba(246,246,246,0.66)" : "rgba(0,0,0,0.58)";
         g.fillRect(0, 0, W, H);
       }
+      // smoke drifting through the black cuts, like a fashion film set
+      if (look !== 0 && WM.Fx) WM.Fx.paint(g, W, H, "smoke", 80, t);
       if (!L || !L.words.length || j < 0) {
         grainOver(g, W, H, t, 0.06);
         return;
@@ -5689,6 +5732,7 @@
       light.addColorStop(1, "rgba(70,50,30,0.16)");
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
+      sheetLight(g, W, H, t);
       if (!L || !L.words.length) return;
       // only the lyric, in the headline's type, centred
       const x0 = safe.x;

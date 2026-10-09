@@ -1589,7 +1589,7 @@
     const th = WM.Themes.get(preview.theme.id);
     // every video style has its own sample: offered when nothing (or another style's sample) is loaded
     const mine = WM.BgVideo.sample === th.id;
-    $("btn-bgs").hidden = !th.video || (on && (!WM.BgVideo.sample || mine));
+    $("btn-bgs").hidden = !th.video || !WM.STYLE_SAMPLES[th.id] || (on && (!WM.BgVideo.sample || mine));
     $("btn-bgs").textContent = on ? "Usar el video de ejemplo de este estilo" : "Probar con un video de ejemplo";
     $("bgv-filters").hidden = !on;
     if (WM.LiveChat.onBg) WM.LiveChat.onBg();
