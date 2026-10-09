@@ -3854,7 +3854,6 @@
       }
       // falling rain behind the glass (the realistic rain of fx.js)
       if (WM.Fx) WM.Fx.paint(g, W, H, "rain", 90, t);
-      this.glass(g, f, u);
       const L = f.lines[f.current];
       if (!L || !L.words.length) return;
       g.save();
