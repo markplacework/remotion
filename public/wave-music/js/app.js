@@ -1836,17 +1836,154 @@
     };
   }
 
+  // ---------- Personalizado: el editor de estilo ----------
+  const CU = WM.Custom;
+  // "Video o foto" borrows the background block of the video styles
+  const bgvAnchor = document.createComment("video-opts");
+  $("video-opts").before(bgvAnchor);
+  const WORD_ANIMS = ["words", "karaoke", "bounce"];
+  {
+    const sel = $("cu-font");
+    sel.innerHTML = WM.Presets.FONTS.map((f) => `<option value="${f.id}" style="font-family:${f.family.replace(/"/g, "'")}">${f.label}</option>`).join("");
+    sel.onchange = () => cuChange({ font: sel.value });
+  }
+  const cuOut = {
+    size: (v) => v + "%",
+    spacing: (v) => (v > 0 ? "+" : "") + v,
+    lineHeight: (v) => Number(v).toFixed(2),
+    darken: (v) => v + "%",
+  };
+  document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
+    const key = el.dataset.cu;
+    if (el.tagName === "DIV") {
+      el.querySelectorAll("button").forEach((b) => {
+        b.onclick = () => cuChange({ [key]: b.dataset.v === "true" ? true : b.dataset.v === "false" ? false : b.dataset.v });
+      });
+    } else if (el.type === "checkbox") el.onchange = () => cuChange({ [key]: el.checked });
+    else if (el.type === "range") el.oninput = () => cuChange({ [key]: Number(el.value) });
+    else el.oninput = () => cuChange({ [key]: el.type === "text" ? el.value.trim() : el.value });
+  });
+  function cuChange(patch) {
+    CU.set(patch);
+    cuPaint();
+    needsSnap = true;
+  }
+  /** The controls show the current options. */
+  function cuPaint() {
+    const c = CU.cfg;
+    $("cu-font").value = c.font;
+    document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
+      const v = c[el.dataset.cu];
+      if (el.tagName === "DIV") el.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === String(v)));
+      else if (el.type === "checkbox") el.checked = !!v;
+      else if (document.activeElement !== el) el.value = v;
+      const out = el.parentNode.querySelector("output");
+      if (out && cuOut[el.dataset.cu]) out.textContent = cuOut[el.dataset.cu](v);
+    });
+    const media = c.bg === "media";
+    $("cu-bgcolors").hidden = media;
+    $("cu-bg2").hidden = c.bg === "solid";
+    $("cu-darken").hidden = !media;
+    $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
+    $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
+    cuPlaceBgv();
+  }
+  function cuPlaceBgv() {
+    const custom = preview.theme.id === "custom";
+    const v = $("video-opts");
+    if (custom) {
+      $("cu-media").appendChild(v);
+      v.hidden = CU.cfg.bg !== "media";
+    } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
+  }
+  // template chips: a dot with the look's colours
+  function cuChip(name, cfg, onDelete) {
+    const c = { ...CU.DEFAULTS, ...cfg };
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    const dot = document.createElement("i");
+    dot.style.background = c.bg === "media" ? `linear-gradient(135deg, #3a4a5a 50%, ${c.accent} 50%)` : `linear-gradient(135deg, ${c.bg1} 50%, ${c.accent} 50%)`;
+    b.append(dot, name);
+    b.onclick = (ev) => {
+      if (ev.target.classList.contains("cu-x")) return;
+      CU.apply(cfg);
+      cuPaint();
+      needsSnap = true;
+    };
+    if (onDelete) {
+      const x = document.createElement("i");
+      x.className = "cu-x";
+      x.textContent = "×";
+      x.title = "Borrar plantilla";
+      x.onclick = onDelete;
+      b.append(x);
+    }
+    return b;
+  }
+  function cuTemplates() {
+    $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
+    const mine = CU.templates();
+    const head = document.createElement("span");
+    head.className = "cu-mine-label";
+    head.textContent = "Mis plantillas";
+    const sub = document.createElement("span");
+    sub.className = "cu-mine-label";
+    sub.textContent = "Para empezar";
+    $("cu-starters").prepend(sub);
+    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, () => {
+      CU.deleteTemplate(m.name);
+      cuTemplates();
+    })));
+  }
+  $("cu-save").onclick = () => {
+    $("cu-save-form").hidden = !$("cu-save-form").hidden;
+    if (!$("cu-save-form").hidden) $("cu-save-name").focus();
+  };
+  $("cu-save-form").onsubmit = (ev) => {
+    ev.preventDefault();
+    const name = $("cu-save-name").value.trim();
+    if (!name) return $("cu-save-name").focus();
+    CU.saveTemplate(name);
+    $("cu-save-name").value = "";
+    $("cu-save-form").hidden = true;
+    cuTemplates();
+    toast(`Guardada: ${name}`);
+  };
+  $("cu-reset").onclick = () => {
+    CU.apply({});
+    cuPaint();
+    needsSnap = true;
+  };
+  // any style is a starting point: its look goes to Personalizado
+  $("btn-customize").onclick = () => {
+    const from = preview.theme;
+    const base = { ...(CU.BASES[from.id] || {}) };
+    // keep what was already changed on that style
+    const font = WM.Presets.FONTS.find((x) => x.family === preview.font);
+    if (font) base.font = font.id;
+    if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
+    CU.apply(base);
+    cuPaint();
+    showCat("todos");
+    chooseStyle("custom");
+    toast(`Partimos de ${from.label}: cambiá lo que quieras`);
+    $("custom-opts").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  cuTemplates();
+  cuPaint();
+
   // ---------- categorías de estilos (Lyrics) ----------
   // each one fills whole rows of the 4-column grid
   const STYLE_CATS = [
     ["todos", "Todos", null],
-    ["populares", "Populares", ["kinetic", "cinematic", "aurora", "wordpop", "karaoke", "notes", "live", "lluvia"]],
+    ["populares", "Populares", ["custom", "kinetic", "cinematic", "aurora", "karaoke", "notes", "live", "lluvia"]],
     ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
     ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
     ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
     ["retro", "Retro", ["vhs", "vinilo", "neon", "radio"]],
     ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
-    ["redes", "Redes", ["wordpop", "notes", "recorte", "karaoke"]],
+    ["redes", "Redes", ["notes", "recorte", "karaoke", "stream"]],
   ];
   // on phones "Todos" opens with 8 styles and grows four (one row) per tap
   var shownCount = 8; // var: chooseStyle may run before this line
@@ -1894,13 +2031,17 @@
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;
     // text size stays; the typeface goes back to the new style's own
-    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    // (Personalizado has all of that in its own editor)
+    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion" || id === "custom";
+    $("custom-opts").hidden = id !== "custom";
+    $("btn-customize").hidden = WM.Themes.get(id).kind !== "motion" || id === "custom";
     // word-paced styles (Word Pop, Blackout) don't offer the phrase mode
     const th = WM.Themes.get(id);
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);
+    cuPlaceBgv();
     updateBgv();
     updateChatOpts();
     // each style has its own composition: start it centred

@@ -3349,6 +3349,184 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
 }
+
+/* ---------- Personalizado: the style editor ---------- */
+.customize-btn {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.cu {
+  gap: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.cu-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+.cu-sec:first-child {
+  border-top: 0;
+}
+details.cu-sec:not([open]) {
+  gap: 0;
+}
+.cu-sec summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cu-sec summary::-webkit-details-marker {
+  display: none;
+}
+.cu-sec summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  rotate: 45deg;
+  translate: 0 -2px;
+  transition: rotate 0.2s;
+}
+.cu-sec[open] summary::after {
+  rotate: 225deg;
+  translate: 0 2px;
+}
+.cu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cu-head .btn-link {
+  font-size: 12.5px;
+}
+.cu-save {
+  display: flex;
+  gap: 8px;
+}
+.cu-save input {
+  flex: 1;
+  min-width: 0;
+}
+.cu-save .btn {
+  padding: 0 14px;
+  height: 38px;
+}
+.cu-tpls {
+  margin-top: 0;
+}
+.cu-tpls:empty {
+  display: none;
+}
+.cu-tpls .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cu-tpls .chip i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.cu-tpls .chip .cu-x {
+  margin: -4px -6px -4px 0;
+  padding: 2px 6px;
+  border-radius: 99px;
+  color: var(--faint);
+  font-style: normal;
+}
+.cu-tpls .chip .cu-x:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.cu-mine-label {
+  width: 100%;
+  font-size: 11px;
+  color: var(--faint);
+}
+.cu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cu-row .segmented button {
+  padding: 6px 11px;
+}
+.cu-range {
+  display: grid;
+  grid-template-columns: 82px 1fr 40px;
+  padding: 3px 0;
+  align-items: center;
+  gap: 10px;
+}
+.cu-range input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.cu-range output {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cu-colors {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cu-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.cu-color input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--line-2);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.cu-color input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.cu-color input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+.cu-color input::-moz-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+#cu-media .style-opts {
+  margin-top: 0;
+}
+#cu-reset {
+  margin: 4px 14px 14px;
+  align-self: flex-start;
+  font-size: 12.5px;
+}
 </style>
   </head>
   <body>
@@ -3772,6 +3950,101 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
             <button type="button" id="styles-more" class="btn btn-ghost styles-more" hidden>Ver más estilos</button>
             <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
             <div id="styles-classic" class="styles"></div>
+          </div>
+          <button type="button" id="btn-customize" class="btn btn-ghost wide customize-btn" hidden>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+            <span>Personalizar este estilo</span>
+          </button>
+          <div id="custom-opts" class="style-opts cu" hidden>
+            <section class="cu-sec">
+              <div class="cu-head"><span class="opt-label">Plantillas</span><button type="button" id="cu-save" class="btn-link">+ Guardar la mía</button></div>
+              <form id="cu-save-form" class="cu-save" hidden>
+                <input id="cu-save-name" type="text" maxlength="28" placeholder="Nombre: Mi canal trap" autocomplete="off" />
+                <button class="btn btn-primary" type="submit">Guardar</button>
+              </form>
+              <div id="cu-mine" class="chips cu-tpls"></div>
+              <div id="cu-starters" class="chips cu-tpls"></div>
+            </section>
+            <details class="cu-sec" open>
+              <summary>Texto</summary>
+              <div class="fields">
+                <label class="field grow"><span>Tipografía</span><select id="cu-font"></select></label>
+              </div>
+              <div class="cu-row"><span class="opt-label">Letras</span><div class="segmented" data-cu="upper"><button type="button" data-v="true">MAYÚSCULAS</button><button type="button" data-v="false">Normal</button></div></div>
+              <div class="cu-row"><span class="opt-label">Alineación</span><div class="segmented" data-cu="align"><button type="button" data-v="left">Izq.</button><button type="button" data-v="center">Centro</button><button type="button" data-v="right">Der.</button></div></div>
+              <div class="cu-row"><span class="opt-label">Posición</span><div class="segmented" data-cu="pos"><button type="button" data-v="top">Arriba</button><button type="button" data-v="center">Centro</button><button type="button" data-v="bottom">Abajo</button></div></div>
+              <label class="cu-range"><span class="opt-label">Tamaño</span><input type="range" data-cu="size" min="50" max="160" step="5" /><output></output></label>
+              <label class="cu-range"><span class="opt-label">Espaciado</span><input type="range" data-cu="spacing" min="-4" max="16" step="1" /><output></output></label>
+              <label class="cu-range"><span class="opt-label">Interlineado</span><input type="range" data-cu="lineHeight" min="0.9" max="1.6" step="0.05" /><output></output></label>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Colores y efecto</summary>
+              <div class="cu-colors">
+                <label class="cu-color"><input type="color" data-cu="color" /><span>Texto</span></label>
+                <label class="cu-color"><input type="color" data-cu="accent" /><span>Destacado</span></label>
+                <label class="cu-color"><input type="color" data-cu="effectColor" /><span>Efecto</span></label>
+              </div>
+              <div class="chips" data-cu="effect">
+                <button type="button" class="chip" data-v="none">Ninguno</button>
+                <button type="button" class="chip" data-v="shadow">Sombra</button>
+                <button type="button" class="chip" data-v="outline">Contorno</button>
+                <button type="button" class="chip" data-v="glow">Brillo</button>
+                <button type="button" class="chip" data-v="box">Caja</button>
+                <button type="button" class="chip" data-v="marker">Resaltador</button>
+              </div>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Animación</summary>
+              <div class="chips" data-cu="anim">
+                <button type="button" class="chip" data-v="fade">Aparecer</button>
+                <button type="button" class="chip" data-v="rise">Subir</button>
+                <button type="button" class="chip" data-v="pop">Pop</button>
+                <button type="button" class="chip" data-v="zoom">Zoom</button>
+                <button type="button" class="chip" data-v="typewriter">Máquina de escribir</button>
+                <button type="button" class="chip" data-v="words">Palabra por palabra</button>
+                <button type="button" class="chip" data-v="karaoke">Karaoke</button>
+                <button type="button" class="chip" data-v="bounce">Salto en la palabra</button>
+              </div>
+              <label class="check"><input type="checkbox" data-cu="beat" /><span>Late con el ritmo</span></label>
+              <label class="check"><input type="checkbox" data-cu="next" /><span>Mostrar la línea que sigue</span></label>
+              <label class="check" id="cu-keyword"><input type="checkbox" data-cu="keyword" /><span>Destacar la palabra clave</span></label>
+              <label class="check" id="cu-dim"><input type="checkbox" data-cu="dim" /><span>Atenuar lo que falta cantar</span></label>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Fondo</summary>
+              <div class="chips" data-cu="bg">
+                <button type="button" class="chip" data-v="solid">Color</button>
+                <button type="button" class="chip" data-v="gradient">Degradé</button>
+                <button type="button" class="chip" data-v="animated">Animado</button>
+                <button type="button" class="chip" data-v="media">Video o foto</button>
+              </div>
+              <div class="cu-colors" id="cu-bgcolors">
+                <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
+                <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
+              </div>
+              <div id="cu-media"></div>
+              <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
+              <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
+              <span class="opt-label">Partículas</span>
+              <div class="chips" data-cu="particles">
+                <button type="button" class="chip" data-v="none">Ninguna</button>
+                <button type="button" class="chip" data-v="sparkles">Brillos</button>
+                <button type="button" class="chip" data-v="stars">Estrellas</button>
+                <button type="button" class="chip" data-v="snow">Nieve</button>
+                <button type="button" class="chip" data-v="rain">Lluvia</button>
+                <button type="button" class="chip" data-v="bokeh">Bokeh</button>
+                <button type="button" class="chip" data-v="confetti">Confeti</button>
+              </div>
+            </details>
+            <details class="cu-sec">
+              <summary>Extras</summary>
+              <label class="check"><input type="checkbox" data-cu="showMeta" /><span>Título y artista arriba</span></label>
+              <label class="check"><input type="checkbox" data-cu="progress" /><span>Barra de progreso</span></label>
+              <div class="fields">
+                <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
+              </div>
+            </details>
+            <button type="button" id="cu-reset" class="btn-link">Volver a empezar</button>
           </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
@@ -5946,12 +6219,14 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
     // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
+    // every option is the user's (custom.js)
+    custom: { id: "custom", label: "Personalizado", kind: "motion", preset: "custom", background: { type: "motion" }, meta: true, video: true },
     kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", background: { type: "motion" }, video: true },
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", background: { type: "motion" }, video: true },
-    wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
+    // Saved, not shown: wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },
@@ -10959,7 +11234,368 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     },
   };
 
-  const PRESETS = { kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
+  // ======================================================================
+  // PERSONALIZADO — every choice is the user's (custom.js holds the options)
+  // ======================================================================
+  const CU_WORD_ANIMS = { words: 1, karaoke: 1, bounce: 1 };
+  const cuCfg = () => (WM.Custom ? WM.Custom.cfg : {});
+  const cuFont = (c, size) => `${(WM.Custom && WM.Custom.weightOf(c.font)) || 800} ${size}px ${WM.Custom ? WM.Custom.familyOf(c.font) : "Montserrat, sans-serif"}`;
+  /** Particles over the background: a pure function of time, like the rest. */
+  function cuParticles(g, f, kind, col) {
+    const { W, H, t } = f;
+    const s = W / 1080;
+    g.save();
+    if (kind === "snow") {
+      g.fillStyle = "#ffffff";
+      for (let i = 0; i < 90; i++) {
+        const sp = 40 + rand(i) * 90;
+        const y = ((rand(i + 3) * H + t * sp * s * 1.4) % (H + 20)) - 10;
+        const x = rand(i + 7) * W + Math.sin(t * 0.8 + i) * 18 * s;
+        g.globalAlpha = 0.35 + rand(i + 9) * 0.5;
+        g.beginPath();
+        g.arc(x, y, (2 + rand(i + 11) * 5) * s, 0, Math.PI * 2);
+        g.fill();
+      }
+    } else if (kind === "rain") {
+      g.strokeStyle = "#cfe3ff";
+      g.lineWidth = 2 * s;
+      for (let i = 0; i < 110; i++) {
+        const len = (30 + rand(i) * 50) * s;
+        const y = ((rand(i + 3) * H + t * (900 + rand(i + 5) * 500) * s) % (H + len)) - len;
+        const x = ((rand(i + 7) * W + y * 0.18) % (W + 40)) - 20;
+        g.globalAlpha = 0.18 + rand(i + 9) * 0.3;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + len * 0.18, y + len);
+        g.stroke();
+      }
+    } else if (kind === "bokeh") {
+      g.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 18; i++) {
+        const r = (40 + rand(i) * 120) * s;
+        const x = (rand(i + 1) * W + Math.sin(t * 0.15 + i) * 60 * s + W) % W;
+        const y = (rand(i + 2) * H - t * (8 + rand(i + 4) * 14) * s + H * 4) % (H + r * 2) - r;
+        const grd = g.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, hexA(i % 3 ? col : "#ffffff", 0.16 + 0.1 * Math.sin(t * 0.7 + i)));
+        grd.addColorStop(0.7, hexA(i % 3 ? col : "#ffffff", 0.08));
+        grd.addColorStop(1, hexA(col, 0));
+        g.fillStyle = grd;
+        g.beginPath();
+        g.arc(x, y, r, 0, Math.PI * 2);
+        g.fill();
+      }
+    } else if (kind === "sparkles" || kind === "stars") {
+      g.fillStyle = kind === "stars" ? "#ffffff" : col;
+      const n = kind === "stars" ? 120 : 45;
+      for (let i = 0; i < n; i++) {
+        const tw = 0.5 + 0.5 * Math.sin(t * (1.5 + rand(i) * 3) + i * 2.1);
+        const x = rand(i + 1) * W;
+        const y = rand(i + 2) * H;
+        g.globalAlpha = (kind === "stars" ? 0.25 : 0.2) + tw * 0.7;
+        if (kind === "stars") {
+          g.beginPath();
+          g.arc(x, y, (1 + rand(i + 3) * 2.2) * s, 0, Math.PI * 2);
+          g.fill();
+        } else {
+          // four-point sparkle
+          const r = (6 + rand(i + 3) * 14) * s * (0.4 + tw * 0.6);
+          g.beginPath();
+          g.moveTo(x, y - r);
+          g.quadraticCurveTo(x, y, x + r, y);
+          g.quadraticCurveTo(x, y, x, y + r);
+          g.quadraticCurveTo(x, y, x - r, y);
+          g.quadraticCurveTo(x, y, x, y - r);
+          g.fill();
+        }
+      }
+    } else if (kind === "confetti") {
+      const cols = [col, "#ffffff", "#ff4d8d", "#4de1ff", "#ffd84d"];
+      for (let i = 0; i < 70; i++) {
+        const y = ((rand(i + 3) * H + t * (120 + rand(i) * 140) * s) % (H + 40)) - 20;
+        const x = rand(i + 7) * W + Math.sin(t * 1.3 + i) * 30 * s;
+        g.save();
+        g.translate(x, y);
+        g.rotate(t * (1 + rand(i + 5) * 3) + i);
+        g.globalAlpha = 0.85;
+        g.fillStyle = cols[i % cols.length];
+        g.fillRect(-7 * s, -3 * s, 14 * s * Math.abs(Math.cos(t * 2 + i)) + 2 * s, 6 * s);
+        g.restore();
+      }
+    }
+    g.restore();
+  }
+  function cuBackground(g, f, c, u) {
+    const { W, H, t } = f;
+    const media = c.bg === "media" && videoBg(g, f);
+    if (media) {
+      if (c.darken > 0) {
+        g.fillStyle = `rgba(0,0,0,${c.darken / 100})`;
+        g.fillRect(0, 0, W, H);
+      }
+    } else if (c.bg === "solid") {
+      g.fillStyle = c.bg1;
+      g.fillRect(0, 0, W, H);
+    } else {
+      const grd = g.createLinearGradient(0, 0, W * 0.35, H);
+      grd.addColorStop(0, c.bg1);
+      grd.addColorStop(1, c.bg2);
+      g.fillStyle = grd;
+      g.fillRect(0, 0, W, H);
+      if (c.bg === "animated") {
+        // two colour blooms drifting slowly, breathing with the beat
+        const p = f.pulse();
+        [
+          [c.bg2, 0.3 + 0.22 * Math.sin(t * 0.19), 0.3 + 0.12 * Math.cos(t * 0.23)],
+          [c.accent, 0.7 + 0.2 * Math.cos(t * 0.17), 0.72 + 0.1 * Math.sin(t * 0.21)],
+        ].forEach(([col, x, y], i) => {
+          const r = H * (0.5 + 0.06 * p);
+          const b = g.createRadialGradient(W * x, H * y, 0, W * x, H * y, r);
+          b.addColorStop(0, hexA(col, (i ? 0.32 : 0.55) + 0.12 * p));
+          b.addColorStop(1, hexA(col, 0));
+          g.fillStyle = b;
+          g.fillRect(0, 0, W, H);
+        });
+      }
+    }
+    if (c.vignette) {
+      const v = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.75);
+      v.addColorStop(0, "rgba(0,0,0,0)");
+      v.addColorStop(1, "rgba(0,0,0,0.55)");
+      g.fillStyle = v;
+      g.fillRect(0, 0, W, H);
+    }
+    if (c.particles && c.particles !== "none") cuParticles(g, f, c.particles, c.accent);
+  }
+  /** One word with the chosen effect (shadow, outline, glow). */
+  function cuWord(g, c, label, x, y, size, col) {
+    if (c.effect === "outline") {
+      g.lineJoin = "round";
+      g.lineWidth = size * 0.11;
+      g.strokeStyle = c.effectColor;
+      g.strokeText(label, x, y);
+    } else if (c.effect === "shadow") {
+      g.shadowColor = hexA(c.effectColor, 0.75);
+      g.shadowBlur = size * 0.2;
+      g.shadowOffsetY = size * 0.06;
+    } else if (c.effect === "glow") {
+      g.shadowColor = col;
+      g.shadowBlur = size * 0.5;
+      g.fillStyle = col;
+      g.fillText(label, x, y);
+    }
+    g.fillStyle = col;
+    g.fillText(label, x, y);
+    g.shadowColor = "transparent";
+    g.shadowBlur = 0;
+    g.shadowOffsetY = 0;
+  }
+  const custom = {
+    id: "custom",
+    label: "Personalizado",
+    tag: "Tu estilo",
+    fonts: ["800 100px Montserrat"],
+    get wordBased() {
+      return CU_WORD_ANIMS[cuCfg().anim] ? "spread" : false;
+    },
+    draw(g, f) {
+      const c = cuCfg();
+      const { W, H, safe, t } = f;
+      const u = safe.w / 825;
+      cuBackground(g, f, c, u);
+      // song title and artist, small at the top
+      if (c.showMeta && (f.meta.title || f.meta.artist)) {
+        g.save();
+        g.textAlign = "center";
+        g.textBaseline = "top";
+        g.fillStyle = hexA(c.color, 0.85);
+        g.font = cuFont(c, u * 34);
+        g.fillText(fitText(g, upper(f.meta.title || ""), safe.w * 0.9), W / 2, safe.y + u * 40);
+        g.font = `500 ${u * 26}px Inter, sans-serif`;
+        g.fillStyle = hexA(c.color, 0.6);
+        g.fillText(fitText(g, f.meta.artist || "", safe.w * 0.9), W / 2, safe.y + u * 86);
+        g.restore();
+      }
+      // progress through the song
+      const last = f.lines[f.lines.length - 1];
+      if (c.progress && last) {
+        const end = Math.max(last.end || 0, last.start + 3);
+        const bw = safe.w * 0.7;
+        const bx = (W - bw) / 2;
+        const by = safe.y + safe.h - u * 40;
+        g.fillStyle = hexA(c.color, 0.22);
+        rrect(g, bx, by, bw, u * 6, u * 3);
+        g.fill();
+        g.fillStyle = c.accent;
+        rrect(g, bx, by, Math.max(u * 6, bw * clamp(t / end)), u * 6, u * 3);
+        g.fill();
+      }
+      if (c.handle) {
+        g.save();
+        g.textAlign = "right";
+        g.textBaseline = "bottom";
+        g.font = `600 ${u * 26}px Inter, sans-serif`;
+        g.fillStyle = hexA(c.color, 0.7);
+        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 64 : u * 24));
+        g.restore();
+      }
+      const L = f.lines[f.current];
+      if (!L || !L.words.length) return;
+      g.save();
+      g.translate(f.shift.x, f.shift.y);
+      const prev = f.lines[f.current - 1];
+      const since = t - L.start;
+      // the outgoing line fades up and away while the new one comes in
+      if (prev && prev.words.length && since < 0.28) this.drawLine(g, f, c, prev, u, { exit: since / 0.28 });
+      this.drawLine(g, f, c, L, u, {});
+      g.restore();
+    },
+    drawLine(g, f, c, L, u, o) {
+      const { safe } = f;
+      const t = f.t;
+      let size = u * 92 * (c.size / 100);
+      const words = L.words.map((w) => ({ ...w, label: c.upper ? upper(w.text) : w.text }));
+      if ("letterSpacing" in g) g.letterSpacing = `${(c.spacing || 0) * u}px`;
+      const maxW = safe.w * 0.88;
+      const wrapAt = (sz) => wrapCached(g, `cu|${c.font}|${c.upper ? 1 : 0}|${c.spacing}|${L.index}|${L.text}|${Math.round(sz * 10)}`, words, () => cuFont(c, sz), maxW, sz * 0.28);
+      let rows = wrapAt(size);
+      // a single word wider than the frame shrinks the whole line
+      const widest = Math.max(...rows.map((r) => r.width));
+      if (widest > maxW) {
+        size *= maxW / widest;
+        rows = wrapAt(size);
+      }
+      const lh = size * (c.lineHeight || 1.15);
+      if (rows.length * lh > safe.h * 0.55) {
+        size *= (safe.h * 0.55) / (rows.length * lh);
+        rows = wrapAt(size);
+      }
+      const lineH = size * (c.lineHeight || 1.15);
+      const next = !o.exit && c.next ? f.lines[L.index + 1] : null;
+      const nextSize = size * 0.5;
+      const blockH = rows.length * lineH + (next ? nextSize * 1.9 : 0);
+      let y0 = c.pos === "top" ? safe.y + safe.h * 0.16 : c.pos === "bottom" ? safe.y + safe.h * 0.86 - blockH : safe.y + (safe.h - blockH) / 2;
+      const xOf = (row) => (c.align === "left" ? safe.x + (safe.w - maxW) / 2 : c.align === "right" ? safe.x + (safe.w + maxW) / 2 - row.width : safe.x + (safe.w - row.width) / 2);
+      // line-level motion
+      const a = ease.out((t - L.start) / 0.4);
+      let alpha = 1;
+      let dy = 0;
+      let k = 1;
+      if (o.exit != null) {
+        alpha = 1 - o.exit;
+        dy = -o.exit * size * 0.5;
+      } else if (c.anim === "fade") alpha = a;
+      else if (c.anim === "rise") {
+        alpha = a;
+        dy = (1 - a) * size * 0.7;
+      } else if (c.anim === "pop") {
+        alpha = clamp((t - L.start) / 0.12);
+        k = 0.6 + 0.4 * ease.back((t - L.start) / 0.38);
+      } else if (c.anim === "zoom") {
+        alpha = a;
+        k = 1.35 - 0.35 * a;
+      }
+      if (c.beat && o.exit == null) k *= 1 + 0.045 * f.pulse();
+      if (alpha <= 0) return;
+      g.save();
+      g.globalAlpha = alpha;
+      const cx = safe.x + safe.w / 2;
+      const cy = y0 + blockH / 2;
+      g.translate(cx, cy + dy);
+      g.scale(k, k);
+      g.translate(-cx, -cy);
+      g.font = cuFont(c, size);
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      const key = c.keyword && !CU_WORD_ANIMS[c.anim] ? longestIndex(L.words) : -1;
+      const j = activeWord(L, t);
+      // typewriter: letters appear at a steady pace across the line
+      let chars = Infinity;
+      if (c.anim === "typewriter" && o.exit == null) {
+        const total = L.text.length;
+        const dur = Math.min(total * 0.05, Math.max(0.4, ((L.end || L.start + 3) - L.start) * 0.6));
+        chars = Math.floor(total * clamp((t - L.start) / dur));
+      }
+      let used = 0;
+      let caret = null;
+      rows.forEach((row, ri) => {
+        const y = y0 + ri * lineH + lineH / 2;
+        const x0 = xOf(row);
+        // a box (or the highlighter) behind the whole row
+        if (c.effect === "box" || (c.effect === "marker" && !CU_WORD_ANIMS[c.anim])) {
+          const pad = size * 0.22;
+          g.fillStyle = c.effect === "box" ? hexA(c.effectColor, 0.82) : c.accent;
+          rrect(g, x0 - pad, y - lineH / 2 + size * 0.04, row.width + pad * 2, lineH - size * 0.08, size * (c.effect === "box" ? 0.18 : 0.08));
+          g.fill();
+        }
+        row.items.forEach((it) => {
+          const w = it.w;
+          const x = x0 + it.x;
+          let label = w.label;
+          if (chars !== Infinity) {
+            const left = chars - used;
+            used += label.length + 1;
+            if (left <= 0) return;
+            if (left < label.length) {
+              label = label.slice(0, left);
+              caret = { x: x + g.measureText(label).width, y };
+            } else caret = { x: x + it.width, y };
+          }
+          const on = c.effect === "marker" && !CU_WORD_ANIMS[c.anim];
+          let col = on ? c.effectColor : w.index === key ? c.accent : c.color;
+          g.save();
+          if (c.anim === "words" && o.exit == null) {
+            const p = sung(w, t);
+            if (p <= 0) return g.restore();
+            g.globalAlpha *= p;
+            g.translate(0, (1 - ease.out(p)) * size * 0.35);
+          } else if (c.anim === "bounce" && o.exit == null && w.index === j) {
+            const p = ease.back(sung(w, t));
+            const s = 1 + 0.18 * (1 - Math.abs(1 - p));
+            g.translate(x + it.width / 2, y);
+            g.scale(s, s);
+            g.translate(-(x + it.width / 2), -y);
+            col = c.accent;
+          } else if (c.anim === "bounce" && w.index > j && o.exit == null) g.globalAlpha *= c.dim ? 0.55 : 1;
+          if (c.effect === "marker" && CU_WORD_ANIMS[c.anim] && w.t0 <= t) {
+            // the highlighter follows the voice word by word
+            const pad = size * 0.15;
+            g.fillStyle = c.accent;
+            rrect(g, x - pad, y - size * 0.6, (it.width + pad * 2) * (c.anim === "karaoke" ? wipe(w, t) : 1), size * 1.2, size * 0.08);
+            g.fill();
+            col = c.effectColor;
+          }
+          if (c.anim === "karaoke" && o.exit == null) {
+            cuWord(g, c, label, x, y, size, c.dim ? hexA(c.color, 0.5) : c.color);
+            const p = wipe(w, t);
+            if (p > 0) {
+              g.beginPath();
+              g.rect(x - size, y - lineH, size + it.width * p, lineH * 2);
+              g.clip();
+              cuWord(g, c, label, x, y, size, c.effect === "marker" ? c.effectColor : c.accent);
+            }
+          } else cuWord(g, c, label, x, y, size, col);
+          g.restore();
+        });
+      });
+      if (caret && chars < L.text.length && Math.floor(t * 2.5) % 2 === 0) {
+        g.fillStyle = c.accent;
+        g.fillRect(caret.x + size * 0.06, caret.y - size * 0.45, size * 0.07, size * 0.9);
+      }
+      // the next line waits underneath, faint
+      if (next && next.words.length) {
+        g.font = cuFont(c, nextSize);
+        g.globalAlpha = alpha * 0.45;
+        g.textAlign = c.align === "left" ? "left" : c.align === "right" ? "right" : "center";
+        const nx = c.align === "left" ? safe.x + (safe.w - maxW) / 2 : c.align === "right" ? safe.x + (safe.w + maxW) / 2 : safe.x + safe.w / 2;
+        const label = c.upper ? upper(next.text) : next.text;
+        g.fillStyle = c.color;
+        g.fillText(fitText(g, label, maxW), nx, y0 + rows.length * lineH + nextSize * 1.1);
+      }
+      g.restore();
+    },
+  };
+
+  const PRESETS = { custom, kinetic, cinematic, neon, minimal, karaoke, wordpop: wordPop, chrome, notes, aurora, couture, blackout, vhs, vinilo, adrenalina, street, broadcast, recorte, lluvia, nieve, tormenta, otono, live, noticiero, radio, stream, karasing, kararetro, karastage };
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
@@ -11003,6 +11639,139 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       return Promise.all(all.map((f) => document.fonts.load(f).catch(() => null)));
     },
   };
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
+// Wave Music · PERSONALIZADO
+// The options of the "Personalizado" style (its draw lives in presets.js):
+// typeface, colours, effect, animation, background, particles and extras.
+// Any other style can be the starting point ("Personalizar este estilo"),
+// and a look can be saved as one of the user's own templates.
+(function (WM) {
+  const DEFAULTS = {
+    font: "montserrat",
+    upper: true,
+    size: 100,
+    spacing: 0,
+    lineHeight: 1.15,
+    align: "center",
+    pos: "center",
+    color: "#ffffff",
+    accent: "#ffd23f",
+    effect: "shadow",
+    effectColor: "#000000",
+    anim: "rise",
+    beat: true,
+    next: false,
+    keyword: false,
+    dim: true,
+    bg: "animated",
+    bg1: "#0d0b1a",
+    bg2: "#5b2bd6",
+    darken: 35,
+    vignette: true,
+    particles: "none",
+    showMeta: false,
+    progress: false,
+    handle: "",
+  };
+  // the weight each typeface looks best in (and that is self-hosted)
+  const WEIGHTS = { anton: 400, montserrat: 800, poppins: 900, inter: 800, league: 400, barlow: 700, bodoni: 600, cormorant: 600, instrument: 400, orbitron: 900, shrikhand: 400, vt323: 400 };
+
+  // Ready looks to start from
+  const STARTERS = [
+    { name: "Clásico", cfg: {} },
+    { name: "Neón", cfg: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#2a0a5e", particles: "stars", size: 88 } },
+    { name: "Karaoke", cfg: { font: "poppins", color: "#ffffff", accent: "#22d3f5", effect: "outline", effectColor: "#0a0a14", anim: "karaoke", bg: "gradient", bg1: "#0a1030", bg2: "#30106a", next: true, particles: "none" } },
+    { name: "Minimal", cfg: { font: "instrument", upper: false, color: "#16140f", accent: "#c0392b", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 } },
+    { name: "Cine", cfg: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 45, vignette: true, particles: "none", size: 105, spacing: 1 } },
+    { name: "Marcador", cfg: { font: "poppins", color: "#ffffff", accent: "#ffe600", effect: "marker", effectColor: "#111111", anim: "words", bg: "media", darken: 25, vignette: false } },
+    { name: "Calle", cfg: { font: "anton", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 20, size: 110 } },
+    { name: "Sueño", cfg: { font: "montserrat", upper: false, color: "#ffffff", accent: "#ffb3d9", effect: "glow", anim: "words", bg: "animated", bg1: "#1a0f2e", bg2: "#ff6fb5", particles: "bokeh", beat: false } },
+  ];
+
+  // Each style as a starting point for Personalizado (the closest look)
+  const BASES = {
+    kinetic: { font: "anton", accent: "#ffe14d", effect: "none", anim: "pop", bg: "animated", bg1: "#08080c", bg2: "#3a0f2a", size: 115 },
+    cinematic: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 40, size: 105 },
+    neon: { font: "orbitron", color: "#e8fbff", accent: "#ff3df0", effect: "glow", anim: "pop", bg: "animated", bg1: "#05010f", bg2: "#1b0b4a", particles: "stars", size: 88 },
+    minimal: { font: "instrument", upper: false, color: "#16140f", accent: "#16140f", effect: "none", anim: "fade", beat: false, bg: "solid", bg1: "#f2eee6", vignette: false, size: 110 },
+    karaoke: { font: "montserrat", color: "#ffffff", accent: "#ffd23f", effect: "outline", effectColor: "#0b0b16", anim: "karaoke", bg: "media", darken: 40, next: true },
+    notes: { font: "inter", upper: false, color: "#1d1d1f", accent: "#e8a400", effect: "none", anim: "words", beat: false, bg: "solid", bg1: "#fffaf0", vignette: false, align: "left", pos: "top", size: 80 },
+    aurora: { font: "inter", upper: false, color: "#ffffff", accent: "#7df9c4", effect: "glow", anim: "rise", bg: "media", darken: 30, particles: "stars" },
+    couture: { font: "bodoni", color: "#ffffff", accent: "#ffffff", effect: "none", anim: "fade", beat: false, bg: "media", darken: 30, spacing: 4, size: 95 },
+    blackout: { font: "league", color: "#ffffff", accent: "#ff2d2d", effect: "none", anim: "words", bg: "solid", bg1: "#000000", vignette: false, size: 140 },
+    vhs: { font: "vt323", color: "#f2f2f2", accent: "#ff4fd8", effect: "glow", anim: "typewriter", bg: "media", darken: 35, size: 120 },
+    vinilo: { font: "instrument", upper: false, color: "#f6e7c8", accent: "#ff9a3c", effect: "shadow", anim: "fade", beat: false, bg: "gradient", bg1: "#1a0e08", bg2: "#5a2a12", particles: "bokeh" },
+    adrenalina: { font: "barlow", color: "#ffffff", accent: "#ff3b1f", effect: "shadow", anim: "pop", bg: "media", darken: 15, size: 120 },
+    street: { font: "poppins", color: "#ffffff", accent: "#b8ff4d", effect: "box", effectColor: "#000000", anim: "bounce", bg: "media", darken: 15 },
+    broadcast: { font: "barlow", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#0b2a6b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left", showMeta: true },
+    recorte: { font: "anton", color: "#ffffff", accent: "#ff4d8d", effect: "outline", anim: "pop", bg: "media", darken: 25, size: 125 },
+    lluvia: { font: "montserrat", upper: false, color: "#e9f1ff", accent: "#8cc7ff", effect: "shadow", anim: "fade", bg: "media", darken: 35, particles: "rain", beat: false },
+    nieve: { font: "cormorant", upper: false, color: "#ffffff", accent: "#cfe8ff", effect: "glow", anim: "fade", bg: "media", darken: 25, particles: "snow", beat: false },
+    tormenta: { font: "league", color: "#eaf2ff", accent: "#9ecbff", effect: "glow", anim: "pop", bg: "media", darken: 40, particles: "rain", size: 130 },
+    otono: { font: "cormorant", upper: false, color: "#fff4e6", accent: "#ff9a3c", effect: "shadow", anim: "rise", bg: "media", darken: 30, beat: false },
+    live: { font: "montserrat", color: "#ffffff", accent: "#ff2d55", effect: "box", effectColor: "#000000", anim: "words", bg: "media", darken: 0, pos: "bottom" },
+    noticiero: { font: "montserrat", color: "#ffffff", accent: "#ffd400", effect: "box", effectColor: "#b3001b", anim: "rise", bg: "media", darken: 0, pos: "bottom", align: "left" },
+    radio: { font: "montserrat", color: "#ffffff", accent: "#ff9500", effect: "shadow", anim: "words", bg: "media", darken: 30, showMeta: true },
+    stream: { font: "poppins", color: "#ffffff", accent: "#9146ff", effect: "box", effectColor: "#9146ff", anim: "words", bg: "media", darken: 0, pos: "bottom" },
+    karasing: { font: "poppins", color: "#ffffff", accent: "#ff3d8b", effect: "outline", effectColor: "#14001f", anim: "karaoke", bg: "animated", bg1: "#14001f", bg2: "#ff3d8b", next: true },
+    kararetro: { font: "barlow", color: "#ffffff", accent: "#ffe600", effect: "outline", effectColor: "#1a0033", anim: "karaoke", bg: "gradient", bg1: "#1a0033", bg2: "#ff2fa0", next: true },
+    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", particles: "sparkles", next: true },
+  };
+
+  const KEY_CUR = "wm-custom-cur";
+  const KEY_TPL = "wm-custom-tpls";
+  const read = (k, d) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(k));
+      return v == null ? d : v;
+    } catch {
+      return d;
+    }
+  };
+  const write = (k, v) => {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+    } catch {
+      /* private mode: kept for this visit only */
+    }
+  };
+
+  const api = {
+    DEFAULTS,
+    STARTERS,
+    BASES,
+    cfg: { ...DEFAULTS, ...read(KEY_CUR, {}) },
+    familyOf(id) {
+      const f = WM.Presets && WM.Presets.FONTS.find((x) => x.id === id);
+      return f ? f.family : "Montserrat, sans-serif";
+    },
+    weightOf: (id) => WEIGHTS[id] || 800,
+    /** Change some options (and remember them). */
+    set(patch) {
+      Object.assign(api.cfg, patch);
+      write(KEY_CUR, api.cfg);
+    },
+    /** Start over from a look: the defaults plus its own choices. */
+    apply(patch) {
+      api.cfg = { ...DEFAULTS, ...patch };
+      write(KEY_CUR, api.cfg);
+    },
+    templates: () => read(KEY_TPL, []),
+    saveTemplate(name) {
+      const list = api.templates().filter((x) => x.name !== name);
+      list.push({ name, cfg: { ...api.cfg } });
+      write(KEY_TPL, list);
+    },
+    deleteTemplate(name) {
+      write(
+        KEY_TPL,
+        api.templates().filter((x) => x.name !== name)
+      );
+    },
+  };
+  WM.Custom = api;
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -14299,17 +15068,154 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     };
   }
 
+  // ---------- Personalizado: el editor de estilo ----------
+  const CU = WM.Custom;
+  // "Video o foto" borrows the background block of the video styles
+  const bgvAnchor = document.createComment("video-opts");
+  $("video-opts").before(bgvAnchor);
+  const WORD_ANIMS = ["words", "karaoke", "bounce"];
+  {
+    const sel = $("cu-font");
+    sel.innerHTML = WM.Presets.FONTS.map((f) => `<option value="${f.id}" style="font-family:${f.family.replace(/"/g, "'")}">${f.label}</option>`).join("");
+    sel.onchange = () => cuChange({ font: sel.value });
+  }
+  const cuOut = {
+    size: (v) => v + "%",
+    spacing: (v) => (v > 0 ? "+" : "") + v,
+    lineHeight: (v) => Number(v).toFixed(2),
+    darken: (v) => v + "%",
+  };
+  document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
+    const key = el.dataset.cu;
+    if (el.tagName === "DIV") {
+      el.querySelectorAll("button").forEach((b) => {
+        b.onclick = () => cuChange({ [key]: b.dataset.v === "true" ? true : b.dataset.v === "false" ? false : b.dataset.v });
+      });
+    } else if (el.type === "checkbox") el.onchange = () => cuChange({ [key]: el.checked });
+    else if (el.type === "range") el.oninput = () => cuChange({ [key]: Number(el.value) });
+    else el.oninput = () => cuChange({ [key]: el.type === "text" ? el.value.trim() : el.value });
+  });
+  function cuChange(patch) {
+    CU.set(patch);
+    cuPaint();
+    needsSnap = true;
+  }
+  /** The controls show the current options. */
+  function cuPaint() {
+    const c = CU.cfg;
+    $("cu-font").value = c.font;
+    document.querySelectorAll("#custom-opts [data-cu]").forEach((el) => {
+      const v = c[el.dataset.cu];
+      if (el.tagName === "DIV") el.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === String(v)));
+      else if (el.type === "checkbox") el.checked = !!v;
+      else if (document.activeElement !== el) el.value = v;
+      const out = el.parentNode.querySelector("output");
+      if (out && cuOut[el.dataset.cu]) out.textContent = cuOut[el.dataset.cu](v);
+    });
+    const media = c.bg === "media";
+    $("cu-bgcolors").hidden = media;
+    $("cu-bg2").hidden = c.bg === "solid";
+    $("cu-darken").hidden = !media;
+    $("cu-keyword").hidden = WORD_ANIMS.includes(c.anim);
+    $("cu-dim").hidden = !(c.anim === "karaoke" || c.anim === "bounce");
+    cuPlaceBgv();
+  }
+  function cuPlaceBgv() {
+    const custom = preview.theme.id === "custom";
+    const v = $("video-opts");
+    if (custom) {
+      $("cu-media").appendChild(v);
+      v.hidden = CU.cfg.bg !== "media";
+    } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
+  }
+  // template chips: a dot with the look's colours
+  function cuChip(name, cfg, onDelete) {
+    const c = { ...CU.DEFAULTS, ...cfg };
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    const dot = document.createElement("i");
+    dot.style.background = c.bg === "media" ? `linear-gradient(135deg, #3a4a5a 50%, ${c.accent} 50%)` : `linear-gradient(135deg, ${c.bg1} 50%, ${c.accent} 50%)`;
+    b.append(dot, name);
+    b.onclick = (ev) => {
+      if (ev.target.classList.contains("cu-x")) return;
+      CU.apply(cfg);
+      cuPaint();
+      needsSnap = true;
+    };
+    if (onDelete) {
+      const x = document.createElement("i");
+      x.className = "cu-x";
+      x.textContent = "×";
+      x.title = "Borrar plantilla";
+      x.onclick = onDelete;
+      b.append(x);
+    }
+    return b;
+  }
+  function cuTemplates() {
+    $("cu-starters").replaceChildren(...CU.STARTERS.map((s) => cuChip(s.name, s.cfg)));
+    const mine = CU.templates();
+    const head = document.createElement("span");
+    head.className = "cu-mine-label";
+    head.textContent = "Mis plantillas";
+    const sub = document.createElement("span");
+    sub.className = "cu-mine-label";
+    sub.textContent = "Para empezar";
+    $("cu-starters").prepend(sub);
+    $("cu-mine").replaceChildren(...(mine.length ? [head] : []), ...mine.map((m) => cuChip(m.name, m.cfg, () => {
+      CU.deleteTemplate(m.name);
+      cuTemplates();
+    })));
+  }
+  $("cu-save").onclick = () => {
+    $("cu-save-form").hidden = !$("cu-save-form").hidden;
+    if (!$("cu-save-form").hidden) $("cu-save-name").focus();
+  };
+  $("cu-save-form").onsubmit = (ev) => {
+    ev.preventDefault();
+    const name = $("cu-save-name").value.trim();
+    if (!name) return $("cu-save-name").focus();
+    CU.saveTemplate(name);
+    $("cu-save-name").value = "";
+    $("cu-save-form").hidden = true;
+    cuTemplates();
+    toast(`Guardada: ${name}`);
+  };
+  $("cu-reset").onclick = () => {
+    CU.apply({});
+    cuPaint();
+    needsSnap = true;
+  };
+  // any style is a starting point: its look goes to Personalizado
+  $("btn-customize").onclick = () => {
+    const from = preview.theme;
+    const base = { ...(CU.BASES[from.id] || {}) };
+    // keep what was already changed on that style
+    const font = WM.Presets.FONTS.find((x) => x.family === preview.font);
+    if (font) base.font = font.id;
+    if (preview.textScale !== 1) base.size = Math.round(((base.size || 100) * preview.textScale) / 5) * 5;
+    CU.apply(base);
+    cuPaint();
+    showCat("todos");
+    chooseStyle("custom");
+    toast(`Partimos de ${from.label}: cambiá lo que quieras`);
+    $("custom-opts").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  cuTemplates();
+  cuPaint();
+
   // ---------- categorías de estilos (Lyrics) ----------
   // each one fills whole rows of the 4-column grid
   const STYLE_CATS = [
     ["todos", "Todos", null],
-    ["populares", "Populares", ["kinetic", "cinematic", "aurora", "wordpop", "karaoke", "notes", "live", "lluvia"]],
+    ["populares", "Populares", ["custom", "kinetic", "cinematic", "aurora", "karaoke", "notes", "live", "lluvia"]],
     ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
     ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
     ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
     ["retro", "Retro", ["vhs", "vinilo", "neon", "radio"]],
     ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
-    ["redes", "Redes", ["wordpop", "notes", "recorte", "karaoke"]],
+    ["redes", "Redes", ["notes", "recorte", "karaoke", "stream"]],
   ];
   // on phones "Todos" opens with 8 styles and grows four (one row) per tap
   var shownCount = 8; // var: chooseStyle may run before this line
@@ -14357,13 +15263,17 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     $("meta-opts").hidden = !(id === "spotify" || id === "minimal" || WM.Themes.get(id).meta);
     $("video-opts").hidden = !WM.Themes.get(id).video;
     // text size stays; the typeface goes back to the new style's own
-    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion";
+    // (Personalizado has all of that in its own editor)
+    $("text-opts").hidden = WM.Themes.get(id).kind !== "motion" || id === "custom";
+    $("custom-opts").hidden = id !== "custom";
+    $("btn-customize").hidden = WM.Themes.get(id).kind !== "motion" || id === "custom";
     // word-paced styles (Word Pop, Blackout) don't offer the phrase mode
     const th = WM.Themes.get(id);
     $("text-mode-field").hidden = th.kind === "motion" && !!WM.Presets.get(th.preset).wordBased;
     $("text-font").value = "";
     preview.font = null;
     preview.setTheme(id);
+    cuPlaceBgv();
     updateBgv();
     updateChatOpts();
     // each style has its own composition: start it centred

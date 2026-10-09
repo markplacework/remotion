@@ -133,12 +133,14 @@
       lyrics: { fontSize: 22, lineHeight: 1.22, gap: 20, activeScale: 1.06 },
     },
     // ---- Lyrics Pro: full-screen motion presets (presets.js) ----
+    // every option is the user's (custom.js)
+    custom: { id: "custom", label: "Personalizado", kind: "motion", preset: "custom", background: { type: "motion" }, meta: true, video: true },
     kinetic: { id: "kinetic", label: "Kinetic Bold", kind: "motion", preset: "kinetic", background: { type: "motion" }, video: true },
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } },
     minimal: { id: "minimal", label: "Minimal", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", background: { type: "motion" }, video: true },
-    wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
+    // Saved, not shown: wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },
     notes: { id: "notes", label: "Notas", kind: "motion", preset: "notes", background: { type: "motion" }, meta: true },
     aurora: { id: "aurora", label: "Aurora", kind: "motion", preset: "aurora", background: { type: "motion" }, meta: true, video: true },

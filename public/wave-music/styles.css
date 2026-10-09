@@ -3214,3 +3214,181 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
 }
+
+/* ---------- Personalizado: the style editor ---------- */
+.customize-btn {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.cu {
+  gap: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.cu-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+.cu-sec:first-child {
+  border-top: 0;
+}
+details.cu-sec:not([open]) {
+  gap: 0;
+}
+.cu-sec summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cu-sec summary::-webkit-details-marker {
+  display: none;
+}
+.cu-sec summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  rotate: 45deg;
+  translate: 0 -2px;
+  transition: rotate 0.2s;
+}
+.cu-sec[open] summary::after {
+  rotate: 225deg;
+  translate: 0 2px;
+}
+.cu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cu-head .btn-link {
+  font-size: 12.5px;
+}
+.cu-save {
+  display: flex;
+  gap: 8px;
+}
+.cu-save input {
+  flex: 1;
+  min-width: 0;
+}
+.cu-save .btn {
+  padding: 0 14px;
+  height: 38px;
+}
+.cu-tpls {
+  margin-top: 0;
+}
+.cu-tpls:empty {
+  display: none;
+}
+.cu-tpls .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cu-tpls .chip i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.cu-tpls .chip .cu-x {
+  margin: -4px -6px -4px 0;
+  padding: 2px 6px;
+  border-radius: 99px;
+  color: var(--faint);
+  font-style: normal;
+}
+.cu-tpls .chip .cu-x:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.cu-mine-label {
+  width: 100%;
+  font-size: 11px;
+  color: var(--faint);
+}
+.cu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cu-row .segmented button {
+  padding: 6px 11px;
+}
+.cu-range {
+  display: grid;
+  grid-template-columns: 82px 1fr 40px;
+  padding: 3px 0;
+  align-items: center;
+  gap: 10px;
+}
+.cu-range input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.cu-range output {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cu-colors {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cu-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.cu-color input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--line-2);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.cu-color input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.cu-color input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+.cu-color input::-moz-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+#cu-media .style-opts {
+  margin-top: 0;
+}
+#cu-reset {
+  margin: 4px 14px 14px;
+  align-self: flex-start;
+  font-size: 12.5px;
+}

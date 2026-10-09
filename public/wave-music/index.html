@@ -434,6 +434,101 @@
             <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
             <div id="styles-classic" class="styles"></div>
           </div>
+          <button type="button" id="btn-customize" class="btn btn-ghost wide customize-btn" hidden>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+            <span>Personalizar este estilo</span>
+          </button>
+          <div id="custom-opts" class="style-opts cu" hidden>
+            <section class="cu-sec">
+              <div class="cu-head"><span class="opt-label">Plantillas</span><button type="button" id="cu-save" class="btn-link">+ Guardar la mía</button></div>
+              <form id="cu-save-form" class="cu-save" hidden>
+                <input id="cu-save-name" type="text" maxlength="28" placeholder="Nombre: Mi canal trap" autocomplete="off" />
+                <button class="btn btn-primary" type="submit">Guardar</button>
+              </form>
+              <div id="cu-mine" class="chips cu-tpls"></div>
+              <div id="cu-starters" class="chips cu-tpls"></div>
+            </section>
+            <details class="cu-sec" open>
+              <summary>Texto</summary>
+              <div class="fields">
+                <label class="field grow"><span>Tipografía</span><select id="cu-font"></select></label>
+              </div>
+              <div class="cu-row"><span class="opt-label">Letras</span><div class="segmented" data-cu="upper"><button type="button" data-v="true">MAYÚSCULAS</button><button type="button" data-v="false">Normal</button></div></div>
+              <div class="cu-row"><span class="opt-label">Alineación</span><div class="segmented" data-cu="align"><button type="button" data-v="left">Izq.</button><button type="button" data-v="center">Centro</button><button type="button" data-v="right">Der.</button></div></div>
+              <div class="cu-row"><span class="opt-label">Posición</span><div class="segmented" data-cu="pos"><button type="button" data-v="top">Arriba</button><button type="button" data-v="center">Centro</button><button type="button" data-v="bottom">Abajo</button></div></div>
+              <label class="cu-range"><span class="opt-label">Tamaño</span><input type="range" data-cu="size" min="50" max="160" step="5" /><output></output></label>
+              <label class="cu-range"><span class="opt-label">Espaciado</span><input type="range" data-cu="spacing" min="-4" max="16" step="1" /><output></output></label>
+              <label class="cu-range"><span class="opt-label">Interlineado</span><input type="range" data-cu="lineHeight" min="0.9" max="1.6" step="0.05" /><output></output></label>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Colores y efecto</summary>
+              <div class="cu-colors">
+                <label class="cu-color"><input type="color" data-cu="color" /><span>Texto</span></label>
+                <label class="cu-color"><input type="color" data-cu="accent" /><span>Destacado</span></label>
+                <label class="cu-color"><input type="color" data-cu="effectColor" /><span>Efecto</span></label>
+              </div>
+              <div class="chips" data-cu="effect">
+                <button type="button" class="chip" data-v="none">Ninguno</button>
+                <button type="button" class="chip" data-v="shadow">Sombra</button>
+                <button type="button" class="chip" data-v="outline">Contorno</button>
+                <button type="button" class="chip" data-v="glow">Brillo</button>
+                <button type="button" class="chip" data-v="box">Caja</button>
+                <button type="button" class="chip" data-v="marker">Resaltador</button>
+              </div>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Animación</summary>
+              <div class="chips" data-cu="anim">
+                <button type="button" class="chip" data-v="fade">Aparecer</button>
+                <button type="button" class="chip" data-v="rise">Subir</button>
+                <button type="button" class="chip" data-v="pop">Pop</button>
+                <button type="button" class="chip" data-v="zoom">Zoom</button>
+                <button type="button" class="chip" data-v="typewriter">Máquina de escribir</button>
+                <button type="button" class="chip" data-v="words">Palabra por palabra</button>
+                <button type="button" class="chip" data-v="karaoke">Karaoke</button>
+                <button type="button" class="chip" data-v="bounce">Salto en la palabra</button>
+              </div>
+              <label class="check"><input type="checkbox" data-cu="beat" /><span>Late con el ritmo</span></label>
+              <label class="check"><input type="checkbox" data-cu="next" /><span>Mostrar la línea que sigue</span></label>
+              <label class="check" id="cu-keyword"><input type="checkbox" data-cu="keyword" /><span>Destacar la palabra clave</span></label>
+              <label class="check" id="cu-dim"><input type="checkbox" data-cu="dim" /><span>Atenuar lo que falta cantar</span></label>
+            </details>
+            <details class="cu-sec" open>
+              <summary>Fondo</summary>
+              <div class="chips" data-cu="bg">
+                <button type="button" class="chip" data-v="solid">Color</button>
+                <button type="button" class="chip" data-v="gradient">Degradé</button>
+                <button type="button" class="chip" data-v="animated">Animado</button>
+                <button type="button" class="chip" data-v="media">Video o foto</button>
+              </div>
+              <div class="cu-colors" id="cu-bgcolors">
+                <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
+                <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
+              </div>
+              <div id="cu-media"></div>
+              <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
+              <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
+              <span class="opt-label">Partículas</span>
+              <div class="chips" data-cu="particles">
+                <button type="button" class="chip" data-v="none">Ninguna</button>
+                <button type="button" class="chip" data-v="sparkles">Brillos</button>
+                <button type="button" class="chip" data-v="stars">Estrellas</button>
+                <button type="button" class="chip" data-v="snow">Nieve</button>
+                <button type="button" class="chip" data-v="rain">Lluvia</button>
+                <button type="button" class="chip" data-v="bokeh">Bokeh</button>
+                <button type="button" class="chip" data-v="confetti">Confeti</button>
+              </div>
+            </details>
+            <details class="cu-sec">
+              <summary>Extras</summary>
+              <label class="check"><input type="checkbox" data-cu="showMeta" /><span>Título y artista arriba</span></label>
+              <label class="check"><input type="checkbox" data-cu="progress" /><span>Barra de progreso</span></label>
+              <div class="fields">
+                <label class="field grow"><span>Tu firma</span><input type="text" data-cu="handle" maxlength="30" placeholder="@tucanal" /></label>
+              </div>
+            </details>
+            <button type="button" id="cu-reset" class="btn-link">Volver a empezar</button>
+          </div>
           <div id="spotify-opts" class="style-opts" hidden>
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
@@ -764,6 +859,7 @@
     <script src="js/themes.js"></script>
     <script src="js/motion.js"></script>
     <script src="js/presets.js"></script>
+    <script src="js/custom.js"></script>
     <script src="js/chrome.js"></script>
     <script src="js/bgvideo.js"></script>
     <script src="js/preview.js"></script>
