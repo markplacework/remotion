@@ -36,8 +36,9 @@
   // H.264 + AAC only: that is what plays everywhere (phones, WhatsApp, TikTok)
   const CODECS = {
     video: [
-      { codec: "avc1.640028", mux: "avc" },
+      // Main profile first: the one every phone, TV and desktop player decodes
       { codec: "avc1.4d0028", mux: "avc" },
+      { codec: "avc1.640028", mux: "avc" },
       { codec: "avc1.42e028", mux: "avc" },
     ],
     audio: [{ codec: "mp4a.40.2", mux: "aac" }],
@@ -47,6 +48,8 @@
     let video = null;
     for (const c of CODECS.video) {
       const cfg = { codec: c.codec, width: 1080, height: 1920, bitrate: 8_000_000, framerate: FPS };
+      // length-prefixed NAL units (what MP4 stores), never Annex B start codes
+      if (c.mux === "avc") cfg.avc = { format: "avc" };
       try {
         const r = await VideoEncoder.isConfigSupported(cfg);
         if (r.supported) {

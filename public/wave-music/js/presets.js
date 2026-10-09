@@ -5955,6 +5955,7 @@
       g.restore();
       // folio at the foot of the page
       g.fillStyle = NEWS.ink;
+      g.font = NEWS_SANS(600, u * 15);
       const fy = safe.y + safe.h - u * (f.mockup ? 70 : 50);
       g.fillRect(x0, fy - u * 30, x1 - x0, u * 1);
       g.fillStyle = NEWS.mute;

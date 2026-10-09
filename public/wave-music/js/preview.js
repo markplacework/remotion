@@ -55,11 +55,19 @@
     const lyrics = theme.kind === "lyrics";
     if (theme.kind === "motion") {
       if (framing === "video") {
-        return { id: "video", stageW: 1080, stageH: 1920, bg: { x: 0, y: 0, w: 1080, h: 1920 }, chat: NO_CHAT, motion: true, safe: MOTION_SAFE.video, fit: "cover" };
+        const scene = { W: 1080, H: 1920, safe: MOTION_SAFE.video, s: 1, ox: 0, oy: 0, vis: { x: 0, y: 0, w: 1080, h: 1920 } };
+        return { id: "video", stageW: 1080, stageH: 1920, bg: { x: 0, y: 0, w: 1080, h: 1920 }, chat: NO_CHAT, motion: true, safe: MOTION_SAFE.video, scene, fit: "cover" };
       }
       const M = MOCKUPS.motion;
       const c = M.crop;
+      // the phone shows the final 1080x1920 video itself, filling its screen
+      // (as a phone plays it), so the mockup and the download always match
+      const s = Math.max(M.bg.w / 1080, M.bg.h / 1920);
+      const ox = (M.bg.w - 1080 * s) / 2;
+      const oy = (M.bg.h - 1920 * s) / 2;
+      const scene = { W: 1080, H: 1920, safe: MOTION_SAFE.video, s, ox, oy, vis: { x: -ox / s, y: -oy / s, w: M.bg.w / s, h: M.bg.h / s } };
       return {
+        scene,
         id: "mockup",
         stageW: c.w,
         stageH: c.h,
@@ -228,15 +236,19 @@
       if (!c) return null;
       const r = c.getBoundingClientRect();
       const L = this.layout;
-      return { x: ((cx - r.left) * L.bg.w) / (r.width || 1), y: ((cy - r.top) * L.bg.h) / (r.height || 1) };
+      const S = L.scene;
+      const x = ((cx - r.left) * L.bg.w) / (r.width || 1);
+      const y = ((cy - r.top) * L.bg.h) / (r.height || 1);
+      return { x: (x - S.ox) / S.s, y: (y - S.oy) / S.s };
     }
     pointerToOffset(dx, dy) {
       const c = this.motionCanvas;
       if (!c) return { x: 0, y: 0 };
       const r = c.getBoundingClientRect();
       const L = this.layout;
-      const k = L.bg.w / (r.width || 1);
-      return { x: (dx * k) / L.safe.w, y: (dy * k) / L.safe.h };
+      const S = L.scene;
+      const k = L.bg.w / (r.width || 1) / S.s;
+      return { x: (dx * k) / S.safe.w, y: (dy * k) / S.safe.h };
     }
     setSpotifyColor(id) {
       this.spotifyColor = id;
@@ -415,15 +427,24 @@
         this.lines = WM.Motion.prepare(this.timeline, mode);
       }
       const g = c.getContext("2d");
+      const S = L.scene;
       g.setTransform(w / L.bg.w, 0, 0, h / L.bg.h, 0, 0);
+      // (the mockup: the video frame scaled into the phone's screen)
+      if (S.s !== 1 || S.ox || S.oy) {
+        g.fillStyle = "#000";
+        g.fillRect(0, 0, L.bg.w, L.bg.h);
+        g.translate(S.ox, S.oy);
+        g.scale(S.s, S.s);
+      }
       if (WM.Fx) WM.Fx.sync(t, playing);
-      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: L.bg.w, H: L.bg.h, safe: L.safe, energy: WM.Energy.current, mockup: L.id === "mockup", meta: this.meta, offset: this.draggable ? this.offset : null, video: WM.BgVideo.showsIn(this.theme) ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
-      if (this.guides) this.drawGuides(g, L);
+      preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: S.W, H: S.H, safe: S.safe, energy: WM.Energy.current, mockup: false, meta: this.meta, offset: this.draggable ? this.offset : null, video: WM.BgVideo.showsIn(this.theme) ? WM.BgVideo.at(t, playing) : null, textScale: this.textScale, font: this.font }));
+      if (this.guides) this.drawGuides(g, S);
     }
 
     /** Preview only: safe area and the centre lines the lyric snaps to. */
-    drawGuides(g, L) {
-      const s = L.safe;
+    drawGuides(g, S) {
+      const s = S.safe;
+      const L = { bg: { w: S.W, h: S.H } };
       const u = s.w / 825;
       g.save();
       g.setLineDash([u * 10, u * 8]);

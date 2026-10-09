@@ -1026,7 +1026,7 @@
     if (P && P.boxes) {
       const p = preview.pointerToCanvas(e.clientX, e.clientY);
       const L = preview.layout;
-      const hit = p && P.boxes(L.bg.w, L.bg.h, L.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      const hit = p && P.boxes(L.scene.W, L.scene.H, L.scene.safe, preview.meta).reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
       if (hit) {
         drag.el = hit.key;
         drag.box = hit;
@@ -1051,8 +1051,10 @@
       const L = preview.layout;
       const bx = drag.box;
       const lim = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-      let x = lim(drag.from.x + d.x, drag.from.x - bx.x / L.safe.w, drag.from.x + (L.bg.w - bx.w - bx.x) / L.safe.w);
-      const y = lim(drag.from.y + d.y, drag.from.y - bx.y / L.safe.h, drag.from.y + (L.bg.h - bx.h - bx.y) / L.safe.h);
+      const V = L.scene.vis;
+      const sf = L.scene.safe;
+      let x = lim(drag.from.x + d.x, drag.from.x - (bx.x - V.x) / sf.w, drag.from.x + (V.x + V.w - bx.w - bx.x) / sf.w);
+      const y = lim(drag.from.y + d.y, drag.from.y - (bx.y - V.y) / sf.h, drag.from.y + (V.y + V.h - bx.h - bx.y) / sf.h);
       const snapX = Math.abs(x) < SNAP;
       if (snapX) x = 0;
       setExtraOffset(drag.el, { x, y });
