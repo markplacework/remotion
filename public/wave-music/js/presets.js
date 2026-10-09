@@ -352,16 +352,17 @@
       g.fillStyle = sun;
       g.fillRect(0, 0, W, H);
       g.globalCompositeOperation = "lighter";
-      // volumetric light shafts from the top corner
+      // volumetric light shafts from the top corner, sweeping slowly like
+      // stage lights, each at its own pace
       for (let i = 0; i < 4; i++) {
-        const a = -0.45 + i * 0.17 + Math.sin(t * 0.08 + i) * 0.03;
+        const a = -0.45 + i * 0.17 + Math.sin(t * (0.19 + i * 0.06) + i * 1.7) * 0.15 + Math.sin(t * 0.07 + i) * 0.05;
         const len = H * 1.3;
         const w = W * (0.09 + rand(i * 4.1) * 0.1);
         g.save();
-        g.translate(W * 0.92, -H * 0.04);
+        g.translate(W * (0.92 + Math.sin(t * 0.11 + i) * 0.03), -H * 0.04);
         g.rotate(a + 0.5);
         const gr = g.createLinearGradient(0, 0, 0, len);
-        const al = (0.05 + 0.05 * rand(i * 2.7)) * (0.8 + 0.2 * Math.sin(t * 0.5 + i * 2));
+        const al = (0.05 + 0.05 * rand(i * 2.7)) * (0.7 + 0.3 * Math.sin(t * 0.6 + i * 2)) * (1 + 0.25 * pulse);
         gr.addColorStop(0, `rgba(255,214,170,${al})`);
         gr.addColorStop(1, "rgba(255,214,170,0)");
         g.fillStyle = gr;
