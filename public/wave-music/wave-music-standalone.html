@@ -8985,8 +8985,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   // 9. COUTURE — black & white fashion film: Didone capitals, cuts on every word
   // ======================================================================
   const COUT_FONT = (size) => `500 ${size}px ${fam("'Bodoni Moda', Didot, 'Times New Roman', serif")}`;
-  // 0: white studio, 1: black, 2: white band over black
-  const COUT_LOOKS = [0, 1, 0, 2, 1, 0, 1, 2];
+  // 0: white studio, 1: black (always full screen; the white band over black is out)
+  const COUT_LOOKS = [0, 1, 0, 0, 1, 0, 1, 1];
   const couture = {
     id: "couture",
     label: "Couture",
