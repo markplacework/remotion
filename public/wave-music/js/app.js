@@ -200,9 +200,21 @@
       if (enteringKaraoke) chooseStyle("karaoke");
       ensureInstrumental();
     } else if (audio.playbackUrl) audio.usePlayback(null);
+    if (view === "lyrics") prefetchWeather();
     needsSnap = true;
   }
   window.addEventListener("hashchange", route);
+  // the weather styles' footage (and their realistic effects) download a few
+  // seconds after the Lyrics tool opens, so picking one shows it at once
+  let weatherFetched = false;
+  function prefetchWeather() {
+    if (weatherFetched) return;
+    weatherFetched = true;
+    setTimeout(() => {
+      ["nieve", "lluvia", "otono", "tormenta"].forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
+      ["snow", "leak"].forEach((id) => WM.Fx.load(id).catch(() => {}));
+    }, 2500);
+  }
 
   // Home: slow sound waves behind the hero, only while the home is shown.
   (function homeWaves() {

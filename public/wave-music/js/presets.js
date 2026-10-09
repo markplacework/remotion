@@ -3816,7 +3816,6 @@
 
   // LLUVIA — a rainy night seen through a wet window
   const RAIN_FONT = (size) => `600 ${size}px ${fam("Montserrat, 'Arial Black', sans-serif")}`;
-  const BOKEH = ["255,180,90", "255,90,90", "90,200,255", "255,220,150", "190,120,255"];
   const lluvia = {
     id: "lluvia",
     label: "Lluvia",
@@ -3834,23 +3833,6 @@
         bg.addColorStop(1, "#1a1230");
         g.fillStyle = bg;
         g.fillRect(0, 0, W, H);
-        // out-of-focus city lights behind the glass
-        g.save();
-        g.globalCompositeOperation = "lighter";
-        for (let i = 0; i < 26; i++) {
-          const x = rand(i * 2.9) * W + Math.sin(t * 0.2 + i) * u * 8;
-          const y = H * (0.25 + rand(i * 5.3) * 0.7);
-          const r = u * (40 + rand(i * 7.1) * 90);
-          const gr = g.createRadialGradient(x, y, 0, x, y, r);
-          const c = BOKEH[i % BOKEH.length];
-          const a = 0.18 + 0.12 * Math.sin(t * 0.7 + i * 2);
-          gr.addColorStop(0, `rgba(${c},${a})`);
-          gr.addColorStop(0.7, `rgba(${c},${a * 0.6})`);
-          gr.addColorStop(1, `rgba(${c},0)`);
-          g.fillStyle = gr;
-          g.fillRect(x - r, y - r, r * 2, r * 2);
-        }
-        g.restore();
       }
       // falling rain behind the glass (the realistic rain of fx.js)
       if (WM.Fx) WM.Fx.paint(g, W, H, "rain", 90, t);
@@ -3859,45 +3841,6 @@
       g.save();
       place(g, f);
       softLine(g, f, L, u, { key: "ll", font: RAIN_FONT, size: 86, col: "#f2f6ff", heroCol: "#9fd4ff", hero: true, blur: 30, glow: "rgba(150,200,255,0.45)", drop: 14 });
-      g.restore();
-    },
-    /** Drops on the window: still beads, and a few that run down leaving a trail. */
-    glass(g, f, u) {
-      const { W, H, t } = f;
-      g.save();
-      for (let i = 0; i < 90; i++) {
-        const x = rand(i * 3.3) * W;
-        const y = rand(i * 6.6) * H;
-        const r = u * (2 + rand(i * 2.2) * 5);
-        g.fillStyle = "rgba(255,255,255,0.1)";
-        g.beginPath();
-        g.arc(x, y, r, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = "rgba(255,255,255,0.35)";
-        g.beginPath();
-        g.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2);
-        g.fill();
-      }
-      for (let i = 0; i < 12; i++) {
-        const sp = 0.08 + rand(i * 7.3) * 0.12;
-        const ph = (rand(i * 1.9) + t * sp) % 1;
-        const x = rand(i * 8.8) * W + Math.sin(ph * 12 + i) * u * 4;
-        const y = ph * H * 1.1;
-        const r = u * (6 + rand(i * 4.1) * 5);
-        const trail = g.createLinearGradient(0, y - u * 260, 0, y);
-        trail.addColorStop(0, "rgba(255,255,255,0)");
-        trail.addColorStop(1, "rgba(255,255,255,0.18)");
-        g.fillStyle = trail;
-        g.fillRect(x - r * 0.35, y - u * 260, r * 0.7, u * 260);
-        g.fillStyle = "rgba(255,255,255,0.16)";
-        g.beginPath();
-        g.ellipse(x, y, r, r * 1.25, 0, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = "rgba(255,255,255,0.55)";
-        g.beginPath();
-        g.arc(x - r * 0.35, y - r * 0.4, r * 0.3, 0, Math.PI * 2);
-        g.fill();
-      }
       g.restore();
     },
   };
@@ -3922,33 +3865,6 @@
         bg.addColorStop(1, "#4d6f99");
         g.fillStyle = bg;
         g.fillRect(0, 0, W, H);
-        // moon glow
-        const mg = g.createRadialGradient(W * 0.78, H * 0.14, 0, W * 0.78, H * 0.14, H * 0.3);
-        mg.addColorStop(0, "rgba(230,240,255,0.5)");
-        mg.addColorStop(0.08, "rgba(230,240,255,0.25)");
-        mg.addColorStop(1, "rgba(230,240,255,0)");
-        g.fillStyle = mg;
-        g.fillRect(0, 0, W, H);
-        // pine forest on a snowy hill
-        g.fillStyle = "#0b1a30";
-        for (let i = 0; i < 14; i++) {
-          const x = (i / 13) * W + (rand(i) - 0.5) * u * 60;
-          const h = H * (0.1 + rand(i * 3.7) * 0.08);
-          const by = H * 0.86 - Math.sin((i / 13) * Math.PI) * H * 0.03;
-          g.beginPath();
-          g.moveTo(x, by - h);
-          g.lineTo(x + h * 0.28, by);
-          g.lineTo(x - h * 0.28, by);
-          g.closePath();
-          g.fill();
-        }
-        g.fillStyle = "#dfe9f5";
-        g.beginPath();
-        g.moveTo(0, H);
-        g.lineTo(0, H * 0.87);
-        g.quadraticCurveTo(W / 2, H * 0.8, W, H * 0.87);
-        g.lineTo(W, H);
-        g.fill();
       }
       // real snowfall footage over the scene; drawn flakes while it loads (and in thumbnails)
       const real = WM.Fx && WM.Fx.paint(g, W, H, "snow", 100, t);
@@ -4123,11 +4039,6 @@
         bg.addColorStop(0.55, "#7a2e10");
         bg.addColorStop(1, "#d9772c");
         g.fillStyle = bg;
-        g.fillRect(0, 0, W, H);
-        const sun = g.createRadialGradient(W * 0.5, H * 0.78, 0, W * 0.5, H * 0.78, H * 0.45);
-        sun.addColorStop(0, "rgba(255,210,140,0.55)");
-        sun.addColorStop(1, "rgba(255,210,140,0)");
-        g.fillStyle = sun;
         g.fillRect(0, 0, W, H);
       }
       // with footage: its own real leaves plus a warm light leak; drawn leaves otherwise

@@ -11,6 +11,9 @@
   el.preload = "auto";
   const img = new Image();
   let url = null;
+  const SAMPLES_VERSION = 2;
+  const samples = new Map(); // style -> Promise<Blob>
+  let sampleSeq = 0;
 
   const api = {
     el,
@@ -36,14 +39,36 @@
     showsIn(theme) {
       return !!theme.video;
     },
+    /**
+     * Download a style's sample ahead of time (kept for the visit), so
+     * choosing the style shows its footage at once.
+     */
+    prefetch(style) {
+      if (!(WM.STYLE_SAMPLES && WM.STYLE_SAMPLES[style])) return Promise.reject(new Error("sin ejemplo"));
+      if (!samples.has(style)) {
+        // ?v: the clips were replaced once; browsers kept the old ones for a day
+        const p = fetch(`${WM.ModalSync.mediaUrl()}/sample/${style}.mp4?v=${SAMPLES_VERSION}`)
+          .then((res) => {
+            if (!res.ok) throw new Error();
+            return res.blob();
+          })
+          .catch((e) => {
+            samples.delete(style);
+            throw e;
+          });
+        samples.set(style, p);
+      }
+      return samples.get(style);
+    },
     /** A style's own sample clip (from the media service), the bundled one if offline. */
     async loadStyleSample(style) {
       const info = WM.STYLE_SAMPLES && WM.STYLE_SAMPLES[style];
+      const my = ++sampleSeq;
       if (info) {
         try {
-          const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/${style}.mp4`);
-          if (!res.ok) throw new Error();
-          const blob = await res.blob();
+          const blob = await api.prefetch(style);
+          // another style was picked while this one downloaded
+          if (my !== sampleSeq) return;
           await api.load(new File([blob], `ejemplo-${style}.mp4`, { type: "video/mp4" }));
           api.sample = style;
           api.name = `ejemplo de ${info.user} (Pixabay)`;

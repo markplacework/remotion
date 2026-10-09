@@ -49,7 +49,7 @@
       clips.set(id, c);
       c.loading = (async () => {
         try {
-          const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/fx${id}.mp4`);
+          const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/fx${id}.mp4?v=1`);
           if (!res.ok) throw new Error("No se pudo cargar el efecto");
           const url = URL.createObjectURL(await res.blob());
           await new Promise((ok, fail) => {
