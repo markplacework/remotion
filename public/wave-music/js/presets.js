@@ -2549,8 +2549,8 @@
         g.fillStyle = inv ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.58)";
       } else g.fillStyle = inv ? "#ffffff" : "#000000";
       g.fillRect(0, 0, W, H);
-      // slow smoke drifting through the dark frames (on white it vanishes)
-      if (!inv && WM.Fx) WM.Fx.paint(g, W, H, "smoke", 70, t);
+      // warm light leaking through the dark frames (on white it vanishes)
+      if (!inv && WM.Fx) WM.Fx.paint(g, W, H, "leak", 85, t);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
       const cx = safe.x + safe.w / 2;
