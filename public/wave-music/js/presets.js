@@ -887,20 +887,26 @@
     lay = [];
     let page = 0;
     let row = 0;
+    let onPage = 0;
+    lay.rowsOf = [];
     g.font = DIA_HAND(size);
     const space = g.measureText(" ").width;
     lines.forEach((L) => {
       const words = L.words.map((w) => ({ ...w, label: w.text }));
       const rows = words.length ? wrapWords(g, words, () => DIA_HAND(size), maxW, space).map((r) => ({ width: r.width, items: r.items.map((it) => ({ k: words.indexOf(it.w), x: it.x, width: it.width })) })) : [];
-      // a long pause in the song leaves an empty row (a new verse)
+      // a page holds a short part (two lines); a long pause in the song
+      // (a new verse) or a full page starts a fresh one
       const prev = lay[lay.length - 1];
-      if (prev && prev.rows.length && L.start - (L.index > 0 ? lines[L.index - 1].end || L.start : L.start) > 4) row++;
-      if (row + rows.length > rowsPerPage) {
+      const pause = prev && prev.rows.length && L.start - (L.index > 0 ? lines[L.index - 1].end || L.start : L.start) > 4;
+      if (onPage && (onPage >= 2 || pause || row + rows.length > rowsPerPage)) {
         page++;
         row = 0;
+        onPage = 0;
       }
       lay.push({ page, row, rows });
       row += Math.max(1, rows.length);
+      onPage++;
+      lay.rowsOf[page] = row;
     });
     if (diaLayouts.size > 40) diaLayouts.clear();
     diaLayouts.set(key, lay);
@@ -922,11 +928,13 @@
       const top = safe.y + u * 290;
       // with a photo, the writing stops above it
       const bottom = f.video ? this.photoBox(f, u).y - u * 30 : safe.y + safe.h - u * 40;
-      const rowsPerPage = Math.max(3, Math.floor((bottom - top) / gap));
+      const rowsPerPage = Math.max(3, Math.min(6, Math.floor((bottom - top) / gap)));
       const maxW = safe.w * 0.92;
       const lay = diaryLayout(g, lines, size, maxW, rowsPerPage);
       const cur = Math.max(0, f.current);
       const page = lay.length ? lay[Math.min(cur, lay.length - 1)].page : 0;
+      // each part sits in the middle of the free space, a little high
+      const topOf = (p) => top + Math.max(0, (bottom - top - (lay.rowsOf[p] || 1) * gap) * 0.42);
       this.canvas(g, f, u);
       // a full page fades away and the writing starts again, as on a fresh
       // sheet: the new page's first line waits until the old one is gone
@@ -940,13 +948,13 @@
           g.save();
           g.translate(f.shift.x, f.shift.y);
           g.globalAlpha = 1 - ease.inOut(fade);
-          this.writing(g, f, u, page - 1, lay, size, gap, top, first - 1, true);
+          this.writing(g, f, u, page - 1, lay, size, gap, topOf(page - 1), first - 1, true);
           g.restore();
         }
       }
       g.save();
       g.translate(f.shift.x, f.shift.y);
-      this.writing(g, f, u, page, lay, size, gap, top, f.current, false, firstOfPage, CLEAR);
+      this.writing(g, f, u, page, lay, size, gap, topOf(page), f.current, false, firstOfPage, CLEAR);
       g.restore();
     },
     /** A clean, warm sheet: fine grain, soft light, the song's title on top. */
