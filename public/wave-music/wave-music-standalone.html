@@ -7131,6 +7131,53 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     g.fillText(txt, x - off / k, y);
     g.restore();
   }
+  /** Low smoke: the real smoke clip faded in from the bottom, over soft rising puffs. */
+  let cineSmokeCv = null;
+  function cineFloorSmoke(g, W, H, t, u) {
+    g.save();
+    g.globalCompositeOperation = "screen";
+    // soft puffs that rise and drift (always there, even before the clip loads)
+    for (let i = 0; i < 9; i++) {
+      const life = ((t * 0.05 + rand(i * 3.7)) % 1 + 1) % 1;
+      const x = W * (rand(i * 1.3) * 1.2 - 0.1) + Math.sin(t * 0.15 + i) * u * 60;
+      const y = H * (1.05 - life * 0.38);
+      const r = u * (220 + rand(i * 5.1) * 180) * (0.8 + life * 0.6);
+      const a = 0.24 * Math.sin(life * Math.PI);
+      const grd = g.createRadialGradient(x, y, 0, x, y, r);
+      grd.addColorStop(0, `rgba(215,210,205,${a})`);
+      grd.addColorStop(0.5, `rgba(215,210,205,${a * 0.45})`);
+      grd.addColorStop(1, "rgba(215,210,205,0)");
+      g.fillStyle = grd;
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    g.restore();
+    if (!WM.Fx) return;
+    // the filmed smoke, only in the lower part of the frame
+    const w = Math.round(W / 2);
+    const h = Math.round(H / 2);
+    if (!cineSmokeCv) cineSmokeCv = document.createElement("canvas");
+    if (cineSmokeCv.width !== w || cineSmokeCv.height !== h) {
+      cineSmokeCv.width = w;
+      cineSmokeCv.height = h;
+    }
+    const o = cineSmokeCv.getContext("2d");
+    o.globalCompositeOperation = "source-over";
+    o.fillStyle = "#000";
+    o.fillRect(0, 0, w, h);
+    if (!WM.Fx.paint(o, w, h, "smoke", 100, t)) return;
+    o.globalCompositeOperation = "destination-in";
+    const m = o.createLinearGradient(0, 0, 0, h);
+    m.addColorStop(0, "rgba(0,0,0,0)");
+    m.addColorStop(0.45, "rgba(0,0,0,0.15)");
+    m.addColorStop(1, "rgba(0,0,0,1)");
+    o.fillStyle = m;
+    o.fillRect(0, 0, w, h);
+    g.save();
+    g.globalCompositeOperation = "screen";
+    g.globalAlpha = 0.85;
+    g.drawImage(cineSmokeCv, 0, 0, W, H);
+    g.restore();
+  }
   const cinematic = {
     id: "cinematic",
     label: "Cinematic",
@@ -7222,6 +7269,8 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       g.globalCompositeOperation = "source-over";
       // real fog drifting through the light (fx.js)
       if (WM.Fx) WM.Fx.paint(g, W, H, "fog", 75, t);
+      // and smoke rolling in from the floor
+      cineFloorSmoke(g, W, H, t, u);
 
       g.save();
       place(g, f);
