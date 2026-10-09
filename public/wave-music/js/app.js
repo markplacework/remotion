@@ -2273,7 +2273,7 @@
     ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
     ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
     ["retro", "Retro", ["vhs", "vinilo", "neon", "radio"]],
-    ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout"]],
+    ["elegantes", "Elegantes", ["cinematic", "minimal", "diario", "couture", "blackout", "vinilo", "aurora", "otono"]],
     ["redes", "Redes", ["notes", "recorte", "karaoke", "stream"]],
   ];
   // on phones "Todos" opens with 8 styles and grows four (one row) per tap

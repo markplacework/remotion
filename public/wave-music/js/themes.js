@@ -139,7 +139,9 @@
     cinematic: { id: "cinematic", label: "Cinematic", kind: "motion", preset: "cinematic", background: { type: "motion" }, meta: true, video: true },
     neon: { id: "neon", label: "Neon Cyber", kind: "motion", preset: "neon", background: { type: "motion" } , video: true },
     // a notebook page; their own photo or video goes on it as a taped polaroid
-    minimal: { id: "minimal", label: "Diario", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true, video: true, drag: false },
+    // the front page of a newspaper; their footage is the photo
+    diario: { id: "diario", label: "Diario", kind: "motion", preset: "diario", background: { type: "motion" }, meta: true, video: true, drag: false },
+    minimal: { id: "minimal", label: "Manuscrito", kind: "motion", preset: "minimal", background: { type: "motion" }, statusInk: "#16140f", meta: true, video: true, drag: false },
     karaoke: { id: "karaoke", label: "Karaoke", kind: "motion", preset: "karaoke", background: { type: "motion" }, video: true },
     // Saved, not shown: wordpop: { id: "wordpop", label: "Word Pop", kind: "motion", preset: "wordpop", background: { type: "motion" } },
     // Saved, not shown: chrome: { id: "chrome", label: "Chrome", kind: "motion", preset: "chrome", background: { type: "motion" }, video: true },

@@ -57,6 +57,7 @@
     kinetic: { font: "anton", accent: "#ffe14d", effect: "none", anim: "pop", bg: "animated", bg1: "#08080c", bg2: "#3a0f2a", size: 115 },
     cinematic: { font: "cormorant", upper: false, color: "#f3eee4", accent: "#e9c46a", effect: "shadow", anim: "fade", beat: false, bg: "media", darken: 40, size: 105 },
     neon: { font: "orbitron", color: "#ff4fd8", accent: "#22e4ff", effect: "glow", anim: "pop", bg: "animated", bg1: "#07010f", bg2: "#2b0a55", fx: "none", size: 88 },
+    diario: { font: "bodoni", upper: false, color: "#16130f", accent: "#b8262c", effect: "none", anim: "words", beat: false, bg: "solid", bg1: "#ece5d5", vignette: true, align: "left", size: 105 },
     minimal: { font: "hand", upper: false, color: "#1f2d66", accent: "#1f2d66", effect: "none", anim: "typewriter", beat: false, bg: "solid", bg1: "#f4eddd", vignette: true, align: "left", size: 70 },
     karaoke: { font: "montserrat", color: "#ffffff", accent: "#ffd23f", effect: "outline", effectColor: "#0b0b16", anim: "karaoke", bg: "media", darken: 40, next: true },
     notes: { font: "inter", upper: false, color: "#1d1d1f", accent: "#e8a400", effect: "none", anim: "words", beat: false, bg: "solid", bg1: "#fffaf0", vignette: false, align: "left", pos: "top", size: 80 },
