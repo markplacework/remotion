@@ -12654,10 +12654,9 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         size *= 0.88;
         rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       }
-      const title = (f.meta && f.meta.title) || "";
       const artist = (f.meta && f.meta.artist) || "";
       const kickH = u * 62;
-      const deckH = title || artist ? u * 100 : 0;
+      const deckH = artist ? u * 100 : 0;
       const photoH = f.video ? u * 360 : 0;
       const blockH = kickH + rows.length * size * 1.0 + deckH + (photoH ? photoH + u * 44 : 0);
       // each new line settles in gently
@@ -12685,7 +12684,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         g.textAlign = "center";
         g.fillStyle = NEWS.mute;
         g.font = `italic ${NEWS_BODY(u * 40)}`;
-        const deck = title && artist ? `“${title}” — ${artist}` : title ? `“${title}”` : artist;
+        const deck = `by ${artist}`;
         g.fillText(fitText(g, deck, cw), cx, y);
         y += u * 24;
       }
@@ -12724,8 +12723,16 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       g.textBaseline = "alphabetic";
       g.textAlign = "center";
       g.fillStyle = NEWS.ink;
-      g.font = `italic ${NEWS_MAST(u * 64)}`;
-      g.fillText("The Daily Wave", cx, y + u * 58);
+      // the nameplate is the song's title
+      const name = (f.meta && f.meta.title) || "The Daily Wave";
+      let ms = u * 64;
+      g.font = `italic ${NEWS_MAST(ms)}`;
+      const mw = g.measureText(name).width;
+      if (mw > x1 - x0) {
+        ms *= (x1 - x0) / mw;
+        g.font = `italic ${NEWS_MAST(ms)}`;
+      }
+      g.fillText(name, cx, y + u * 58);
       y += u * 84;
       // a thick and a thin rule, the classic newspaper double line
       g.fillRect(x0, y, x1 - x0, u * 3);
