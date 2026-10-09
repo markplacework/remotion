@@ -350,11 +350,11 @@ def media():
             raise HTTPException(400, "kind tiene que ser video o photo")
         q = q.strip().lower()
         page = max(1, min(page, 10))
-        ck = f"{kind}|{q}|{page}"
+        ck = f"{kind}|{q}|{page}|60"
         hit = media_cache.get(ck)
         if hit and time.time() - hit["at"] < CACHE_SECONDS:
             return hit["data"]
-        params = {"key": _pixabay_key(), "q": q, "page": page, "per_page": 30, "safesearch": "true", "lang": "es"}
+        params = {"key": _pixabay_key(), "q": q, "page": page, "per_page": 60, "safesearch": "true", "lang": "es"}
         if kind == "photo":
             params.update(image_type="photo", orientation="vertical")
             url = "https://pixabay.com/api/"

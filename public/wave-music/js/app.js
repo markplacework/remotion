@@ -1542,7 +1542,27 @@
   // ---------- biblioteca gratis (Pixabay, por nuestro servicio de Modal) ----------
   {
     const lib = { kind: "video", q: "", page: 1, total: 0, busy: false };
-    const SUGG = ["Ciudad de noche", "Playa", "Lluvia", "Neón", "Atardecer", "Naturaleza", "Fiesta", "Abstracto"];
+    const SUGG = ["Ciudad de noche", "Tren", "Estación", "Gente", "Calle", "Concierto", "Playa", "Lluvia", "Ruta", "Neón", "Atardecer", "Naturaleza", "Fiesta", "Abstracto"];
+    // video length filter (Pixabay can't filter by it: done on the results)
+    const DUR = { all: () => true, short: (d) => d < 15, mid: (d) => d >= 15 && d <= 30, long: (d) => d > 30 };
+    lib.dur = "all";
+    function applyDur() {
+      let shown = 0;
+      $("lib-grid").querySelectorAll(".lib-item").forEach((b) => {
+        const off = lib.kind !== "photo" && b.dataset.kind === "video" && !DUR[lib.dur](Number(b.dataset.dur || 0));
+        b.classList.toggle("dur-off", off);
+        if (!off) shown++;
+      });
+      return shown;
+    }
+    document.querySelectorAll("#lib-dur .chip").forEach((c) => {
+      c.onclick = () => {
+        lib.dur = c.dataset.dur;
+        document.querySelectorAll("#lib-dur .chip").forEach((x) => x.setAttribute("aria-pressed", x === c));
+        const n = applyDur();
+        $("lib-msg").textContent = n ? "" : "No hay videos de esa duración en estos resultados. Probá \"Ver más\" u otra búsqueda.";
+      };
+    });
     // the media service sits next to the sync service, same token
     const mediaUrl = (u) => u.replace(/-syncer-web(\.modal\.run)/, "-media$1").replace(/\/+$/, "");
     const fmtDur = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
@@ -1584,6 +1604,10 @@
     }
     async function search(fresh) {
       if (lib.busy) return;
+      if (lib.kind === "fav") {
+        lib.kind = "video";
+        document.querySelectorAll(".lib-tabs .chip[data-kind]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.kind === "video"));
+      }
       if (fresh) {
         lib.page = 1;
         lib.q = $("lib-q").value.trim();
@@ -1598,7 +1622,8 @@
         lib.total = data.total;
         data.items.forEach(addItem);
         const shown = $("lib-grid").children.length;
-        $("lib-msg").textContent = shown ? "" : "No encontramos nada con esa búsqueda. Probá con otra palabra.";
+        const visible = applyDur();
+        $("lib-msg").textContent = !shown ? "No encontramos nada con esa búsqueda. Probá con otra palabra." : visible ? "" : "No hay videos de esa duración en estos resultados. Probá \"Ver más\" u otra búsqueda.";
         $("lib-more").hidden = !(shown && shown < lib.total && lib.page < 10);
       } catch (e) {
         if (e.code !== "cancelled") $("lib-msg").textContent = e.message;
@@ -1607,14 +1632,51 @@
         lib.busy = false;
       }
     }
+    // ♥ favourites, kept in this browser (Supabase later, per account)
+    const FAV_KEY = "wm-lib-favs";
+    const favs = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    })();
+    const isFav = (it) => favs.some((f) => f.id === it.id && f.kind === it.kind);
+    function toggleFav(it, el) {
+      const i = favs.findIndex((f) => f.id === it.id && f.kind === it.kind);
+      if (i >= 0) favs.splice(i, 1);
+      else favs.unshift(it);
+      try {
+        localStorage.setItem(FAV_KEY, JSON.stringify(favs.slice(0, 200)));
+      } catch {
+        /* storage blocked: kept for this visit */
+      }
+      el.classList.toggle("on", i < 0);
+      el.textContent = i < 0 ? "♥" : "♡";
+      if (lib.kind === "fav" && i >= 0) el.closest(".lib-item").remove();
+    }
     function addItem(it) {
-      const b = document.createElement("button");
-      b.type = "button";
+      const b = document.createElement("div");
+      b.setAttribute("role", "button");
+      b.tabIndex = 0;
       b.className = "lib-item";
+      b.dataset.dur = it.duration || 0;
+      b.dataset.kind = it.kind;
       b.title = (it.kind === "video" ? "Video" : "Foto") + " de " + it.user + " en Pixabay";
       b.innerHTML = `<img loading="lazy" alt="" src="${it.thumb}" /><span class="lib-user"></span>${it.kind === "video" ? `<span class="lib-dur">${fmtDur(it.duration)}</span>` : ""}`;
       b.querySelector(".lib-user").textContent = it.user;
+      const h = document.createElement("button");
+      h.type = "button";
+      h.className = "lib-fav" + (isFav(it) ? " on" : "");
+      h.textContent = isFav(it) ? "♥" : "♡";
+      h.title = "Guardar en favoritos";
+      h.onclick = (ev) => {
+        ev.stopPropagation();
+        toggleFav(it, h);
+      };
+      b.appendChild(h);
       b.onclick = () => pick(it, b);
+      b.onkeydown = (ev) => ev.key === "Enter" && pick(it, b);
       $("lib-grid").appendChild(b);
     }
     async function pick(it, b) {
@@ -1636,13 +1698,22 @@
         b.classList.remove("loading");
       }
     }
-    document.querySelectorAll(".lib-tabs .chip").forEach((t) => {
+    document.querySelectorAll(".lib-tabs .chip[data-kind]").forEach((t) => {
       t.onclick = () => {
         lib.kind = t.dataset.kind;
-        document.querySelectorAll(".lib-tabs .chip").forEach((x) => x.setAttribute("aria-pressed", x === t));
-        search(true);
+        $("lib-dur").hidden = lib.kind === "photo";
+        document.querySelectorAll(".lib-tabs .chip[data-kind]").forEach((x) => x.setAttribute("aria-pressed", x === t));
+        if (lib.kind === "fav") showFavs();
+        else search(true);
       };
     });
+    function showFavs() {
+      $("lib-grid").innerHTML = "";
+      $("lib-more").hidden = true;
+      favs.forEach(addItem);
+      applyDur();
+      $("lib-msg").textContent = favs.length ? "" : "Todavía no guardaste nada. Tocá el ♡ de un video o foto para guardarlo acá.";
+    }
     $("lib-form").onsubmit = (ev) => {
       ev.preventDefault();
       search(true);

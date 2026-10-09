@@ -2115,6 +2115,35 @@ body[data-view="captions"] #btn-demo {
   display: flex;
   gap: 6px;
 }
+.lib-fav {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.15s, color 0.15s;
+}
+.lib-fav.on {
+  color: #ff3d6e;
+}
+.lib-fav:active {
+  transform: scale(1.25);
+}
+.lib-item.dur-off {
+  display: none;
+}
+.lib-dur .chip {
+  font-size: 12px;
+  padding: 5px 10px;
+}
 .lib-sugg {
   display: flex;
   flex-wrap: wrap;
