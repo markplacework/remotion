@@ -5387,6 +5387,8 @@
     return o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 };
   };
   /** Where the user dragged an element, in canvas units (from safe-area fractions). */
+  // how long the outgoing line takes to leave
+  const CU_EXIT = 0.22;
   const cuOff = (o, safe) => (o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 });
   let cuScratch = null;
   const custom = {
@@ -5420,8 +5422,10 @@
         const hs = (c.handleSize || 100) / 100;
         g.font = `600 ${u * 26 * hs}px Inter, sans-serif`;
         const w = g.measureText(c.handle).width + u * 24;
-        const bottom = safe.y + safe.h - (c.progress ? u * 190 : u * 24);
-        at("offHandle", safe.x + safe.w - u * 20 - w + u * 12, bottom - u * 10 - u * 26 * hs, w, u * 18 + u * 26 * hs);
+        const bottom = safe.y + safe.h - (c.progress ? u * 182 : u * 24);
+        // with the player, it sits over the bar's start like the song name in a music app
+        const x = c.progress ? (W - safe.w * 0.86) / 2 - u * 12 : safe.x + safe.w - u * 20 - w + u * 12;
+        at("offHandle", x, bottom - u * 10 - u * 26 * hs, w, u * 18 + u * 26 * hs);
       }
       return out;
     },
@@ -5538,11 +5542,11 @@
         g.save();
         const oh = cuOff(c.offHandle, safe);
         g.translate(oh.x, oh.y);
-        g.textAlign = "right";
+        g.textAlign = c.progress ? "left" : "right";
         g.textBaseline = "bottom";
         g.font = `600 ${u * 26 * ((c.handleSize || 100) / 100)}px Inter, sans-serif`;
-        g.fillStyle = hexA(c.color, 0.7);
-        g.fillText(c.handle, safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 190 : u * 24));
+        g.fillStyle = hexA(c.color, c.progress ? 0.85 : 0.7);
+        g.fillText(c.handle, c.progress ? (W - safe.w * 0.86) / 2 : safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 182 : u * 24));
         g.restore();
       }
       const L = f.lines[f.current];
@@ -5552,7 +5556,7 @@
       const prev = f.lines[f.current - 1];
       const since = t - L.start;
       // the outgoing line fades up and away while the new one comes in
-      if (prev && prev.words.length && since < 0.28) this.drawLine(g, f, c, prev, u, { exit: since / 0.28 });
+      if (prev && prev.words.length && since < CU_EXIT) this.drawLine(g, f, c, prev, u, { exit: since / CU_EXIT });
       this.drawLine(g, f, c, L, u, {});
       g.restore();
     },
@@ -5655,7 +5659,8 @@
           let col = on ? c.effectColor : w.index === key ? c.accent : c.color;
           g.save();
           if (c.anim === "words" && o.exit == null) {
-            const p = sung(w, t);
+            // the first words wait for the old line to clear, so the two never overlap
+            const p = sung(w, t - Math.max(0, L.start + CU_EXIT - w.t0));
             if (p <= 0) return g.restore();
             g.globalAlpha *= p;
             g.translate(0, (1 - ease.out(p)) * size * 0.35);

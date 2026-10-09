@@ -33,6 +33,8 @@
     handle: "",
     handleSize: 100,
   };
+  // Personalizado's own original look (its card, "Restaurar estilo")
+  const ORIGINAL = { font: "montserrat", effect: "glow", anim: "words", bg: "solid", bg1: "#0d0b1a", fx: "embers", showMeta: true, progress: true, handle: "Wave Music", handleSize: 130 };
   // the weight each typeface looks best in (and that is self-hosted)
   const WEIGHTS = { anton: 400, montserrat: 800, poppins: 900, inter: 800, league: 400, barlow: 700, bodoni: 600, cormorant: 600, instrument: 400, orbitron: 900, shrikhand: 400, vt323: 400, hand: 400, caveat: 600 };
 
@@ -123,18 +125,19 @@
 
   // once: the ready looks ("Para empezar") are gone, so a look left over
   // from them goes back to Personalizado's own (saved templates stay)
-  if (read("wm-custom-v", 0) < 2) {
-    write(KEY_CUR, {});
-    write(KEY_ORIGIN, {});
+  if (read("wm-custom-v", 0) < 3) {
+    write(KEY_CUR, ORIGINAL);
+    write(KEY_ORIGIN, ORIGINAL);
     write(KEY_ACTIVE, null);
-    write("wm-custom-v", 2);
+    write("wm-custom-v", 3);
   }
   const api = {
     DEFAULTS,
     STARTERS,
     BASES,
     SCENE,
-    cfg: migrate(read(KEY_CUR, {})),
+    ORIGINAL,
+    cfg: migrate(read(KEY_CUR, ORIGINAL)),
     // the look it started from ("Restaurar estilo" goes back to it)
     origin: read(KEY_ORIGIN, {}),
     familyOf(id) {
@@ -167,12 +170,12 @@
     /** Chosen straight from its card: "Restaurar estilo" means its own original look. */
     fromScratch() {
       if (api.active) return;
-      api.origin = {};
+      api.origin = { ...ORIGINAL };
       write(KEY_ORIGIN, api.origin);
     },
     /** Back to the look it started from (a saved template: as it was saved). */
     restore() {
-      api.apply(api.origin, api.active);
+      api.apply(Object.keys(api.origin || {}).length ? api.origin : ORIGINAL, api.active);
     },
     // the user's template being edited (null: a ready look or a style)
     active: read(KEY_ACTIVE, null),
