@@ -2383,6 +2383,18 @@ body:not([data-view="karaoke"]) .styles-more:not([hidden]) {
   width: 100%;
   margin: 12px 0 4px;
 }
+/* live comments editor */
+.chat-text {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 500 13px/1.5 Inter, sans-serif;
+  resize: vertical;
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;
@@ -3736,6 +3748,16 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
           </div>
+          <div id="chat-opts" class="style-opts" hidden>
+            <span class="opt-label">Comentarios del live</span>
+            <div class="bgv-row">
+              <button id="chat-ai" class="btn btn-primary">✨ Generar con IA</button>
+              <button id="chat-reset" class="btn-link" hidden>Volver a los de ejemplo</button>
+            </div>
+            <p class="opt-hint">La IA mira tu video y la letra, y escribe comentarios que encajan. Podés editarlos: uno por línea, "nombre: mensaje".</p>
+            <textarea id="chat-text" class="chat-text" rows="6" spellcheck="false" placeholder="sofi.music: ¡temazo!&#10;juanpi_22: ¿dónde es ese lugar?"></textarea>
+            <span id="chat-status" class="bgv-name"></span>
+          </div>
           <div id="video-opts" class="style-opts" hidden>
             <span class="opt-label">Fondo propio</span>
             <div class="bgv-row">
@@ -4924,6 +4946,111 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   }
 
   WM.Captions = { extractWav, transcribe, buildCues, breakLines, drawCue, cueAt, toSRT, toVTT, burnIn, STYLES, stamp };
+})((window.WaveMusic = window.WaveMusic || {}));
+</script>
+    <script>
+// Wave Music · COMENTARIOS DEL LIVE
+// The Live and Stream styles show viewers' comments. They are written by
+// AI from one frame of the background and the song's lyrics (our media
+// service asks OpenAI), can be edited by hand, and fall back to themed
+// lists when there is no AI at hand. The presets read WM.LiveChat.list.
+(function (WM) {
+  const NAMES = ["sofi.music", "juanpi_22", "lu.martinez", "tomas.rk", "cami_fan", "nico.beats", "valen.ok", "agus_m", "flor.canta", "mateo.lp", "rocio_x", "lean.dj", "meli.ok", "santi_07", "bren.music", "fede.rk"];
+  // themed comments for when there is no AI (picked from the background's name/search)
+  const THEMES = {
+    nieve: ["qué lugar hermoso 😍", "¿dónde es eso?", "esa nieve 🔥", "quiero estar ahí", "bariloche??", "qué frío jaja", "vista increíble"],
+    playa: ["qué playa 😍", "¿dónde es?", "me voy ya", "ese mar 🌊", "verano ya", "qué lugar"],
+    ciudad: ["qué buena noche", "¿qué ciudad es?", "esas luces 😍", "vibes nocturnas", "la ciudad no duerme"],
+    recital: ["quiero ir al próximo show", "qué energía!!", "ese público 🔥", "estuve ahí!!", "qué escenario"],
+    naturaleza: ["qué paz", "¿dónde es?", "qué lugar hermoso", "necesito ir", "qué colores 😍"],
+    general: ["qué buena", "me encanta", "la mejor", "otra vez!!", "saludos!!"],
+  };
+  const SONG = ["¡temazo!", "otra vez!!", "la amo", "subí el volumen", "qué voz", "esta es mía", "lloro", "me la sé toda", "la mejor", "desde Córdoba!!", "ufff", "❤️❤️❤️"];
+  const KEYS = {
+    nieve: /nieve|snow|esqu|ski|monta|mountain|invierno|winter/i,
+    playa: /playa|beach|mar\b|sea|ocean|surf|wave|ola/i,
+    ciudad: /ciudad|city|noche|night|urban|calle|street|neon|tráfico|traffic|london|tormenta/i,
+    recital: /recital|concierto|concert|show|crowd|stage|escenario|karaoke|live|cantante|singer/i,
+    naturaleza: /bosque|forest|lago|lake|naturaleza|nature|otoño|autumn|campo|field|flor|aurora/i,
+  };
+  const pick = (arr, i) => arr[i % arr.length];
+
+  const api = {
+    list: null, // [{ name, msg }]
+    source: "", // "ai" | "tema" | "manual"
+    /** Themed comments from the background's name and a few lyric lines. */
+    themed(hint, lyricLines) {
+      const theme = Object.keys(KEYS).find((k) => KEYS[k].test(hint || "")) || "general";
+      const quotes = (lyricLines || []).filter((l) => l.length > 6 && l.length < 40).slice(0, 4).map((l) => `«${l.toLocaleLowerCase("es")}» 😭`);
+      const msgs = [];
+      for (let i = 0; i < 18; i++) {
+        if (i % 3 === 1) msgs.push(pick(THEMES[theme], i));
+        else if (i % 5 === 3 && quotes.length) msgs.push(pick(quotes, i));
+        else msgs.push(pick(SONG, i * 7));
+      }
+      return msgs.map((msg, i) => ({ name: pick(NAMES, i * 5 + 3), msg }));
+    },
+    /** One JPEG frame of the current background, or null. */
+    frame() {
+      const bg = WM.BgVideo;
+      const el = bg && bg.enabled ? (bg.kind === "image" ? bg.img : bg.el) : null;
+      const w = el && (el.videoWidth || el.naturalWidth);
+      const h = el && (el.videoHeight || el.naturalHeight);
+      if (!w || !h) return Promise.resolve(null);
+      const k = Math.min(1, 512 / Math.max(w, h));
+      const c = document.createElement("canvas");
+      c.width = Math.round(w * k);
+      c.height = Math.round(h * k);
+      try {
+        c.getContext("2d").drawImage(el, 0, 0, c.width, c.height);
+        return new Promise((res) => c.toBlob((b) => res(b), "image/jpeg", 0.8));
+      } catch {
+        return Promise.resolve(null);
+      }
+    },
+    /** Ask our media service (OpenAI behind it) for comments that fit the video and song. */
+    async generate({ url, token, lyrics, title, artist }) {
+      const fd = new FormData();
+      const img = await api.frame();
+      if (img) fd.append("image", img, "frame.jpg");
+      fd.append("lyrics", (lyrics || "").slice(0, 3000));
+      fd.append("title", title || "");
+      fd.append("artist", artist || "");
+      let res;
+      try {
+        res = await fetch(url + "/comments", { method: "POST", headers: token ? { Authorization: "Bearer " + token } : {}, body: fd });
+      } catch {
+        throw new Error("No se pudo conectar con la IA");
+      }
+      if (res.status === 401) throw Object.assign(new Error("El token del servicio no es válido."), { code: "auth" });
+      if (!res.ok) {
+        let msg = "";
+        try {
+          msg = (await res.json()).detail;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg || "La IA respondió con un error (" + res.status + ")");
+      }
+      const data = await res.json();
+      const list = (data.comments || []).filter((c) => c && c.msg).map((c) => ({ name: String(c.name || "").slice(0, 18) || pick(NAMES, c.msg.length), msg: String(c.msg).slice(0, 60) }));
+      if (!list.length) throw new Error("La IA no devolvió comentarios");
+      return list;
+    },
+    /** "nombre: mensaje" per line <-> list */
+    toText: (list) => (list || []).map((c) => `${c.name}: ${c.msg}`).join("\n"),
+    fromText(text) {
+      return text
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l, i) => {
+          const m = l.match(/^([^:]{1,20}):\s*(.+)$/);
+          return m ? { name: m[1].trim(), msg: m[2].trim() } : { name: pick(NAMES, i * 5 + 3), msg: l };
+        });
+    },
+  };
+  WM.LiveChat = api;
 })((window.WaveMusic = window.WaveMusic || {}));
 </script>
     <script>
@@ -10214,7 +10341,12 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   function liveComments(t, n, every) {
     const k = Math.floor(t / every);
     const out = [];
-    for (let i = Math.max(0, k - n + 1); i <= k; i++) out.push({ i, name: LIVE_NAMES[(i * 7) % LIVE_NAMES.length], msg: LIVE_MSGS[(i * 5 + 3) % LIVE_MSGS.length], age: t - i * every, col: LIVE_COLS[i % LIVE_COLS.length] });
+    // the user's / AI's comments when there are some, the built-in ones otherwise
+    const own = WM.LiveChat && WM.LiveChat.list && WM.LiveChat.list.length ? WM.LiveChat.list : null;
+    for (let i = Math.max(0, k - n + 1); i <= k; i++) {
+      const c = own ? own[i % own.length] : { name: LIVE_NAMES[(i * 7) % LIVE_NAMES.length], msg: LIVE_MSGS[(i * 5 + 3) % LIVE_MSGS.length] };
+      out.push({ i, name: c.name, msg: c.msg, age: t - i * every, col: LIVE_COLS[i % LIVE_COLS.length] });
+    }
     return out;
   }
   function heartPath(g, x, y, s) {
@@ -10251,7 +10383,18 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     g.globalAlpha = 1;
     return rows.length * lh;
   }
-  const liveCount = (t) => (12.4 + Math.floor(t * 3) * 0.1).toFixed(1).replace(".", ",") + " mil";
+  // viewers drift up and down like a real live (people come and go), a pure
+  // function of time; each background gets its own audience size
+  const liveSeed = () => (WM.LiveChat && WM.LiveChat.seed) || 0;
+  const fmtK = (v) => (v >= 1000 ? (v / 1000).toFixed(1).replace(".", ",") + " mil" : String(Math.round(v)));
+  const liveViewers = (t) => {
+    const base = 3200 + (liveSeed() % 9) * 2100;
+    const step = Math.floor(t * 2);
+    return base * (1 + 0.1 * Math.sin(t * 0.11 + liveSeed()) + 0.04 * Math.sin(t * 0.53) + 0.015 * (rand(step + liveSeed()) - 0.5)) + t * 9;
+  };
+  const liveCount = (t) => fmtK(liveViewers(t));
+  // likes only go up, in bursts
+  const liveLikes = (t) => fmtK(18000 + (liveSeed() % 7) * 9000 + t * 140 + Math.floor(t * 1.7) * 37 * rand(Math.floor(t * 1.7)));
 
   // LIVE — social live video: host pill, viewers, hearts, comments, the lyric pinned
   const live = {
@@ -10310,7 +10453,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       g.fillText(fitText(g, meta.artist || "Artista", u * 170), px + ph + u * 6, py + ph * 0.36);
       g.font = LIVE_UI(500, u * 20);
       g.fillStyle = "rgba(255,255,255,0.8)";
-      g.fillText(`${(48.2 + Math.floor(t * 5) * 0.1).toFixed(1).replace(".", ",")} mil Me gusta`, px + ph + u * 6, py + ph * 0.7);
+      g.fillText(`${liveLikes(t)} Me gusta`, px + ph + u * 6, py + ph * 0.7);
       g.fillStyle = "#fe2c55";
       rrect(g, px + u * 266, py + u * 13, u * 100, ph - u * 26, u * 10);
       g.fill();
@@ -13771,6 +13914,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     $("btn-bgs").hidden = !th.video || (on && (!WM.BgVideo.sample || mine));
     $("btn-bgs").textContent = on ? "Usar el video de ejemplo de este estilo" : "Probar con un video de ejemplo";
     $("bgv-filters").hidden = !on;
+    if (WM.LiveChat.onBg) WM.LiveChat.onBg();
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
@@ -13946,6 +14090,80 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     };
   }
 
+  // ---------- comentarios del live (Live / Stream) ----------
+  const CHAT_STYLES = ["live", "stream"];
+  const LC = WM.LiveChat;
+  const lyricLines = () => ($("lyrics").value || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const bgHint = () => (WM.BgVideo.enabled ? `${WM.BgVideo.name} ${WM.BgVideo.sample || ""}` : "");
+  function seedFrom(str) {
+    let h = 7;
+    for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h % 1000;
+  }
+  function setChat(list, source) {
+    LC.list = list;
+    LC.source = source;
+    $("chat-text").value = LC.toText(list);
+    $("chat-reset").hidden = source === "tema";
+    needsSnap = true;
+  }
+  /** Free, instant comments that fit the background's theme (no AI). */
+  function themedChat() {
+    LC.seed = seedFrom(bgHint() || "wave");
+    setChat(LC.themed(bgHint(), lyricLines()), "tema");
+  }
+  function updateChatOpts() {
+    const on = CHAT_STYLES.includes(preview.theme.id);
+    $("chat-opts").hidden = !on;
+    if (on && (!LC.list || LC.source === "tema")) themedChat();
+  }
+  // a new background re-themes the example comments (not the AI's or the user's)
+  LC.onBg = () => {
+    if (LC.source !== "tema" || LC.lastHint === bgHint()) return;
+    LC.lastHint = bgHint();
+    if (!$("chat-opts").hidden) themedChat();
+  };
+  $("chat-text").oninput = () => {
+    LC.list = LC.fromText($("chat-text").value);
+    LC.source = "manual";
+    $("chat-reset").hidden = false;
+    needsSnap = true;
+  };
+  $("chat-reset").onclick = () => {
+    themedChat();
+    $("chat-status").textContent = "";
+  };
+  $("chat-ai").onclick = async () => {
+    const btn = $("chat-ai");
+    btn.disabled = true;
+    $("chat-status").textContent = "La IA está mirando tu video…";
+    try {
+      let creds = await modalCreds();
+      let list;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          list = await LC.generate({ url: WM.ModalSync.mediaUrl(), token: creds.token, lyrics: $("lyrics").value, title: $("sp-title").value, artist: $("sp-artist").value });
+          break;
+        } catch (e) {
+          if (e.code !== "auth" || attempt) throw e;
+          WM.ModalSync.setConfig(creds.url, "");
+          creds = await modalCreds(e.message + " Revisalo y probá de nuevo.");
+        }
+      }
+      LC.seed = seedFrom(bgHint() || "wave");
+      setChat(list, "ai");
+      $("chat-status").textContent = `Listo · ${list.length} comentarios hechos por la IA`;
+    } catch (e) {
+      if (e.code === "cancelled") $("chat-status").textContent = "";
+      else {
+        themedChat();
+        $("chat-status").textContent = e.message + " · usamos comentarios de ejemplo";
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
   // ---------- texto: tipografía y tamaño (estilos animados) ----------
   {
     const sel = $("text-font");
@@ -14039,6 +14257,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     preview.font = null;
     preview.setTheme(id);
     updateBgv();
+    updateChatOpts();
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
     updateCenterBtn();

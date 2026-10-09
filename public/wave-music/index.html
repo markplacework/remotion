@@ -438,6 +438,16 @@
             <span class="opt-label">Color de fondo</span>
             <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
           </div>
+          <div id="chat-opts" class="style-opts" hidden>
+            <span class="opt-label">Comentarios del live</span>
+            <div class="bgv-row">
+              <button id="chat-ai" class="btn btn-primary">✨ Generar con IA</button>
+              <button id="chat-reset" class="btn-link" hidden>Volver a los de ejemplo</button>
+            </div>
+            <p class="opt-hint">La IA mira tu video y la letra, y escribe comentarios que encajan. Podés editarlos: uno por línea, "nombre: mensaje".</p>
+            <textarea id="chat-text" class="chat-text" rows="6" spellcheck="false" placeholder="sofi.music: ¡temazo!&#10;juanpi_22: ¿dónde es ese lugar?"></textarea>
+            <span id="chat-status" class="bgv-name"></span>
+          </div>
           <div id="video-opts" class="style-opts" hidden>
             <span class="opt-label">Fondo propio</span>
             <div class="bgv-row">
@@ -738,6 +748,7 @@
     <script src="js/ai-sync.js"></script>
     <script src="js/modal-sync.js"></script>
     <script src="js/captions.js"></script>
+    <script src="js/live-chat.js"></script>
     <script src="js/timestamps.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/adjust.js"></script>

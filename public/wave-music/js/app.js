@@ -1488,6 +1488,7 @@
     $("btn-bgs").hidden = !th.video || (on && (!WM.BgVideo.sample || mine));
     $("btn-bgs").textContent = on ? "Usar el video de ejemplo de este estilo" : "Probar con un video de ejemplo";
     $("bgv-filters").hidden = !on;
+    if (WM.LiveChat.onBg) WM.LiveChat.onBg();
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   Object.entries(WM.BgVideo.FILTERS).forEach(([id, fl]) => {
@@ -1663,6 +1664,80 @@
     };
   }
 
+  // ---------- comentarios del live (Live / Stream) ----------
+  const CHAT_STYLES = ["live", "stream"];
+  const LC = WM.LiveChat;
+  const lyricLines = () => ($("lyrics").value || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const bgHint = () => (WM.BgVideo.enabled ? `${WM.BgVideo.name} ${WM.BgVideo.sample || ""}` : "");
+  function seedFrom(str) {
+    let h = 7;
+    for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h % 1000;
+  }
+  function setChat(list, source) {
+    LC.list = list;
+    LC.source = source;
+    $("chat-text").value = LC.toText(list);
+    $("chat-reset").hidden = source === "tema";
+    needsSnap = true;
+  }
+  /** Free, instant comments that fit the background's theme (no AI). */
+  function themedChat() {
+    LC.seed = seedFrom(bgHint() || "wave");
+    setChat(LC.themed(bgHint(), lyricLines()), "tema");
+  }
+  function updateChatOpts() {
+    const on = CHAT_STYLES.includes(preview.theme.id);
+    $("chat-opts").hidden = !on;
+    if (on && (!LC.list || LC.source === "tema")) themedChat();
+  }
+  // a new background re-themes the example comments (not the AI's or the user's)
+  LC.onBg = () => {
+    if (LC.source !== "tema" || LC.lastHint === bgHint()) return;
+    LC.lastHint = bgHint();
+    if (!$("chat-opts").hidden) themedChat();
+  };
+  $("chat-text").oninput = () => {
+    LC.list = LC.fromText($("chat-text").value);
+    LC.source = "manual";
+    $("chat-reset").hidden = false;
+    needsSnap = true;
+  };
+  $("chat-reset").onclick = () => {
+    themedChat();
+    $("chat-status").textContent = "";
+  };
+  $("chat-ai").onclick = async () => {
+    const btn = $("chat-ai");
+    btn.disabled = true;
+    $("chat-status").textContent = "La IA está mirando tu video…";
+    try {
+      let creds = await modalCreds();
+      let list;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          list = await LC.generate({ url: WM.ModalSync.mediaUrl(), token: creds.token, lyrics: $("lyrics").value, title: $("sp-title").value, artist: $("sp-artist").value });
+          break;
+        } catch (e) {
+          if (e.code !== "auth" || attempt) throw e;
+          WM.ModalSync.setConfig(creds.url, "");
+          creds = await modalCreds(e.message + " Revisalo y probá de nuevo.");
+        }
+      }
+      LC.seed = seedFrom(bgHint() || "wave");
+      setChat(list, "ai");
+      $("chat-status").textContent = `Listo · ${list.length} comentarios hechos por la IA`;
+    } catch (e) {
+      if (e.code === "cancelled") $("chat-status").textContent = "";
+      else {
+        themedChat();
+        $("chat-status").textContent = e.message + " · usamos comentarios de ejemplo";
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
   // ---------- texto: tipografía y tamaño (estilos animados) ----------
   {
     const sel = $("text-font");
@@ -1756,6 +1831,7 @@
     preview.font = null;
     preview.setTheme(id);
     updateBgv();
+    updateChatOpts();
     // each style has its own composition: start it centred
     preview.setOffset({ x: 0, y: 0 });
     updateCenterBtn();

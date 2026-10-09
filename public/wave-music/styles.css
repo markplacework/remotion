@@ -2248,6 +2248,18 @@ body:not([data-view="karaoke"]) .styles-more:not([hidden]) {
   width: 100%;
   margin: 12px 0 4px;
 }
+/* live comments editor */
+.chat-text {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 500 13px/1.5 Inter, sans-serif;
+  resize: vertical;
+}
 /* fondo propio: sample + filters */
 .bgv-sample {
   display: block;

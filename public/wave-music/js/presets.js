@@ -4188,7 +4188,12 @@
   function liveComments(t, n, every) {
     const k = Math.floor(t / every);
     const out = [];
-    for (let i = Math.max(0, k - n + 1); i <= k; i++) out.push({ i, name: LIVE_NAMES[(i * 7) % LIVE_NAMES.length], msg: LIVE_MSGS[(i * 5 + 3) % LIVE_MSGS.length], age: t - i * every, col: LIVE_COLS[i % LIVE_COLS.length] });
+    // the user's / AI's comments when there are some, the built-in ones otherwise
+    const own = WM.LiveChat && WM.LiveChat.list && WM.LiveChat.list.length ? WM.LiveChat.list : null;
+    for (let i = Math.max(0, k - n + 1); i <= k; i++) {
+      const c = own ? own[i % own.length] : { name: LIVE_NAMES[(i * 7) % LIVE_NAMES.length], msg: LIVE_MSGS[(i * 5 + 3) % LIVE_MSGS.length] };
+      out.push({ i, name: c.name, msg: c.msg, age: t - i * every, col: LIVE_COLS[i % LIVE_COLS.length] });
+    }
     return out;
   }
   function heartPath(g, x, y, s) {
@@ -4225,7 +4230,18 @@
     g.globalAlpha = 1;
     return rows.length * lh;
   }
-  const liveCount = (t) => (12.4 + Math.floor(t * 3) * 0.1).toFixed(1).replace(".", ",") + " mil";
+  // viewers drift up and down like a real live (people come and go), a pure
+  // function of time; each background gets its own audience size
+  const liveSeed = () => (WM.LiveChat && WM.LiveChat.seed) || 0;
+  const fmtK = (v) => (v >= 1000 ? (v / 1000).toFixed(1).replace(".", ",") + " mil" : String(Math.round(v)));
+  const liveViewers = (t) => {
+    const base = 3200 + (liveSeed() % 9) * 2100;
+    const step = Math.floor(t * 2);
+    return base * (1 + 0.1 * Math.sin(t * 0.11 + liveSeed()) + 0.04 * Math.sin(t * 0.53) + 0.015 * (rand(step + liveSeed()) - 0.5)) + t * 9;
+  };
+  const liveCount = (t) => fmtK(liveViewers(t));
+  // likes only go up, in bursts
+  const liveLikes = (t) => fmtK(18000 + (liveSeed() % 7) * 9000 + t * 140 + Math.floor(t * 1.7) * 37 * rand(Math.floor(t * 1.7)));
 
   // LIVE — social live video: host pill, viewers, hearts, comments, the lyric pinned
   const live = {
@@ -4284,7 +4300,7 @@
       g.fillText(fitText(g, meta.artist || "Artista", u * 170), px + ph + u * 6, py + ph * 0.36);
       g.font = LIVE_UI(500, u * 20);
       g.fillStyle = "rgba(255,255,255,0.8)";
-      g.fillText(`${(48.2 + Math.floor(t * 5) * 0.1).toFixed(1).replace(".", ",")} mil Me gusta`, px + ph + u * 6, py + ph * 0.7);
+      g.fillText(`${liveLikes(t)} Me gusta`, px + ph + u * 6, py + ph * 0.7);
       g.fillStyle = "#fe2c55";
       rrect(g, px + u * 266, py + u * 13, u * 100, ph - u * 26, u * 10);
       g.fill();

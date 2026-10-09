@@ -31,6 +31,10 @@ GET /search?q=...&kind=video|photo&page=1
 GET /sample/<style>.mp4
     the sample background picked for each style (Pixabay clips, cropped
     to 540x960, in the "wave-samples" volume). No token: they are public.
+POST /comments (image?, lyrics, title, artist)
+    viewer comments for the Live / Stream styles, written by OpenAI
+    (gpt-4o-mini) from one frame of the background and the lyrics:
+    { comments: [{ name, msg }] }. Key in the Modal secret "openai".
 GET /file?url=...
     streams a Pixabay file back with CORS headers, so the app can use it as
     a background (and record it) like an uploaded file.
@@ -215,7 +219,7 @@ class Syncer:
 # ---------------------------------------------------------------------------
 # Free stock media: Pixabay search, behind our token (CPU only, no GPU)
 # ---------------------------------------------------------------------------
-media_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi[standard]==0.115.6", "httpx==0.28.1")
+media_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi[standard]==0.115.6", "httpx==0.28.1", "python-multipart==0.0.20")
 media_cache = modal.Dict.from_name("wave-pixabay-cache", create_if_missing=True)
 samples = modal.Volume.from_name("wave-samples", create_if_missing=True)
 CACHE_SECONDS = 24 * 3600
@@ -255,7 +259,7 @@ def _items(kind: str, hits: list) -> list:
     return out
 
 
-@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY")], volumes={"/samples": samples}, scaledown_window=60, timeout=120)
+@app.function(image=media_image, secrets=[*secrets, modal.Secret.from_name("PIXEBAY"), modal.Secret.from_name("openai")], volumes={"/samples": samples}, scaledown_window=60, timeout=120)
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def media():
@@ -263,11 +267,11 @@ def media():
     from urllib.parse import urlparse
 
     import httpx
-    from fastapi import FastAPI, Header, HTTPException, Query, Response
+    from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
 
     api = FastAPI(title="Wave Studio media")
-    api.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
+    api.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
     def check(authorization: str):
         token = os.environ.get("WAVE_SYNC_TOKEN")
@@ -277,6 +281,55 @@ def media():
     @api.get("/")
     def health():
         return {"ok": True, "service": "wave-media"}
+
+    @api.post("/comments")
+    async def comments(
+        image: UploadFile | None = File(None),
+        lyrics: str = Form(""),
+        title: str = Form(""),
+        artist: str = Form(""),
+        authorization: str = Header(""),
+    ):
+        import base64
+        import json
+
+        check(authorization)
+        key = next((v for k, v in os.environ.items() if "OPENAI" in k.upper() and v), "")
+        if not key:
+            raise HTTPException(503, "Falta la clave de OpenAI")
+        prompt = (
+            "Sos el chat de un video en vivo de TikTok donde suena una canción. Escribí 18 comentarios "
+            "cortos y naturales de espectadores argentinos/latinos (máx. 8 palabras, informales, algunos con un emoji). "
+            "Mezclá: comentarios sobre lo que se ve en la imagen (el lugar, el paisaje, la situación; si es un lugar, "
+            "alguno pregunta dónde es), comentarios sobre la canción (que es un temazo, que la aman, citando una frase "
+            "corta de la letra entre «»), y saludos o reacciones del público. Sin insultos, sin datos personales, "
+            "sin nombres de marcas. Nombres de usuario inventados estilo redes (minúsculas, puntos o guiones bajos). "
+            'Respondé solo JSON: {"comments":[{"name":"...","msg":"..."}]}.\n\n'
+            f"Canción: {title or 'sin título'} · {artist or 'artista'}\nLetra:\n{lyrics[:2500] or '(sin letra)'}"
+        )
+        content = [{"type": "text", "text": prompt}]
+        if image is not None:
+            data = await image.read()
+            if data and len(data) < 4 * 1024 * 1024:
+                content.append({"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + base64.b64encode(data).decode(), "detail": "low"}})
+        r = httpx.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}"},
+            json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": content}], "response_format": {"type": "json_object"}, "temperature": 0.9, "max_tokens": 900},
+            timeout=60,
+        )
+        if r.status_code == 401:
+            raise HTTPException(502, "La clave de OpenAI no es válida")
+        if r.status_code == 429:
+            raise HTTPException(429, "OpenAI está saturado o sin crédito, probá en un rato")
+        if r.status_code != 200:
+            raise HTTPException(502, f"OpenAI respondió {r.status_code}")
+        try:
+            out = json.loads(r.json()["choices"][0]["message"]["content"])
+            items = [{"name": str(c.get("name", ""))[:18], "msg": str(c.get("msg", ""))[:60]} for c in out.get("comments", []) if c.get("msg")]
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(502, "La IA devolvió algo inesperado") from e
+        return {"comments": items[:24]}
 
     @api.get("/sample/{name}")
     def sample(name: str):
