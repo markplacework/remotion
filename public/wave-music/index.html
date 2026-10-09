@@ -500,16 +500,16 @@
             <details class="cu-sec" open>
               <summary>Fondo</summary>
               <div class="chips cu-bgtabs" data-cu="bg">
-                <button type="button" class="chip" data-v="media">Video o foto</button>
                 <button type="button" class="chip" data-v="solid">Color</button>
                 <button type="button" class="chip" data-v="gradient">Degradé</button>
                 <button type="button" class="chip" data-v="animated">Animado</button>
               </div>
-              <div id="cu-media"></div>
               <div class="cu-colors" id="cu-bgcolors">
                 <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
                 <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
               </div>
+              <div id="cu-media"></div>
+              <button type="button" id="cu-usemedia" class="btn btn-ghost cu-usemedia" hidden>Usar mi video o foto de fondo</button>
               <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
               <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
               <span class="opt-label">Efecto</span>

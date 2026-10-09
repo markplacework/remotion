@@ -3414,9 +3414,13 @@ details.cu-sec:not([open]) {
 #cu-media .style-opts {
   margin-top: 0;
 }
-#cu-media #video-opts > .opt-label:first-child,
 #cu-media #bgv-fx {
   display: none;
+}
+#cu-media {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 .cu-editing {
   display: flex;
@@ -3463,8 +3467,11 @@ details.cu-sec:not([open]) {
 }
 .cu .cu-bgtabs {
   display: grid;
-  grid-template-columns: auto auto auto auto;
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.cu-usemedia {
+  height: 38px;
 }
 .cu .cu-bgtabs .chip {
   padding: 7px 6px;

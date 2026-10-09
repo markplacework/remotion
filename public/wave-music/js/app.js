@@ -1537,6 +1537,7 @@
     }
     $("bgv-fx-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === WM.Fx.current.id));
     $("bgv-fx-amount").hidden = WM.Fx.current.id === "none";
+    $("cu-usemedia").hidden = WM.Custom.cfg.bg === "media" || !on;
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
@@ -1966,6 +1967,8 @@
     });
     const media = c.bg === "media";
     $("cu-bgcolors").hidden = media;
+    // footage loaded but a colour chosen: one tap brings it back
+    $("cu-usemedia").hidden = media || !WM.BgVideo.enabled;
     $("cu-bg2").hidden = c.bg === "solid";
     $("cu-darken").hidden = !media;
     $("cu-fxamount").hidden = c.fx === "none";
@@ -1979,7 +1982,7 @@
     const v = $("video-opts");
     if (custom) {
       $("cu-media").appendChild(v);
-      v.hidden = CU.cfg.bg !== "media";
+      v.hidden = false; // your own video or photo, always at hand
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
@@ -2087,6 +2090,7 @@
     CU.restore();
     cuApplied();
   };
+  $("cu-usemedia").onclick = () => cuChange({ bg: "media" });
   $("cu-replace").onclick = () => {
     CU.set({ offPlayer: null, offMeta: null, offHandle: null, offText: null });
     cuApplied();

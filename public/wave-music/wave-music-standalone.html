@@ -3549,9 +3549,13 @@ details.cu-sec:not([open]) {
 #cu-media .style-opts {
   margin-top: 0;
 }
-#cu-media #video-opts > .opt-label:first-child,
 #cu-media #bgv-fx {
   display: none;
+}
+#cu-media {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 .cu-editing {
   display: flex;
@@ -3598,8 +3602,11 @@ details.cu-sec:not([open]) {
 }
 .cu .cu-bgtabs {
   display: grid;
-  grid-template-columns: auto auto auto auto;
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.cu-usemedia {
+  height: 38px;
 }
 .cu .cu-bgtabs .chip {
   padding: 7px 6px;
@@ -4096,16 +4103,16 @@ details.cu-sec:not([open]) {
             <details class="cu-sec" open>
               <summary>Fondo</summary>
               <div class="chips cu-bgtabs" data-cu="bg">
-                <button type="button" class="chip" data-v="media">Video o foto</button>
                 <button type="button" class="chip" data-v="solid">Color</button>
                 <button type="button" class="chip" data-v="gradient">Degradé</button>
                 <button type="button" class="chip" data-v="animated">Animado</button>
               </div>
-              <div id="cu-media"></div>
               <div class="cu-colors" id="cu-bgcolors">
                 <label class="cu-color"><input type="color" data-cu="bg1" /><span>Color 1</span></label>
                 <label class="cu-color" id="cu-bg2"><input type="color" data-cu="bg2" /><span>Color 2</span></label>
               </div>
+              <div id="cu-media"></div>
+              <button type="button" id="cu-usemedia" class="btn btn-ghost cu-usemedia" hidden>Usar mi video o foto de fondo</button>
               <label class="cu-range" id="cu-darken"><span class="opt-label">Oscurecer</span><input type="range" data-cu="darken" min="0" max="80" step="5" /><output></output></label>
               <label class="check"><input type="checkbox" data-cu="vignette" /><span>Viñeta (bordes oscuros)</span></label>
               <span class="opt-label">Efecto</span>
@@ -15251,6 +15258,7 @@ details.cu-sec:not([open]) {
     }
     $("bgv-fx-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === WM.Fx.current.id));
     $("bgv-fx-amount").hidden = WM.Fx.current.id === "none";
+    $("cu-usemedia").hidden = WM.Custom.cfg.bg === "media" || !on;
     $("bgv-name").textContent = on ? (WM.BgVideo.kind === "image" ? "Imagen: " : "Video: ") + WM.BgVideo.name : "";
     $("bgv-clear").hidden = !on;
     const th = WM.Themes.get(preview.theme.id);
@@ -15680,6 +15688,8 @@ details.cu-sec:not([open]) {
     });
     const media = c.bg === "media";
     $("cu-bgcolors").hidden = media;
+    // footage loaded but a colour chosen: one tap brings it back
+    $("cu-usemedia").hidden = media || !WM.BgVideo.enabled;
     $("cu-bg2").hidden = c.bg === "solid";
     $("cu-darken").hidden = !media;
     $("cu-fxamount").hidden = c.fx === "none";
@@ -15693,7 +15703,7 @@ details.cu-sec:not([open]) {
     const v = $("video-opts");
     if (custom) {
       $("cu-media").appendChild(v);
-      v.hidden = CU.cfg.bg !== "media";
+      v.hidden = false; // your own video or photo, always at hand
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
@@ -15801,6 +15811,7 @@ details.cu-sec:not([open]) {
     CU.restore();
     cuApplied();
   };
+  $("cu-usemedia").onclick = () => cuChange({ bg: "media" });
   $("cu-replace").onclick = () => {
     CU.set({ offPlayer: null, offMeta: null, offHandle: null, offText: null });
     cuApplied();
