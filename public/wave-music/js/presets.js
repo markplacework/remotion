@@ -858,11 +858,12 @@
     if (bg && (v === bg.el || v === bg.img)) {
       bg.paintFilter(g, W, H);
       // and the realistic effect picked for it (Personalizado paints its own)
-      if (WM.Fx && !cuOwnFx) WM.Fx.paint(g, W, H, WM.Fx.current.id, WM.Fx.current.amount, t);
+      if (WM.Fx && !cuOwnFx) WM.Fx.paint(g, W, H, WM.Fx.current.id, WM.Fx.current.amount, t, curFrame ? curFrame.pulse() : 0);
     }
     return true;
   }
   let cuOwnFx = false;
+  let curFrame = null; // the frame being drawn (set by the wrapper at the bottom)
   const videoBg = (g, f, filter) => !!f.video && coverTo(g, f.video, f.W, f.H, filter, f.t);
   /** Progress of a word being sung, 0..1. */
   // capped: a word stretched over a long held note still "lands" on time
@@ -3851,20 +3852,8 @@
         }
         g.restore();
       }
-      // falling rain behind the glass
-      g.save();
-      g.strokeStyle = "rgba(200,220,255,0.22)";
-      g.lineWidth = Math.max(1, u * 1.6);
-      g.beginPath();
-      for (let i = 0; i < 110; i++) {
-        const sp = 1.4 + rand(i * 1.3) * 0.8;
-        const y = ((rand(i * 4.7) + t * sp) % 1) * (H + u * 80) - u * 80;
-        const x = rand(i * 9.1) * W;
-        g.moveTo(x, y);
-        g.lineTo(x - u * 6, y + u * (40 + rand(i) * 40));
-      }
-      g.stroke();
-      g.restore();
+      // falling rain behind the glass (the realistic rain of fx.js)
+      if (WM.Fx) WM.Fx.paint(g, W, H, "rain", 90, t);
       this.glass(g, f, u);
       const L = f.lines[f.current];
       if (!L || !L.words.length) return;
@@ -3962,7 +3951,9 @@
         g.lineTo(W, H);
         g.fill();
       }
-      this.flakes(g, f, u, 0);
+      // real snowfall footage over the scene; drawn flakes while it loads (and in thumbnails)
+      const real = WM.Fx && WM.Fx.paint(g, W, H, "snow", 100, t);
+      if (!real) this.flakes(g, f, u, 0);
       const L = f.lines[f.current];
       if (L && L.words.length) {
         g.save();
@@ -3970,7 +3961,7 @@
         softLine(g, f, L, u, { key: "nv", font: SNOW_FONT, size: 92, col: "#ffffff", heroCol: "#cfe6ff", upper: true, track: 0.08, space: 0.45, blur: 36, glow: f.video ? "rgba(6,16,36,0.95)" : "rgba(190,220,255,0.6)", drop: -18, dur: 0.7 });
         g.restore();
       }
-      this.flakes(g, f, u, 1);
+      if (!real) this.flakes(g, f, u, 1);
     },
     /** Snow in layers: small far flakes behind the lyric, big soft ones in front. */
     flakes(g, f, u, front) {
@@ -4140,7 +4131,9 @@
         g.fillStyle = sun;
         g.fillRect(0, 0, W, H);
       }
-      this.leaves(g, f, u, false);
+      // with footage: its own real leaves plus a warm light leak; drawn leaves otherwise
+      if (f.video && WM.Fx) WM.Fx.paint(g, W, H, "leak", 55, t);
+      if (!f.video) this.leaves(g, f, u, false);
       const L = f.lines[f.current];
       if (L && L.words.length) {
         g.save();
@@ -4148,7 +4141,7 @@
         softLine(g, f, L, u, { key: "ot", font: AUT_FONT, size: 120, col: "#fff1dc", heroCol: "#ffc46b", hero: true, blur: 22, glow: "rgba(80,30,0,0.6)", drop: 60, rot: 0.6, dur: 0.6, lh: 1.05 });
         g.restore();
       }
-      this.leaves(g, f, u, true);
+      if (!f.video) this.leaves(g, f, u, true);
     },
     leaves(g, f, u, front) {
       const { W, H, t } = f;
@@ -4779,7 +4772,7 @@
   // PERSONALIZADO — every choice is the user's (custom.js holds the options)
   // ======================================================================
   const CU_WORD_ANIMS = { words: 1, karaoke: 1, bounce: 1 };
-  const CU_DRAWN_FX = { sparkles: 1, stars: 1, confetti: 1 };
+  const CU_DRAWN_FX = { stars: 1, confetti: 1 };
   const cuCfg = () => (WM.Custom ? WM.Custom.cfg : {});
   const cuFont = (c, size) => `${(WM.Custom && WM.Custom.weightOf(c.font)) || 800} ${size}px ${WM.Custom ? WM.Custom.familyOf(c.font) : "Montserrat, sans-serif"}`;
   /** Particles over the background: a pure function of time, like the rest. */
@@ -4906,7 +4899,7 @@
       g.globalAlpha = Math.min(1, (c.fxAmount == null ? 80 : c.fxAmount) / 100);
       cuParticles(g, f, fx, c.accent);
       g.restore();
-    } else if (WM.Fx) WM.Fx.paint(g, W, H, fx, c.fxAmount == null ? 80 : c.fxAmount, t);
+    } else if (WM.Fx) WM.Fx.paint(g, W, H, fx, c.fxAmount == null ? 80 : c.fxAmount, t, f.pulse());
     if (c.vignette) {
       const v = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.75);
       v.addColorStop(0, "rgba(0,0,0,0)");
@@ -5216,12 +5209,14 @@
     const draw = p.draw;
     p.draw = function (g, f) {
       lyricFamily = f.font || null;
+      curFrame = f;
       // a canvas shared between styles must not carry one style's tracking into the next
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       try {
         return draw.call(this, g, f);
       } finally {
         lyricFamily = null;
+        curFrame = null;
       }
     };
   });

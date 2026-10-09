@@ -1300,7 +1300,13 @@
       const W = 180;
       const H = (180 * h) / w;
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
-      preset.draw(g, WM.Motion.frame({ lines: SAMPLES[WM.Motion.modeFor(preset)], t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
+      // thumbnails run on their own clock: no effect clips (they follow the song)
+      WM.Fx.quiet = true;
+      try {
+        preset.draw(g, WM.Motion.frame({ lines: SAMPLES[WM.Motion.modeFor(preset)], t, W, H, safe: { x: 12, y: 22, w: W - 24, h: H - 44 }, energy: null, meta: { title: "Mi canción" } }));
+      } finally {
+        WM.Fx.quiet = false;
+      }
     });
   }
   let lastThumb = 0;
@@ -1457,7 +1463,12 @@
       if (hv.paused) hv.play().catch(() => {});
       const video = hv.readyState >= 2 ? hv : null;
       const lines = pairs[preset.id];
-      preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Wave Studio" } }));
+      WM.Fx.quiet = true;
+      try {
+        preset.draw(g, WM.Motion.frame({ lines: lines[WM.Motion.modeFor(preset)], t: (sec % LOOP) + 0.05, W, H, safe, energy: null, video, meta: { title: "Tu canción", artist: "Wave Studio" } }));
+      } finally {
+        WM.Fx.quiet = false;
+      }
       // TikTok's own shade so its white UI reads over light styles
       g.setTransform(w / W, 0, 0, h / H, 0, 0);
       const top = g.createLinearGradient(0, 0, 0, H * 0.16);
@@ -1503,6 +1514,7 @@
     $("bgv-filter-list").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.filter === WM.BgVideo.filter));
   }
   var cuSeenBg = "";
+  var WEATHER = ["lluvia", "nieve", "otono", "tormenta"];
   // realistic effects over the background (fx.js)
   WM.Fx.LIST.forEach((fx) => {
     const b = document.createElement("button");
@@ -1931,7 +1943,7 @@
     const v = $("video-opts");
     if (custom) {
       $("cu-media").appendChild(v);
-      v.hidden = false; // uploading is always at hand
+      v.hidden = CU.cfg.bg !== "media";
     } else if (v.parentNode !== bgvAnchor.parentNode) bgvAnchor.after(v);
   }
   // template chips: a dot with the look's colours
@@ -2095,6 +2107,8 @@
     preview.font = null;
     preview.setTheme(id);
     cuPlaceBgv();
+    // the weather styles open on their own (real) footage unless the user brought theirs
+    if (WEATHER.includes(id) && (!WM.BgVideo.enabled || (WM.BgVideo.sample && WM.BgVideo.sample !== id))) $("btn-bgs").onclick();
     updateBgv();
     updateChatOpts();
     // each style has its own composition: start it centred

@@ -76,7 +76,7 @@
     stream: { font: "poppins", color: "#ffffff", accent: "#9146ff", effect: "box", effectColor: "#9146ff", anim: "words", bg: "media", darken: 0, pos: "bottom" },
     karasing: { font: "poppins", color: "#ffffff", accent: "#ff3d8b", effect: "outline", effectColor: "#14001f", anim: "karaoke", bg: "animated", bg1: "#14001f", bg2: "#ff3d8b", next: true },
     kararetro: { font: "barlow", color: "#ffffff", accent: "#ffe600", effect: "outline", effectColor: "#1a0033", anim: "karaoke", bg: "gradient", bg1: "#1a0033", bg2: "#ff2fa0", next: true },
-    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", fx: "sparkles", next: true },
+    karastage: { font: "poppins", color: "#ffffff", accent: "#ffd23f", effect: "glow", anim: "karaoke", bg: "animated", bg1: "#070712", bg2: "#3a2a7a", fx: "golddust", next: true },
   };
 
   const KEY_CUR = "wm-custom-cur";
@@ -86,6 +86,7 @@
   function migrate(c) {
     c = { ...DEFAULTS, ...c };
     if (c.particles && c.particles !== "none" && (!c.fx || c.fx === "none")) c.fx = c.particles;
+    if (c.fx === "sparkles") c.fx = "stars"; // "Brillos" is gone
     delete c.particles;
     return c;
   }

@@ -2,7 +2,7 @@
 // Real footage of snow, fog, smoke, embers, light… shot over black and
 // blended with "screen" on top of the background, the way editors use
 // overlay packs. The clips (Pixabay, cropped to 720x1280 and made to loop
-// seamlessly) are served by the media service; rain is drawn instead.
+// seamlessly) are served by the media service; rain and lightning are drawn.
 // Like the background video, the clip follows the song's clock, so the
 // preview, seeking and the export show the same frame.
 (function (WM) {
@@ -12,7 +12,7 @@
     { id: "rain", label: "Lluvia", drawn: true },
     { id: "fog", label: "Niebla" },
     { id: "smoke", label: "Humo" },
-    { id: "lightning", label: "Relámpagos" },
+    { id: "lightning", label: "Relámpagos", drawn: true },
     { id: "embers", label: "Brasas" },
     { id: "sparks", label: "Chispas" },
     { id: "bokeh", label: "Bokeh" },
@@ -22,79 +22,94 @@
     { id: "flare", label: "Destello" },
   ];
 
-  const el = document.createElement("video");
-  el.muted = true;
-  el.loop = true;
-  el.playsInline = true;
-  el.preload = "auto";
-  const blobs = new Map(); // id -> object URL (kept: switching back is instant)
-  let loaded = ""; // id whose clip is in the element
-  let loading = null;
+  // one element per effect, so styles and previews never fight over a clip
+  const clips = new Map(); // id -> { el, loading, used }
+  const pending = new Set();
 
   const api = {
     LIST,
-    el,
     // the choice for the styles with a background video (Personalizado keeps its own)
     current: { id: "none", amount: 80 },
     exporting: false,
+    // thumbnails run on their own clock: they get the drawn effects only
+    quiet: false,
     onchange: null,
-    /** Make sure the clip for an effect is in the element. */
+    /** Make sure the clip for an effect is loaded. */
     load(id) {
       const fx = LIST.find((x) => x.id === id);
-      if (!fx || fx.drawn || id === "none" || loaded === id) return loading || Promise.resolve();
-      loaded = id;
-      loading = (async () => {
+      if (!fx || fx.drawn || id === "none") return Promise.resolve();
+      let c = clips.get(id);
+      if (c) return c.loading || Promise.resolve();
+      const el = document.createElement("video");
+      el.muted = true;
+      el.loop = true;
+      el.playsInline = true;
+      el.preload = "auto";
+      c = { el, used: 0, loading: null };
+      clips.set(id, c);
+      c.loading = (async () => {
         try {
-          let url = blobs.get(id);
-          if (!url) {
-            const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/fx${id}.mp4`);
-            if (!res.ok) throw new Error("No se pudo cargar el efecto");
-            url = URL.createObjectURL(await res.blob());
-            blobs.set(id, url);
-          }
-          if (loaded !== id) return;
-          await new Promise((res, rej) => {
-            el.onloadeddata = res;
-            el.onerror = () => rej(new Error("No se pudo leer el efecto"));
+          const res = await fetch(`${WM.ModalSync.mediaUrl()}/sample/fx${id}.mp4`);
+          if (!res.ok) throw new Error("No se pudo cargar el efecto");
+          const url = URL.createObjectURL(await res.blob());
+          await new Promise((ok, fail) => {
+            el.onloadeddata = ok;
+            el.onerror = () => fail(new Error("No se pudo leer el efecto"));
             el.src = url;
           });
         } catch (e) {
-          if (loaded === id) loaded = "";
+          clips.delete(id); // try again next time
           throw e;
         } finally {
-          loading = null;
+          c.loading = null;
+          pending.delete(c);
           if (api.onchange) api.onchange();
         }
       })();
-      return loading;
+      pending.add(c);
+      return c.loading;
     },
-    /** Resolves once the current clip can be drawn (before an export). */
-    ready: () => (loading ? loading.catch(() => {}) : Promise.resolve()),
-    get busy() {
-      return !!loading;
-    },
-    /** Keep the clip on the song's clock (called once per drawn frame). */
+    /** Resolves once every clip being loaded can be drawn (before an export). */
+    ready: () => Promise.all([...pending].map((c) => c.loading && c.loading.catch(() => {}))),
+    /** Keep the clips in use on the song's clock (once per drawn frame). */
     sync(t, playing, fromExport = false) {
-      if (!loaded || !el.duration) return;
       if (api.exporting && !fromExport) return;
-      const d = el.duration;
-      const want = ((t % d) + d) % d;
-      const drift = Math.abs(el.currentTime - want);
-      if (playing) {
-        if (el.paused) el.play().catch(() => {});
-        if (drift > 0.35 && drift < d - 0.35 && !el.seeking) el.currentTime = want;
-      } else {
-        if (!el.paused) el.pause();
-        if (drift > 0.04 && !el.seeking) el.currentTime = want;
-      }
+      const now = performance.now();
+      clips.forEach((c) => {
+        const el = c.el;
+        if (!el.duration) return;
+        // a clip no style drew lately rests
+        if (now - c.used > 800) {
+          if (!el.paused) el.pause();
+          return;
+        }
+        const d = el.duration;
+        const want = ((t % d) + d) % d;
+        const drift = Math.abs(el.currentTime - want);
+        if (playing) {
+          if (el.paused) el.play().catch(() => {});
+          if (drift > 0.35 && drift < d - 0.35 && !el.seeking) el.currentTime = want;
+        } else {
+          if (!el.paused) el.pause();
+          if (drift > 0.04 && !el.seeking) el.currentTime = want;
+        }
+      });
     },
-    /** Paint an effect over what is already on the canvas. amount: 0..100 */
-    paint(g, W, H, id, amount, t) {
-      if (!id || id === "none" || amount <= 0) return;
+    /**
+     * Paint an effect over what is already on the canvas. amount: 0..100;
+     * pulse: the beat (lightning strikes on it). Returns whether it painted.
+     */
+    paint(g, W, H, id, amount, t, pulse = 0) {
+      if (!id || id === "none" || amount <= 0) return false;
       const k = Math.min(1, amount / 100);
-      if (id === "rain") return rain(g, W, H, t, k);
+      if (id === "rain") return rain(g, W, H, t, k), true;
+      if (id === "lightning") return lightning(g, W, H, t, k, pulse), true;
+      if (api.quiet) return false;
       api.load(id).catch(() => {});
-      if (loaded !== id || el.readyState < 2 || !el.videoWidth) return;
+      const c = clips.get(id);
+      if (!c || c.loading || c.el.readyState < 2 || !c.el.videoWidth) return false;
+      c.used = performance.now();
+      const el = c.el;
       const vw = el.videoWidth;
       const vh = el.videoHeight;
       const s = Math.max(W / vw, H / vh);
@@ -103,8 +118,40 @@
       g.globalAlpha = k;
       g.drawImage(el, (W - vw * s) / 2, (H - vh * s) / 2, vw * s, vh * s);
       g.restore();
+      return true;
     },
   };
+
+  // Lightning (as in the Tormenta style): a fresh bolt on every strong beat
+  function lightning(g, W, H, t, k, pulse) {
+    const flash = pulse > 0.72 ? (pulse - 0.72) / 0.28 : 0;
+    if (flash <= 0.05) return;
+    const u = W / 1100;
+    const rnd2 = (i) => {
+      const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    g.save();
+    g.fillStyle = `rgba(200,210,255,${0.35 * flash * k})`;
+    g.fillRect(0, 0, W, H);
+    const seed = Math.floor(t * 3);
+    let x = W * (0.2 + rnd2(seed) * 0.6);
+    let y = 0;
+    g.strokeStyle = `rgba(240,245,255,${flash * k})`;
+    g.shadowColor = "rgba(170,190,255,1)";
+    g.shadowBlur = u * 30;
+    g.lineWidth = u * 4;
+    g.lineJoin = "round";
+    g.beginPath();
+    g.moveTo(x, y);
+    for (let i = 0; i < 12 && y < H * 0.62; i++) {
+      x += (rnd2(seed * 7 + i) - 0.5) * u * 120;
+      y += H * (0.04 + rnd2(seed * 3 + i) * 0.03);
+      g.lineTo(x, y);
+    }
+    g.stroke();
+    g.restore();
+  }
 
   // Rain: three depths of motion-blurred streaks with a little wind; the
   // near ones longer, wider and brighter, like drops passing the lens.
