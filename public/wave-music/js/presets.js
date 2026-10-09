@@ -7,23 +7,43 @@
   const { clamp, lerp, ease, rand } = WM.Motion;
 
   // ---------- shared text helpers ----------
-  /** Lay words out in lines no wider than maxW. fontOf(word) -> font. */
-  function wrapWords(g, words, fontOf, maxW, spaceW) {
-    const lines = [];
-    let cur = { items: [], width: 0 };
-    words.forEach((w) => {
+  /**
+   * Lay words out in lines no wider than maxW. fontOf(word) -> font.
+   * balance: keep the same number of lines but make them as even as
+   * possible (like CSS text-wrap: balance), so no word is left alone.
+   */
+  function wrapWords(g, words, fontOf, maxW, spaceW, balance = true) {
+    const widths = words.map((w) => {
       g.font = fontOf(w);
-      const width = g.measureText(w.label).width;
-      const add = (cur.items.length ? spaceW : 0) + width;
-      if (cur.items.length && cur.width + add > maxW) {
-        lines.push(cur);
-        cur = { items: [], width: 0 };
-      }
-      cur.items.push({ w, width, x: cur.width + (cur.items.length ? spaceW : 0) });
-      cur.width += cur.items.length > 1 ? add : width;
+      return g.measureText(w.label).width;
     });
-    if (cur.items.length) lines.push(cur);
-    return lines;
+    const lay = (limit) => {
+      const lines = [];
+      let cur = { items: [], width: 0 };
+      words.forEach((w, i) => {
+        const width = widths[i];
+        const add = (cur.items.length ? spaceW : 0) + width;
+        if (cur.items.length && cur.width + add > limit) {
+          lines.push(cur);
+          cur = { items: [], width: 0 };
+        }
+        cur.items.push({ w, width, x: cur.width + (cur.items.length ? spaceW : 0) });
+        cur.width += cur.items.length > 1 ? add : width;
+      });
+      if (cur.items.length) lines.push(cur);
+      return lines;
+    };
+    const lines = lay(maxW);
+    if (!balance || lines.length < 2) return lines;
+    // the narrowest width that still needs no more lines
+    let lo = Math.max(...widths);
+    let hi = maxW;
+    for (let k = 0; k < 14 && hi - lo > 1; k++) {
+      const mid = (lo + hi) / 2;
+      if (lay(mid).length > lines.length) lo = mid;
+      else hi = mid;
+    }
+    return lay(hi);
   }
 
   /** Words grouped into stacked rows: short words ride with the next one. */
@@ -1182,7 +1202,7 @@
     if (!v) {
       if (wrapCache.size > 600) wrapCache.clear();
       // keep only the layout (which word goes where), never the timing
-      v = wrapWords(g, words, fontOf, maxW, spaceW).map((row) => ({ width: row.width, items: row.items.map((it) => ({ k: words.indexOf(it.w), width: it.width, x: it.x })) }));
+      v = wrapWords(g, words, fontOf, maxW, spaceW, key[0] !== "!").map((row) => ({ width: row.width, items: row.items.map((it) => ({ k: words.indexOf(it.w), width: it.width, x: it.x })) }));
       wrapCache.set(key, v);
     }
     // re-attach the words as they are now (AI sync, manual nudges)
@@ -1866,7 +1886,7 @@
       const navY = safe.y + u * (f.mockup ? 78 : 24);
       const barY = safe.y + safe.h - u * 30;
       // the note starts a little below the bar, clear of the top edge
-      const top = navY + u * 120;
+      const top = navY + u * 200;
       const bottom = barY - u * 70;
       // a bit larger than the real app, so the lyric reads on a phone feed
       const body = u * 50;
@@ -1949,7 +1969,7 @@
     },
     rows(g, line, body, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_LYR(body), w, body * 0.28);
+      return wrapCached(g, `!n|${line.index}|${line.text}|${Math.round(body * 10)}|${Math.round(w)}`, words, () => NOTE_LYR(body), w, body * 0.28);
     },
     caret(g, f, line, c, u, body) {
       const { t } = f;
@@ -2132,7 +2152,7 @@
     },
     layout(g, line, size, w) {
       const words = line.words.map((x) => ({ ...x, label: x.text }));
-      return wrapCached(g, `a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_LYR(size), w, size * 0.28);
+      return wrapCached(g, `!a|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(w)}`, words, () => AUR_LYR(size), w, size * 0.28);
     },
     drawCard(g, f, u, pulse) {
       const { W, H, t, safe } = f;
@@ -2471,6 +2491,8 @@
         g.fillStyle = inv ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.58)";
       } else g.fillStyle = inv ? "#ffffff" : "#000000";
       g.fillRect(0, 0, W, H);
+      // slow smoke drifting through the dark frames (on white it vanishes)
+      if (!inv && WM.Fx) WM.Fx.paint(g, W, H, "smoke", 70, t);
       if (!L || !L.words.length || j < 0 || done) return;
       const ink = inv ? "#000000" : "#ffffff";
       const cx = safe.x + safe.w / 2;
@@ -5707,6 +5729,21 @@
     c.fill();
     return newsDots;
   }
+  /** Letter-spaced small caps, drawn letter by letter. Returns the width. */
+  function spaced(g, text, x, y, align, sp) {
+    const chars = [...text];
+    const ws = chars.map((c) => g.measureText(c).width);
+    const total = ws.reduce((a, b) => a + b, 0) + sp * (chars.length - 1);
+    let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+    const prev = g.textAlign;
+    g.textAlign = "left";
+    chars.forEach((c, i) => {
+      g.fillText(c, cx, y);
+      cx += ws[i] + sp;
+    });
+    g.textAlign = prev;
+    return total;
+  }
   const diario = {
     id: "diario",
     label: "News",
@@ -5733,29 +5770,56 @@
       g.fillStyle = light;
       g.fillRect(0, 0, W, H);
       sheetLight(g, W, H, t);
+      this.masthead(g, f, u);
       if (!L || !L.words.length) return;
-      // only the lyric, in the headline's type, centred
-      const x0 = safe.x;
-      const cw = safe.w;
-      let size = u * 108;
+      // the sung line is the front-page headline, centred
+      const cw = safe.w * 0.9;
+      const x0 = safe.x + (safe.w - cw) / 2;
+      let size = u * 104;
       const words = L.words.map((w) => ({ ...w, label: w.text }));
       let rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       while (rows.length > 4 && size > u * 60) {
         size *= 0.88;
         rows = wrapCached(g, `nw|${L.index}|${L.text}|${Math.round(size * 10)}|${Math.round(cw)}`, words, () => NEWS_HEAD(size), cw, size * 0.26);
       }
-      const photoH = f.video ? u * 380 : 0;
-      const blockH = rows.length * size * 1.02 + (photoH ? photoH + u * 50 : 0);
+      const title = (f.meta && f.meta.title) || "";
+      const artist = (f.meta && f.meta.artist) || "";
+      const kickH = u * 62;
+      const deckH = title || artist ? u * 100 : 0;
+      const photoH = f.video ? u * 360 : 0;
+      const blockH = kickH + rows.length * size * 1.0 + deckH + (photoH ? photoH + u * 44 : 0);
       // each new line settles in gently
       const e = clamp((t - L.start) / 0.5);
+      const cx = safe.x + safe.w / 2;
       g.save();
       g.translate(f.shift.x, f.shift.y + (1 - ease.out(e)) * u * 14);
-      let y = safe.y + (safe.h - blockH) / 2;
+      let y = safe.y + (safe.h - blockH) / 2 + u * 20;
+      // kicker: a red tag with a hairline either side
+      g.textBaseline = "middle";
+      g.font = NEWS_SANS(800, u * 21);
+      g.fillStyle = NEWS.red;
+      const kw = spaced(g, "EXCLUSIVE", cx, y + u * 12, "center", u * 4);
+      g.fillRect(cx - kw / 2 - u * 70, y + u * 11, u * 52, u * 2);
+      g.fillRect(cx + kw / 2 + u * 18, y + u * 11, u * 52, u * 2);
+      y += kickH;
       y = this.headline(g, f, u, L, x0, y, cw, size, rows, true);
-      y += u * 50;
+      // deck: the song and the artist, like a standfirst under the headline
+      if (deckH) {
+        y += u * 30;
+        g.fillStyle = NEWS.ink;
+        g.fillRect(cx - u * 40, y, u * 80, u * 2);
+        y += u * 46;
+        g.textBaseline = "middle";
+        g.textAlign = "center";
+        g.fillStyle = NEWS.mute;
+        g.font = `italic ${NEWS_BODY(u * 40)}`;
+        const deck = title && artist ? `“${title}” — ${artist}` : title ? `“${title}”` : artist;
+        g.fillText(fitText(g, deck, cw), cx, y);
+        y += u * 24;
+      }
       // their photo, printed in black and white
       if (photoH) {
-        y += u * 10;
+        y += u * 44;
         g.save();
         g.beginPath();
         g.rect(x0, y, cw, photoH);
@@ -5774,6 +5838,49 @@
         g.fillRect(0, 0, cw, photoH);
         g.restore();
       }
+      g.restore();
+    },
+    /** The paper's nameplate and folio lines, small and quiet, at the top and bottom of the page. */
+    masthead(g, f, u) {
+      const { safe } = f;
+      const x0 = safe.x + u * 34;
+      const x1 = safe.x + safe.w - u * 34;
+      const cx = (x0 + x1) / 2;
+      let y = safe.y + u * (f.mockup ? 60 : 40);
+      g.save();
+      g.__keepColor = true;
+      g.textBaseline = "alphabetic";
+      g.textAlign = "center";
+      g.fillStyle = NEWS.ink;
+      g.font = `italic ${NEWS_MAST(u * 64)}`;
+      g.fillText("The Daily Wave", cx, y + u * 58);
+      y += u * 84;
+      // a thick and a thin rule, the classic newspaper double line
+      g.fillRect(x0, y, x1 - x0, u * 3);
+      g.fillRect(x0, y + u * 7, x1 - x0, u * 1);
+      y += u * 36;
+      const d = new Date();
+      const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+      const MON = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+      g.font = NEWS_SANS(600, u * 15);
+      g.fillStyle = NEWS.mute;
+      g.textAlign = "left";
+      spaced(g, "VOL. CXXVI · NO. 41", x0, y, "left", u * 2);
+      g.textAlign = "center";
+      spaced(g, `${DAYS[d.getDay()]}, ${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`, cx, y, "center", u * 2);
+      g.textAlign = "right";
+      spaced(g, "LATE EDITION", x1, y, "right", u * 2);
+      g.fillStyle = NEWS.ink;
+      g.fillRect(x0, y + u * 16, x1 - x0, u * 1);
+      // folio at the foot of the page
+      const fy = safe.y + safe.h - u * (f.mockup ? 70 : 50);
+      g.fillRect(x0, fy - u * 30, x1 - x0, u * 1);
+      g.fillStyle = NEWS.mute;
+      g.textAlign = "left";
+      spaced(g, "A1", x0, fy, "left", u * 2);
+      g.textAlign = "right";
+      spaced(g, "CONTINUED ON PAGE 2 →", x1, fy, "right", u * 2);
+      g.__keepColor = false;
       g.restore();
     },
     /** The sung line as the headline; each word presses onto the page as it is sung. Returns the y below it. */

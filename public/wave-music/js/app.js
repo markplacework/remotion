@@ -2404,6 +2404,106 @@
   $("btn-autocenter").addEventListener("click", () => histRecord());
   $("btn-center").addEventListener("click", () => histRecord());
 
+  // ---------- pasos plegables ----------
+  // Each step folds away from its header once it's set; folded, the header
+  // shows what was chosen. Remembered in this browser.
+  {
+    let folded = [];
+    try {
+      folded = JSON.parse(localStorage.getItem("wm-folded")) || [];
+    } catch {
+      /* none */
+    }
+    const summary = {
+      1: () => (audio.duration ? "✓ " + $("audio-name").textContent : ""),
+      2: () => "",
+      3: () => {
+        const o = $("sync-mode").selectedOptions[0];
+        return o ? o.textContent : "";
+      },
+      4: () => "",
+      5: () => WM.Themes.get(preview.theme.id).label,
+      6: () => "",
+    };
+    const cards = [...document.querySelectorAll("#lyrics-view .card[data-step]")];
+    const paint = (card) => {
+      const sum = card.querySelector(".card-sum");
+      const f = summary[card.dataset.step];
+      sum.textContent = card.classList.contains("folded") && f ? f() : "";
+    };
+    cards.forEach((card) => {
+      const head = card.querySelector(".card-head");
+      const sum = document.createElement("span");
+      sum.className = "card-sum";
+      const chev = document.createElement("button");
+      chev.type = "button";
+      chev.className = "card-fold";
+      chev.setAttribute("aria-label", "Plegar o desplegar este paso");
+      head.append(sum, chev);
+      if (folded.includes(card.dataset.step)) card.classList.add("folded");
+      chev.setAttribute("aria-expanded", !card.classList.contains("folded"));
+      head.addEventListener("click", (e) => {
+        // the header's own controls (undo, redo…) keep working
+        if (e.target.closest("button, input, select, a, label") && !e.target.closest(".card-fold")) return;
+        card.classList.toggle("folded");
+        chev.setAttribute("aria-expanded", !card.classList.contains("folded"));
+        folded = cards.filter((c) => c.classList.contains("folded")).map((c) => c.dataset.step);
+        try {
+          localStorage.setItem("wm-folded", JSON.stringify(folded));
+        } catch {
+          /* kept for this visit */
+        }
+        paint(card);
+      });
+      paint(card);
+    });
+    // folded summaries follow what changes (a new song, the style…)
+    setInterval(() => cards.forEach((c) => c.classList.contains("folded") && paint(c)), 1000);
+  }
+
+  // ---------- mini vista previa (móvil) ----------
+  // On a phone the styles sit far below the picture: while you browse and
+  // edit them, a small live copy of the video floats in the corner.
+  {
+    const mq = window.matchMedia("(max-width: 899px)");
+    const pip = document.createElement("button");
+    pip.type = "button";
+    pip.className = "pip";
+    pip.setAttribute("aria-label", "Ver la vista previa");
+    const pc = document.createElement("canvas");
+    pip.append(pc);
+    document.body.append(pip);
+    let stageSeen = true;
+    let stepSeen = false;
+    let raf = 0;
+    const loop = () => {
+      raf = 0;
+      if (!pip.classList.contains("on")) return;
+      const src = preview.motionCanvas;
+      if (src && src.width > 2) {
+        const w = Math.round(pip.clientWidth * Math.min(2, window.devicePixelRatio || 1));
+        const h = Math.round(w * (src.height / src.width));
+        if (pc.width !== w || pc.height !== h) {
+          pc.width = w;
+          pc.height = h;
+        }
+        try {
+          pc.getContext("2d").drawImage(src, 0, 0, w, h);
+        } catch {}
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    const update = () => {
+      const on = mq.matches && stepSeen && !stageSeen && !!preview.motionCanvas && !document.fullscreenElement;
+      pip.classList.toggle("on", on);
+      if (on && !raf) raf = requestAnimationFrame(loop);
+    };
+    new IntersectionObserver((l) => l.forEach((en) => (stageSeen = en.isIntersecting)) || update(), { threshold: 0.25 }).observe($("stage-host"));
+    new IntersectionObserver((l) => l.forEach((en) => (stepSeen = en.isIntersecting)) || update()).observe(document.querySelector('#lyrics-view .card[data-step="5"]'));
+    mq.addEventListener("change", update);
+    pip.onclick = () => $("stage-host").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   // ---------- categorías de estilos (Lyrics) ----------
   // each one fills whole rows of the 4-column grid
   const STYLE_CATS = [
@@ -2412,7 +2512,7 @@
     ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
     ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
     ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
-    ["retro", "Retro", ["vhs", "vinilo", "neon", "radio"]],
+    ["retro", "Retro", ["vhs", "vinilo", "neon"]],
     ["elegantes", "Elegantes", ["cinematic", "minimal", "diario", "couture", "blackout", "vinilo", "aurora", "otono"]],
     ["redes", "Redes", ["notes", "recorte", "karaoke", "stream"]],
   ];

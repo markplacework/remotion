@@ -165,7 +165,7 @@
     // live broadcasts
     live: { id: "live", label: "Live", kind: "motion", preset: "live", background: { type: "motion" }, meta: true, video: true },
     noticiero: { id: "noticiero", label: "Noticiero", kind: "motion", preset: "noticiero", background: { type: "motion" }, meta: true, video: true },
-    radio: { id: "radio", label: "Radio", kind: "motion", preset: "radio", background: { type: "motion" }, meta: true, video: true },
+    // Saved, not shown: radio: { id: "radio", label: "Radio", kind: "motion", preset: "radio", background: { type: "motion" }, meta: true, video: true },
     stream: { id: "stream", label: "Stream", kind: "motion", preset: "stream", background: { type: "motion" }, video: true },
     // only in the Karaoke tool
     karasing: { id: "karasing", label: "Sing", kind: "motion", preset: "karasing", background: { type: "motion" }, karaokeOnly: true , video: true },
