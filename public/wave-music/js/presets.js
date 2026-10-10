@@ -314,51 +314,97 @@
     g.fillText(txt, x - off / k, y);
     g.restore();
   }
-  /** Low smoke: the real smoke clip faded in from the bottom, over soft rising puffs. */
+  /** The sweeping light shafts from the top corner. k: brightness. */
+  function cineShafts(g, W, H, t, pulse, k, tail = 0) {
+    for (let i = 0; i < 4; i++) {
+      const a = -0.45 + i * 0.17 + Math.sin(t * (0.19 + i * 0.06) + i * 1.7) * 0.15 + Math.sin(t * 0.07 + i) * 0.05;
+      const len = H * 1.3;
+      const w = W * (0.09 + rand(i * 4.1) * 0.1);
+      g.save();
+      g.translate(W * (0.92 + Math.sin(t * 0.11 + i) * 0.03), -H * 0.04);
+      g.rotate(a + 0.5);
+      const gr = g.createLinearGradient(0, 0, 0, len);
+      const al = Math.min(1, k * (0.5 + 0.5 * rand(i * 2.7)) * (0.7 + 0.3 * Math.sin(t * 0.6 + i * 2)) * (1 + 0.25 * pulse));
+      gr.addColorStop(0, `rgba(255,214,170,${al})`);
+      gr.addColorStop(1, `rgba(255,214,170,${al * tail})`);
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.lineTo(-w, len);
+      g.lineTo(w, len);
+      g.closePath();
+      g.fill();
+      g.restore();
+    }
+  }
+  /**
+   * Low smoke rolling in from the floor (the filmed clip over soft rising
+   * puffs), lit by the light shafts: where a beam crosses the smoke it
+   * glows warm, as in a real stage haze.
+   */
   let cineSmokeCv = null;
-  function cineFloorSmoke(g, W, H, t, u) {
-    g.save();
-    g.globalCompositeOperation = "screen";
-    // soft puffs that rise and drift (always there, even before the clip loads)
+  let cineBeamCv = null;
+  function cineFloorSmoke(g, W, H, t, u, pulse) {
+    const w = Math.round(W / 2);
+    const h = Math.round(H / 2);
+    const mk = (c) => {
+      if (!c) c = document.createElement("canvas");
+      if (c.width !== w || c.height !== h) {
+        c.width = w;
+        c.height = h;
+      }
+      return c;
+    };
+    cineSmokeCv = mk(cineSmokeCv);
+    cineBeamCv = mk(cineBeamCv);
+    // 1. the smoke, half size, on black
+    const o = cineSmokeCv.getContext("2d");
+    o.globalCompositeOperation = "source-over";
+    o.globalAlpha = 1;
+    o.fillStyle = "#000";
+    o.fillRect(0, 0, w, h);
+    o.globalCompositeOperation = "screen";
     for (let i = 0; i < 9; i++) {
       const life = ((t * 0.05 + rand(i * 3.7)) % 1 + 1) % 1;
-      const x = W * (rand(i * 1.3) * 1.2 - 0.1) + Math.sin(t * 0.15 + i) * u * 60;
-      const y = H * (1.05 - life * 0.38);
-      const r = u * (220 + rand(i * 5.1) * 180) * (0.8 + life * 0.6);
+      const x = w * (rand(i * 1.3) * 1.2 - 0.1) + Math.sin(t * 0.15 + i) * u * 30;
+      const y = h * (1.05 - life * 0.38);
+      const r = (u / 2) * (220 + rand(i * 5.1) * 180) * (0.8 + life * 0.6);
       const a = 0.24 * Math.sin(life * Math.PI);
-      const grd = g.createRadialGradient(x, y, 0, x, y, r);
+      const grd = o.createRadialGradient(x, y, 0, x, y, r);
       grd.addColorStop(0, `rgba(215,210,205,${a})`);
       grd.addColorStop(0.5, `rgba(215,210,205,${a * 0.45})`);
       grd.addColorStop(1, "rgba(215,210,205,0)");
-      g.fillStyle = grd;
-      g.fillRect(x - r, y - r, r * 2, r * 2);
+      o.fillStyle = grd;
+      o.fillRect(x - r, y - r, r * 2, r * 2);
     }
-    g.restore();
-    if (!WM.Fx) return;
-    // the filmed smoke, only in the lower part of the frame
-    const w = Math.round(W / 2);
-    const h = Math.round(H / 2);
-    if (!cineSmokeCv) cineSmokeCv = document.createElement("canvas");
-    if (cineSmokeCv.width !== w || cineSmokeCv.height !== h) {
-      cineSmokeCv.width = w;
-      cineSmokeCv.height = h;
-    }
-    const o = cineSmokeCv.getContext("2d");
+    if (WM.Fx) WM.Fx.paint(o, w, h, "smoke", 100, t);
+    // only in the lower part of the frame
     o.globalCompositeOperation = "source-over";
-    o.fillStyle = "#000";
-    o.fillRect(0, 0, w, h);
-    if (!WM.Fx.paint(o, w, h, "smoke", 100, t)) return;
-    o.globalCompositeOperation = "destination-in";
     const m = o.createLinearGradient(0, 0, 0, h);
-    m.addColorStop(0, "rgba(0,0,0,0)");
-    m.addColorStop(0.45, "rgba(0,0,0,0.15)");
-    m.addColorStop(1, "rgba(0,0,0,1)");
+    m.addColorStop(0, "rgba(0,0,0,1)");
+    m.addColorStop(0.45, "rgba(0,0,0,0.85)");
+    m.addColorStop(1, "rgba(0,0,0,0)");
     o.fillStyle = m;
     o.fillRect(0, 0, w, h);
     g.save();
     g.globalCompositeOperation = "screen";
     g.globalAlpha = 0.85;
     g.drawImage(cineSmokeCv, 0, 0, W, H);
+    // 2. the beams, bright, kept only where there is smoke: the lit haze
+    const b = cineBeamCv.getContext("2d");
+    b.globalCompositeOperation = "source-over";
+    b.fillStyle = "#000";
+    b.fillRect(0, 0, w, h);
+    b.globalCompositeOperation = "lighter";
+    cineShafts(b, w, h, t, pulse, 0.9, 0.7);
+    b.globalCompositeOperation = "multiply";
+    b.drawImage(cineSmokeCv, 0, 0);
+    // multiply darkens: brighten it back up before adding it on
+    b.globalCompositeOperation = "lighter";
+    b.drawImage(cineBeamCv, 0, 0);
+    g.globalCompositeOperation = "lighter";
+    g.globalAlpha = 0.75;
+    g.drawImage(cineBeamCv, 0, 0, W, H);
     g.restore();
   }
   const cinematic = {
@@ -401,26 +447,7 @@
       g.globalCompositeOperation = "lighter";
       // volumetric light shafts from the top corner, sweeping slowly like
       // stage lights, each at its own pace
-      for (let i = 0; i < 4; i++) {
-        const a = -0.45 + i * 0.17 + Math.sin(t * (0.19 + i * 0.06) + i * 1.7) * 0.15 + Math.sin(t * 0.07 + i) * 0.05;
-        const len = H * 1.3;
-        const w = W * (0.09 + rand(i * 4.1) * 0.1);
-        g.save();
-        g.translate(W * (0.92 + Math.sin(t * 0.11 + i) * 0.03), -H * 0.04);
-        g.rotate(a + 0.5);
-        const gr = g.createLinearGradient(0, 0, 0, len);
-        const al = (0.05 + 0.05 * rand(i * 2.7)) * (0.7 + 0.3 * Math.sin(t * 0.6 + i * 2)) * (1 + 0.25 * pulse);
-        gr.addColorStop(0, `rgba(255,214,170,${al})`);
-        gr.addColorStop(1, "rgba(255,214,170,0)");
-        g.fillStyle = gr;
-        g.beginPath();
-        g.moveTo(0, 0);
-        g.lineTo(-w, len);
-        g.lineTo(w, len);
-        g.closePath();
-        g.fill();
-        g.restore();
-      }
+      cineShafts(g, W, H, t, pulse, 0.1);
       // a few big soft bokeh far behind
       for (let i = 0; i < 9; i++) {
         const warm = rand(i * 3.1) > 0.4;
@@ -453,7 +480,7 @@
       // real fog drifting through the light (fx.js)
       if (WM.Fx) WM.Fx.paint(g, W, H, "fog", 75, t);
       // and smoke rolling in from the floor
-      cineFloorSmoke(g, W, H, t, u);
+      cineFloorSmoke(g, W, H, t, u, pulse);
 
       g.save();
       place(g, f);
@@ -1944,27 +1971,42 @@
       const navY = safe.y + u * (f.mockup ? 78 : 24);
       const barY = safe.y + safe.h - u * 30;
       // the note starts a little below the bar, clear of the top edge
-      const top = navY + u * 200;
+      const top = navY + u * 300;
       const bottom = barY - u * 70;
       // a bit larger than the real app, so the lyric reads on a phone feed
       const body = u * 50;
       const lh = u * 68;
       const para = u * 14;
       const head = { date: u * 50, title: u * 120 };
-      // content heights up to each line, for the scroll
+      // the lyric is typed a part at a time (two lines, or up to a long
+      // pause): when a part is done it fades and the next starts afresh
       const lines = f.lines;
-      const blocks = [];
-      let yy = head.date + head.title;
-      for (let i = 0; i <= Math.min(f.current, lines.length - 1); i++) {
-        const rows = this.rows(g, lines[i], body, cw);
-        blocks.push({ y: yy, rows });
-        yy += rows.length * lh + para;
-      }
-      const room = bottom - top;
-      const scrollAt = (i) => (i < 0 ? 0 : Math.max(0, blocks[i].y + blocks[i].rows.length * lh + u * 40 - room));
-      const L = lines[f.current];
-      const k = L ? ease.inOut(clamp((t - L.start) / 0.35)) : 1;
-      const scroll = f.current < 0 ? 0 : lerp(scrollAt(f.current - 1), scrollAt(f.current), k);
+      const CLEAR = 0.3;
+      const firstOf = [];
+      let first = 0;
+      lines.forEach((Ln, i) => {
+        const pause = i > 0 && Ln.start - (lines[i - 1].end || Ln.start) > 4;
+        if (i > 0 && (i - first >= 2 || pause)) first = i;
+        firstOf[i] = first;
+      });
+      const blocksFor = (a, b) => {
+        const out = [];
+        let yy = head.date + head.title;
+        for (let i = a; i <= b; i++) {
+          const rows = this.rows(g, lines[i], body, cw);
+          out.push({ i, y: yy, rows });
+          yy += rows.length * lh + para;
+        }
+        return out;
+      };
+      const cur = Math.min(f.current, lines.length - 1);
+      const partStart = cur >= 0 ? firstOf[cur] : 0;
+      let blocks = cur >= 0 ? blocksFor(partStart, cur) : [];
+      // the part before, fading out while the new one waits
+      const since = cur >= 0 ? t - lines[partStart].start : 1;
+      let old = null;
+      if (partStart > 0 && since < CLEAR) old = { blocks: blocksFor(firstOf[partStart - 1], partStart - 1), a: 1 - ease.inOut(since / CLEAR) };
+      const scroll = 0;
 
       g.save();
       g.beginPath();
@@ -1986,8 +2028,16 @@
       const title = (f.meta && f.meta.title) || "Letra";
       g.fillText(title, x0, oy + head.date + u * 66, cw);
       g.font = NOTE_LYR(body);
+      if (old) {
+        g.globalAlpha = old.a;
+        g.fillStyle = NOTE.ink;
+        old.blocks.forEach((b) => b.rows.forEach((row, ri) => row.items.forEach((it) => g.fillText(it.w.label, x0 + it.x, oy + b.y + ri * lh + body))));
+        g.globalAlpha = 1;
+        blocks = [];
+      }
       let cursor = null;
-      blocks.forEach((b, i) => {
+      blocks.forEach((b) => {
+        const i = b.i;
         const line = lines[i];
         const typing = i === f.current;
         b.rows.forEach((row, ri) => {
@@ -2388,6 +2438,34 @@
   const COUT_FONT = (size) => `500 ${size}px ${fam("'Bodoni Moda', Didot, 'Times New Roman', serif")}`;
   // 0: white studio, 1: black (always full screen; the white band over black is out)
   const COUT_LOOKS = [0, 1, 0, 0, 1, 0, 1, 1];
+  /** Couture's studio light: a slow soft key light, and a flash on each cut. */
+  function couStudio(g, W, H, t, look, sinceCut) {
+    g.save();
+    const lx = W * (0.5 + Math.sin(t * 0.23) * 0.28);
+    const ly = H * (0.12 + Math.sin(t * 0.17 + 1) * 0.05);
+    const key = g.createRadialGradient(lx, ly, 0, lx, ly, H * 0.75);
+    if (look === 0) {
+      // on the white seamless the light reads as a soft brighter patch
+      key.addColorStop(0, "rgba(255,255,255,0.45)");
+      key.addColorStop(1, "rgba(255,255,255,0)");
+      g.globalCompositeOperation = "screen";
+    } else {
+      key.addColorStop(0, "rgba(255,255,255,0.16)");
+      key.addColorStop(0.5, "rgba(255,255,255,0.05)");
+      key.addColorStop(1, "rgba(255,255,255,0)");
+      g.globalCompositeOperation = "lighter";
+    }
+    g.fillStyle = key;
+    g.fillRect(0, 0, W, H);
+    // the flash: a quick white pop as the cut lands
+    const fl = clamp(1 - sinceCut / 0.14);
+    if (fl > 0) {
+      g.globalCompositeOperation = "source-over";
+      g.fillStyle = `rgba(255,255,255,${(look === 0 ? 0.35 : 0.22) * fl * fl})`;
+      g.fillRect(0, 0, W, H);
+    }
+    g.restore();
+  }
   const couture = {
     id: "couture",
     label: "Couture",
@@ -2430,8 +2508,9 @@
         g.fillStyle = look === 0 ? "rgba(246,246,246,0.66)" : "rgba(0,0,0,0.58)";
         g.fillRect(0, 0, W, H);
       }
-      // smoke drifting through the black cuts, like a fashion film set
-      if (look !== 0 && WM.Fx) WM.Fx.paint(g, W, H, "smoke", 80, t);
+      // a studio: a soft key light sweeping slowly over the backdrop, and a
+      // camera flash on every cut, like a photo shoot
+      couStudio(g, W, H, t, look, L && j >= 0 ? t - L.words[j].t0 : 9);
       if (!L || !L.words.length || j < 0) {
         grainOver(g, W, H, t, 0.06);
         return;
@@ -3524,8 +3603,9 @@
       const rows = wrapCached(g, `bc|${line.index}|${line.text}|${Math.round(size * 10)}|${Math.round(safe.w)}`, words, () => BC_FONT(size), safe.w * 0.86, size * 0.26);
       const lh = size * 1.02;
       const barH = rows.length * lh + u * 34;
-      const barW = Math.max(...rows.map((r) => r.width)) + u * 70;
+      // a full-width bar across the safe area, the lyric centred in it
       const x0 = safe.x + u * 16;
+      const barW = safe.w - u * 16;
       const y0 = ty - u * 40 - barH;
       const inn = ease.out(clamp((t - line.start + 0.2) / 0.35));
       const k = u * 14;
@@ -3565,7 +3645,7 @@
           const p = clamp((t - it.w.t0 + 0.05) / 0.2);
           if (p <= 0) return;
           g.globalAlpha = p;
-          g.fillText(it.w.label, x0 + u * 32 + it.x + (1 - p) * u * 20, y);
+          g.fillText(it.w.label, x0 + (barW - row.width) / 2 + it.x + (1 - p) * u * 20, y);
         });
       });
       g.restore();
@@ -6113,8 +6193,10 @@
       // the visible box, in device pixels (a far shadow offset draws only the shadow)
       const sx = Math.abs(this.shadowOffsetX) > 1000 ? this.shadowOffsetX : 0;
       const sy = Math.abs(this.shadowOffsetY) > 1000 ? this.shadowOffsetY : 0;
-      const l = x - m.actualBoundingBoxLeft;
-      const r = x + m.actualBoundingBoxRight;
+      // a maxWidth squeezes the text around its anchor
+      const sq = maxWidth !== undefined && m.width > maxWidth ? maxWidth / m.width : 1;
+      const l = x - m.actualBoundingBoxLeft * sq;
+      const r = x + m.actualBoundingBoxRight * sq;
       const tp = y - m.actualBoundingBoxAscent;
       const bt = y + m.actualBoundingBoxDescent;
       let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
