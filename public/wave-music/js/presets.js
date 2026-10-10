@@ -6181,6 +6181,12 @@
     const tf = mode === "upper" ? upper : (x) => x.toLocaleLowerCase("es");
     return (m[mode] = lines.map((L) => ({ ...L, text: tf(L.text || ""), words: L.words.map((w) => ({ ...w, text: tf(w.text) })) })));
   }
+  // How a style starts (until the user changes it): its effect and extras
+  WM.StyleDefaults = {
+    lluvia: { fx: "fog", fxAmount: 80, meta: true, progress: true },
+  };
+  /** A style's look: what the user set, or how the style starts. */
+  const lookOf = (id) => (WM.StyleColors && WM.StyleColors[id]) || WM.StyleDefaults[id] || null;
   /** The extras' settings for a style, in Personalizado's terms. */
   function extrasCfg(id, sc) {
     const off = (WM.StyleOffsets && WM.StyleOffsets[id]) || {};
@@ -6193,7 +6199,7 @@
     const own = p.boxes;
     p.boxes = function (W, H, safe, meta) {
       const base = own ? own.call(this, W, H, safe, meta) : [];
-      const sc = WM.StyleColors && WM.StyleColors[this.id];
+      const sc = lookOf(this.id);
       return sc && (sc.meta || sc.progress || sc.handle) ? base.concat(cuExtraBoxes(W, H, safe, meta, extrasCfg(this.id, sc))) : base;
     };
   });
@@ -6205,7 +6211,7 @@
       guard(g);
       lyricFamily = f.font || null;
       curFrame = f;
-      styleColors = (WM.StyleColors && WM.StyleColors[this.id]) || null;
+      styleColors = lookOf(this.id);
       // a canvas shared between styles must not carry one style's tracking into the next
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       const sc = this.id !== "custom" ? styleColors : null;

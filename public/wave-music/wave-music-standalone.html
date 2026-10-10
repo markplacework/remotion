@@ -4780,7 +4780,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   // eslint-disable-next-line no-unused-vars
   const SAVED_SAMPLES = {"kinetic": {"user": "doktorkleinmusic", "id": 316702}, "karaoke": {"user": "Coverr-Free-Footage", "id": 1630}, "aurora": {"user": "redzy", "id": 186969}, "couture": {"user": "LiskaRed", "id": 336847}, "vhs": {"user": "AmbientSoul", "id": 297271}, "adrenalina": {"user": "spaceX55", "id": 31517}, "street": {"user": "RafterJr72", "id": 23258}, "broadcast": {"user": "emilianofls", "id": 45830}, "recorte": {"user": "tommyvideo", "id": 121793}, "lluvia": {"user": "IAmTheDrama", "id": 340514}, "nieve": {"user": "doktorkleinmusic", "id": 316493}, "tormenta": {"user": "Nick_the_Photographer", "id": 145582}, "otono": {"user": "doktorkleinmusic", "id": 375779}, "live": {"user": "doktorkleinmusic", "id": 326417}, "noticiero": {"user": "thuanvo", "id": 188591}, "radio": {"user": "Natsu_444", "id": 201676}, "stream": {"user": "Darioguzben", "id": 180776}};
   // each style's own footage, picked one by one (loads on its own with the style)
-  WM.STYLE_SAMPLES = { otono: { user: "redzy", id: 186965 }, nieve: { user: "JamesQube", id: 5581991 } };
+  WM.STYLE_SAMPLES = { otono: { user: "redzy", id: 186965 }, nieve: { user: "JamesQube", id: 5581991 }, lluvia: { user: "Macb3t", id: 16160 } };
   // Captions demo: a 51 s podcast clip (synthetic voices, no third-party
   // rights) and the words our transcription service returned for it, with
   // three slips of the synthetic voice corrected by hand.
@@ -13025,6 +13025,12 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     const tf = mode === "upper" ? upper : (x) => x.toLocaleLowerCase("es");
     return (m[mode] = lines.map((L) => ({ ...L, text: tf(L.text || ""), words: L.words.map((w) => ({ ...w, text: tf(w.text) })) })));
   }
+  // How a style starts (until the user changes it): its effect and extras
+  WM.StyleDefaults = {
+    lluvia: { fx: "fog", fxAmount: 80, meta: true, progress: true },
+  };
+  /** A style's look: what the user set, or how the style starts. */
+  const lookOf = (id) => (WM.StyleColors && WM.StyleColors[id]) || WM.StyleDefaults[id] || null;
   /** The extras' settings for a style, in Personalizado's terms. */
   function extrasCfg(id, sc) {
     const off = (WM.StyleOffsets && WM.StyleOffsets[id]) || {};
@@ -13037,7 +13043,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     const own = p.boxes;
     p.boxes = function (W, H, safe, meta) {
       const base = own ? own.call(this, W, H, safe, meta) : [];
-      const sc = WM.StyleColors && WM.StyleColors[this.id];
+      const sc = lookOf(this.id);
       return sc && (sc.meta || sc.progress || sc.handle) ? base.concat(cuExtraBoxes(W, H, safe, meta, extrasCfg(this.id, sc))) : base;
     };
   });
@@ -13049,7 +13055,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       guard(g);
       lyricFamily = f.font || null;
       curFrame = f;
-      styleColors = (WM.StyleColors && WM.StyleColors[this.id]) || null;
+      styleColors = lookOf(this.id);
       // a canvas shared between styles must not carry one style's tracking into the next
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       const sc = this.id !== "custom" ? styleColors : null;
@@ -13443,7 +13449,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   el.preload = "auto";
   const img = new Image();
   let url = null;
-  const SAMPLES_VERSION = 7;
+  const SAMPLES_VERSION = 8;
   const samples = new Map(); // style -> Promise<Blob>
   let sampleSeq = 0;
 
@@ -19609,7 +19615,7 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
   const CASE_LOCKED = ["kinetic", "cinematic", "neon", "couture", "blackout", "adrenalina", "street", "lluvia", "nieve", "tormenta", "kararetro"];
   function paintColors() {
     const id = preview.theme.preset;
-    const c = (id && WM.StyleColors[id]) || {};
+    const c = (id && (WM.StyleColors[id] || WM.StyleDefaults[id])) || {};
     $("tc-main").value = c.main || TC_DEFAULT.main;
     $("tc-accent").value = c.accent || TC_DEFAULT.accent;
     $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
@@ -19633,7 +19639,7 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
     $("tc-handle-size").querySelector("input").value = c.handleSize || 100;
     $("tc-handle-size").querySelector("output").textContent = (c.handleSize || 100) + "%";
     $("tc-extras-hint").hidden = !(c.meta || c.progress || c.handle);
-    $("tc-reset").hidden = !Object.keys(c).length;
+    $("tc-reset").hidden = !WM.StyleColors[id];
   }
   // Personalizado's options on this style: capitals, effect and extras
   $("tc-case").querySelectorAll("button").forEach((b) => (b.onclick = () => setLook({ case: b.dataset.v })));
@@ -19656,9 +19662,11 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
   $("tc-handle-size").querySelector("input").oninput = (e) => setLook({ handleSize: Number(e.target.value) });
   function setLook(patch) {
     const id = preview.theme.preset;
-    const next = { ...(WM.StyleColors[id] || {}), ...patch };
-    Object.keys(next).forEach((k) => !next[k] && delete next[k]);
-    if (Object.keys(next).length) WM.StyleColors[id] = next;
+    const base = WM.StyleDefaults[id];
+    const next = { ...(WM.StyleColors[id] || base || {}), ...patch };
+    // an option the style starts with stays switched off when turned off
+    Object.keys(next).forEach((k) => !next[k] && !(base && k in base) && delete next[k]);
+    if (Object.keys(next).length || base) WM.StyleColors[id] = next;
     else delete WM.StyleColors[id];
     saveColors();
     paintColors();

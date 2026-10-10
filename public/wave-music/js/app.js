@@ -2284,7 +2284,7 @@
   const CASE_LOCKED = ["kinetic", "cinematic", "neon", "couture", "blackout", "adrenalina", "street", "lluvia", "nieve", "tormenta", "kararetro"];
   function paintColors() {
     const id = preview.theme.preset;
-    const c = (id && WM.StyleColors[id]) || {};
+    const c = (id && (WM.StyleColors[id] || WM.StyleDefaults[id])) || {};
     $("tc-main").value = c.main || TC_DEFAULT.main;
     $("tc-accent").value = c.accent || TC_DEFAULT.accent;
     $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
@@ -2308,7 +2308,7 @@
     $("tc-handle-size").querySelector("input").value = c.handleSize || 100;
     $("tc-handle-size").querySelector("output").textContent = (c.handleSize || 100) + "%";
     $("tc-extras-hint").hidden = !(c.meta || c.progress || c.handle);
-    $("tc-reset").hidden = !Object.keys(c).length;
+    $("tc-reset").hidden = !WM.StyleColors[id];
   }
   // Personalizado's options on this style: capitals, effect and extras
   $("tc-case").querySelectorAll("button").forEach((b) => (b.onclick = () => setLook({ case: b.dataset.v })));
@@ -2331,9 +2331,11 @@
   $("tc-handle-size").querySelector("input").oninput = (e) => setLook({ handleSize: Number(e.target.value) });
   function setLook(patch) {
     const id = preview.theme.preset;
-    const next = { ...(WM.StyleColors[id] || {}), ...patch };
-    Object.keys(next).forEach((k) => !next[k] && delete next[k]);
-    if (Object.keys(next).length) WM.StyleColors[id] = next;
+    const base = WM.StyleDefaults[id];
+    const next = { ...(WM.StyleColors[id] || base || {}), ...patch };
+    // an option the style starts with stays switched off when turned off
+    Object.keys(next).forEach((k) => !next[k] && !(base && k in base) && delete next[k]);
+    if (Object.keys(next).length || base) WM.StyleColors[id] = next;
     else delete WM.StyleColors[id];
     saveColors();
     paintColors();

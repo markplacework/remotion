@@ -45,7 +45,7 @@
   // eslint-disable-next-line no-unused-vars
   const SAVED_SAMPLES = {"kinetic": {"user": "doktorkleinmusic", "id": 316702}, "karaoke": {"user": "Coverr-Free-Footage", "id": 1630}, "aurora": {"user": "redzy", "id": 186969}, "couture": {"user": "LiskaRed", "id": 336847}, "vhs": {"user": "AmbientSoul", "id": 297271}, "adrenalina": {"user": "spaceX55", "id": 31517}, "street": {"user": "RafterJr72", "id": 23258}, "broadcast": {"user": "emilianofls", "id": 45830}, "recorte": {"user": "tommyvideo", "id": 121793}, "lluvia": {"user": "IAmTheDrama", "id": 340514}, "nieve": {"user": "doktorkleinmusic", "id": 316493}, "tormenta": {"user": "Nick_the_Photographer", "id": 145582}, "otono": {"user": "doktorkleinmusic", "id": 375779}, "live": {"user": "doktorkleinmusic", "id": 326417}, "noticiero": {"user": "thuanvo", "id": 188591}, "radio": {"user": "Natsu_444", "id": 201676}, "stream": {"user": "Darioguzben", "id": 180776}};
   // each style's own footage, picked one by one (loads on its own with the style)
-  WM.STYLE_SAMPLES = { otono: { user: "redzy", id: 186965 }, nieve: { user: "JamesQube", id: 5581991 } };
+  WM.STYLE_SAMPLES = { otono: { user: "redzy", id: 186965 }, nieve: { user: "JamesQube", id: 5581991 }, lluvia: { user: "Macb3t", id: 16160 } };
   // Captions demo: a 51 s podcast clip (synthetic voices, no third-party
   // rights) and the words our transcription service returned for it, with
   // three slips of the synthetic voice corrected by hand.
