@@ -13041,7 +13041,7 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
     handleSize: 100,
   };
   // Personalizado's own original look (its card, "Restaurar estilo")
-  const ORIGINAL = { font: "montserrat", effect: "glow", anim: "words", bg: "solid", bg1: "#0d0b1a", fx: "embers", showMeta: true, progress: true, handle: "Wave Music", handleSize: 130 };
+  const ORIGINAL = { font: "montserrat", effect: "glow", anim: "words", bg: "solid", bg1: "#0d0b1a", fx: "golddust", pos: "top", showMeta: true, progress: true, handle: "Wave Music", handleSize: 130 };
   // the weight each typeface looks best in (and that is self-hosted)
   const WEIGHTS = { anton: 400, montserrat: 800, poppins: 900, inter: 800, league: 400, barlow: 700, bodoni: 600, cormorant: 600, instrument: 400, orbitron: 900, shrikhand: 400, vt323: 400, hand: 400, caveat: 600 };
 
@@ -13132,11 +13132,11 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
 
   // once: the ready looks ("Para empezar") are gone, so a look left over
   // from them goes back to Personalizado's own (saved templates stay)
-  if (read("wm-custom-v", 0) < 3) {
+  if (read("wm-custom-v", 0) < 4) {
     write(KEY_CUR, ORIGINAL);
     write(KEY_ORIGIN, ORIGINAL);
     write(KEY_ACTIVE, null);
-    write("wm-custom-v", 3);
+    write("wm-custom-v", 4);
   }
   const api = {
     DEFAULTS,
