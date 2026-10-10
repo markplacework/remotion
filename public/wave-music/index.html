@@ -583,7 +583,7 @@
               <span class="opt-label">Filtro</span>
               <div id="bgv-filter-list" class="flt-list" role="group" aria-label="Filtro del fondo"></div>
               <label class="cu-range flt-amount" id="bgv-filter-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="100" /><output>100%</output></label>
-              <div id="bgv-fx">
+              <div id="bgv-fx" hidden>
                 <span class="opt-label">Efecto</span>
                 <div id="bgv-fx-list" class="chips grid3" role="group" aria-label="Efecto sobre el fondo"></div>
                 <label class="cu-range" id="bgv-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
@@ -630,6 +630,21 @@
                 <button type="button" class="chip" data-v="marker">Resaltador</button>
               </div>
               <label class="cu-color" id="tc-effect-color-row" hidden><input type="color" id="tc-effect-color" value="#000000" /><span>Color del efecto</span></label>
+              <span class="opt-label">Letras</span>
+              <div class="chips grid3" id="tc-case" role="group" aria-label="Mayúsculas">
+                <button type="button" class="chip" data-v="">Original</button>
+                <button type="button" class="chip" data-v="upper">MAYÚSCULAS</button>
+                <button type="button" class="chip" data-v="lower">minúsculas</button>
+              </div>
+              <span class="opt-label">Efecto</span>
+              <div class="chips grid3" id="tc-fx" role="group" aria-label="Efecto"></div>
+              <label class="cu-range" id="tc-fx-amount" hidden><span class="opt-label">Intensidad</span><input type="range" min="10" max="100" step="5" value="80" /><output>80%</output></label>
+              <span class="opt-label">Extras</span>
+              <label class="check"><input type="checkbox" id="tc-meta" /><span>Título y artista arriba</span></label>
+              <label class="check"><input type="checkbox" id="tc-progress" /><span>Barra de progreso</span></label>
+              <label class="field grow tc-handle"><span>Firma o nombre del canal</span><input id="tc-handle" type="text" maxlength="40" placeholder="@tucanal" /></label>
+              <label class="cu-range" id="tc-handle-size" hidden><span class="opt-label">Tamaño de la firma</span><input type="range" min="60" max="200" step="10" value="100" /><output>100%</output></label>
+              <p class="opt-hint" id="tc-extras-hint" hidden>El título, la barra y la firma se pueden arrastrar en la vista previa.</p>
               <button type="button" id="tc-reset" class="btn-link tc-reset" hidden>Volver a como era el estilo</button>
             </div>
             <button type="button" id="btn-customize" class="btn-link customize-link" hidden>Crear una copia editable en Personalizado</button>

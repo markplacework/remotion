@@ -3640,3 +3640,25 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
 .card-head .hint ~ .card-fold {
   margin-left: 4px;
 }
+.text-colors > .opt-label {
+  margin-top: 6px;
+}
+.text-colors > .check {
+  margin: 0;
+}
+.text-colors .tc-handle {
+  width: auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.text-colors .tc-handle > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.text-colors .tc-handle input {
+  width: 100%;
+  box-sizing: border-box;
+}

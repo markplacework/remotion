@@ -2287,8 +2287,39 @@
     $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
     $("tc-effect-color").value = c.effectColor || "#000000";
     $("tc-effect-color-row").hidden = !c.effect || c.effect === "glow";
-    $("tc-reset").hidden = !(c.main || c.accent || c.effect);
+    $("tc-case").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.case || "")));
+    $("tc-fx").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === (c.fx || "none")));
+    $("tc-fx-amount").hidden = !c.fx;
+    $("tc-fx-amount").querySelector("input").value = c.fxAmount || 80;
+    $("tc-fx-amount").querySelector("output").textContent = (c.fxAmount || 80) + "%";
+    $("tc-meta").checked = !!c.meta;
+    $("tc-progress").checked = !!c.progress;
+    if (document.activeElement !== $("tc-handle")) $("tc-handle").value = c.handle || "";
+    $("tc-handle-size").hidden = !c.handle;
+    $("tc-handle-size").querySelector("input").value = c.handleSize || 100;
+    $("tc-handle-size").querySelector("output").textContent = (c.handleSize || 100) + "%";
+    $("tc-extras-hint").hidden = !(c.meta || c.progress || c.handle);
+    $("tc-reset").hidden = !Object.keys(c).length;
   }
+  // Personalizado's options on this style: capitals, effect and extras
+  $("tc-case").querySelectorAll("button").forEach((b) => (b.onclick = () => setLook({ case: b.dataset.v })));
+  WM.Fx.LIST.forEach((fx) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.fx = fx.id;
+    b.textContent = fx.label;
+    b.onclick = () => {
+      if (fx.id !== "none") WM.Fx.load(fx.id).catch((e) => toast(e.message));
+      setLook({ fx: fx.id === "none" ? "" : fx.id });
+    };
+    $("tc-fx").appendChild(b);
+  });
+  $("tc-fx-amount").querySelector("input").oninput = (e) => setLook({ fxAmount: Number(e.target.value) });
+  $("tc-meta").onchange = (e) => setLook({ meta: e.target.checked });
+  $("tc-progress").onchange = (e) => setLook({ progress: e.target.checked });
+  $("tc-handle").oninput = (e) => setLook({ handle: e.target.value.trim() });
+  $("tc-handle-size").querySelector("input").oninput = (e) => setLook({ handleSize: Number(e.target.value) });
   function setLook(patch) {
     const id = preview.theme.preset;
     const next = { ...(WM.StyleColors[id] || {}), ...patch };

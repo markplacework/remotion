@@ -1246,8 +1246,6 @@
     const bg = WM.BgVideo;
     if (bg && (v === bg.el || v === bg.img)) {
       bg.paintFilter(g, W, H);
-      // and the realistic effect picked for it (Personalizado paints its own)
-      if (WM.Fx && !cuOwnFx) WM.Fx.paint(g, W, H, WM.Fx.current.id, WM.Fx.current.amount, t, curFrame ? curFrame.pulse() : 0);
     }
     return true;
   }
@@ -5455,43 +5453,153 @@
   const CU_EXIT = 0.22;
   const cuOff = (o, safe) => (o ? { x: o.x * safe.w, y: o.y * safe.h } : { x: 0, y: 0 });
   let cuScratch = null;
+  /** Where the extras (player, title, signature) sit, as draggable boxes. */
+  function cuExtraBoxes(W, H, safe, meta, c) {
+    const u = safe.w / 825;
+    if (!cuScratch) cuScratch = document.createElement("canvas").getContext("2d");
+    const g = cuScratch;
+    const out = [];
+    const at = (key, x, y, w, h) => {
+      const o = cuOff(c[key], safe);
+      out.push({ key, x: x + o.x, y: y + o.y, w, h });
+    };
+    if (c.progress) {
+      const bw = safe.w * 0.86;
+      const by = safe.y + safe.h - u * 150;
+      at("offPlayer", (W - bw) / 2 - u * 10, by - u * 24, bw + u * 20, u * 162);
+    }
+    if (c.showMeta && meta && (meta.title || meta.artist)) {
+      g.font = cuFont(c, u * 34);
+      let w = g.measureText(upper(meta.title || "")).width;
+      g.font = `500 ${u * 26}px Inter, sans-serif`;
+      w = Math.min(safe.w * 0.9, Math.max(w, g.measureText(meta.artist || "").width)) + u * 30;
+      at("offMeta", W / 2 - w / 2, safe.y + u * 30, w, u * 92);
+    }
+    if (c.handle) {
+      const hs = (c.handleSize || 100) / 100;
+      g.font = `600 ${u * 26 * hs}px Inter, sans-serif`;
+      const w = g.measureText(c.handle).width + u * 24;
+      const bottom = safe.y + safe.h - (c.progress ? u * 182 : u * 24);
+      // with the player, it sits over the bar's start like the song name in a music app
+      const x = c.progress ? (W - safe.w * 0.86) / 2 - u * 12 : safe.x + safe.w - u * 20 - w + u * 12;
+      at("offHandle", x, bottom - u * 10 - u * 26 * hs, w, u * 18 + u * 26 * hs);
+    }
+    return out;
+  }
+  /** The extras over a frame: title and artist, the music player, the signature. */
+  function cuExtras(g, f, c, u) {
+    const { W, safe, t } = f;
+    // song title and artist, small at the top
+    if (c.showMeta && (f.meta.title || f.meta.artist)) {
+      g.save();
+      const om = cuOff(c.offMeta, safe);
+      g.translate(om.x, om.y);
+      g.textAlign = "center";
+      g.textBaseline = "top";
+      g.fillStyle = hexA(c.color, 0.85);
+      g.font = cuFont(c, u * 34);
+      g.fillText(fitText(g, upper(f.meta.title || ""), safe.w * 0.9), W / 2, safe.y + u * 40);
+      g.font = `500 ${u * 26}px Inter, sans-serif`;
+      g.fillStyle = hexA(c.color, 0.6);
+      g.fillText(fitText(g, f.meta.artist || "", safe.w * 0.9), W / 2, safe.y + u * 86);
+      g.restore();
+    }
+    // progress through the song, like a music player: bar, knob, times, controls
+    const last = f.lines[f.lines.length - 1];
+    if (c.progress && last) {
+      const end = WM.songDuration > 0 ? WM.songDuration : Math.max(last.end || 0, last.start + 3);
+      const k = clamp(t / end);
+      const bw = safe.w * 0.86;
+      const bx = (W - bw) / 2;
+      const by = safe.y + safe.h - u * 150;
+      g.save();
+      const op = cuOff(c.offPlayer, safe);
+      g.translate(op.x, op.y);
+      g.fillStyle = hexA(c.color, 0.28);
+      rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
+      g.fill();
+      g.fillStyle = c.color;
+      rrect(g, bx, by - u * 3, Math.max(u * 6, bw * k), u * 6, u * 3);
+      g.fill();
+      g.beginPath();
+      g.arc(bx + bw * k, by, u * 12, 0, Math.PI * 2);
+      g.fill();
+      g.font = `500 ${u * 22}px Inter, sans-serif`;
+      g.fillStyle = hexA(c.color, 0.7);
+      g.textBaseline = "top";
+      g.textAlign = "left";
+      g.fillText(fmt(Math.min(t, end)), bx, by + u * 18);
+      g.textAlign = "right";
+      g.fillText("-" + fmt(Math.max(0, end - t)), bx + bw, by + u * 18);
+      // shuffle · previous · pause · next · repeat
+      const cy = by + u * 92;
+      const cx = W / 2;
+      g.fillStyle = c.color;
+      g.beginPath();
+      g.arc(cx, cy, u * 40, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = c.bg === "solid" || c.bg === "gradient" || c.bg === "animated" ? c.bg1 : "#000000";
+      g.fillRect(cx - u * 12, cy - u * 15, u * 8, u * 30);
+      g.fillRect(cx + u * 4, cy - u * 15, u * 8, u * 30);
+      g.fillStyle = c.color;
+      [-1, 1].forEach((d) => {
+        const x = cx + d * u * 120;
+        g.beginPath();
+        g.moveTo(x - d * u * 12, cy - u * 15);
+        g.lineTo(x + d * u * 10, cy);
+        g.lineTo(x - d * u * 12, cy + u * 15);
+        g.closePath();
+        g.fill();
+        g.fillRect(x + d * u * 10 - (d > 0 ? 0 : u * 5), cy - u * 15, u * 5, u * 30);
+      });
+      g.strokeStyle = hexA(c.color, 0.75);
+      g.lineWidth = u * 3.5;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      // shuffle: two crossing arrows
+      const sx = cx - u * 230;
+      g.beginPath();
+      g.moveTo(sx - u * 16, cy - u * 10);
+      g.bezierCurveTo(sx, cy - u * 10, sx, cy + u * 10, sx + u * 16, cy + u * 10);
+      g.moveTo(sx - u * 16, cy + u * 10);
+      g.bezierCurveTo(sx, cy + u * 10, sx, cy - u * 10, sx + u * 16, cy - u * 10);
+      g.moveTo(sx + u * 10, cy - u * 16);
+      g.lineTo(sx + u * 16, cy - u * 10);
+      g.lineTo(sx + u * 10, cy - u * 4);
+      g.moveTo(sx + u * 10, cy + u * 4);
+      g.lineTo(sx + u * 16, cy + u * 10);
+      g.lineTo(sx + u * 10, cy + u * 16);
+      g.stroke();
+      // repeat: a rounded loop with an arrow
+      const rx = cx + u * 230;
+      rrect(g, rx - u * 17, cy - u * 11, u * 34, u * 22, u * 8);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(rx + u * 2, cy - u * 17);
+      g.lineTo(rx + u * 8, cy - u * 11);
+      g.lineTo(rx + u * 2, cy - u * 5);
+      g.stroke();
+      g.restore();
+    }
+    if (c.handle) {
+      g.save();
+      const oh = cuOff(c.offHandle, safe);
+      g.translate(oh.x, oh.y);
+      g.textAlign = c.progress ? "left" : "right";
+      g.textBaseline = "bottom";
+      g.font = `600 ${u * 26 * ((c.handleSize || 100) / 100)}px Inter, sans-serif`;
+      g.fillStyle = hexA(c.color, c.progress ? 0.85 : 0.7);
+      g.fillText(c.handle, c.progress ? (W - safe.w * 0.86) / 2 : safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 182 : u * 24));
+      g.restore();
+    }
+  }
   const custom = {
     /**
      * The draggable extras (player, title, signature) as rectangles in
      * canvas units, where draw() puts them; the lyric is everything else.
      */
     boxes(W, H, safe, meta) {
-      const c = cuCfg();
-      const u = safe.w / 825;
-      if (!cuScratch) cuScratch = document.createElement("canvas").getContext("2d");
-      const g = cuScratch;
-      const out = [];
-      const at = (key, x, y, w, h) => {
-        const o = cuOff(c[key], safe);
-        out.push({ key, x: x + o.x, y: y + o.y, w, h });
-      };
-      if (c.progress) {
-        const bw = safe.w * 0.86;
-        const by = safe.y + safe.h - u * 150;
-        at("offPlayer", (W - bw) / 2 - u * 10, by - u * 24, bw + u * 20, u * 162);
-      }
-      if (c.showMeta && meta && (meta.title || meta.artist)) {
-        g.font = cuFont(c, u * 34);
-        let w = g.measureText(upper(meta.title || "")).width;
-        g.font = `500 ${u * 26}px Inter, sans-serif`;
-        w = Math.min(safe.w * 0.9, Math.max(w, g.measureText(meta.artist || "").width)) + u * 30;
-        at("offMeta", W / 2 - w / 2, safe.y + u * 30, w, u * 92);
-      }
-      if (c.handle) {
-        const hs = (c.handleSize || 100) / 100;
-        g.font = `600 ${u * 26 * hs}px Inter, sans-serif`;
-        const w = g.measureText(c.handle).width + u * 24;
-        const bottom = safe.y + safe.h - (c.progress ? u * 182 : u * 24);
-        // with the player, it sits over the bar's start like the song name in a music app
-        const x = c.progress ? (W - safe.w * 0.86) / 2 - u * 12 : safe.x + safe.w - u * 20 - w + u * 12;
-        at("offHandle", x, bottom - u * 10 - u * 26 * hs, w, u * 18 + u * 26 * hs);
-      }
-      return out;
+      return cuExtraBoxes(W, H, safe, meta, cuCfg());
     },
     id: "custom",
     label: "Personalizado",
@@ -5510,109 +5618,7 @@
       } finally {
         cuOwnFx = false;
       }
-      // song title and artist, small at the top
-      if (c.showMeta && (f.meta.title || f.meta.artist)) {
-        g.save();
-        const om = cuOff(c.offMeta, safe);
-        g.translate(om.x, om.y);
-        g.textAlign = "center";
-        g.textBaseline = "top";
-        g.fillStyle = hexA(c.color, 0.85);
-        g.font = cuFont(c, u * 34);
-        g.fillText(fitText(g, upper(f.meta.title || ""), safe.w * 0.9), W / 2, safe.y + u * 40);
-        g.font = `500 ${u * 26}px Inter, sans-serif`;
-        g.fillStyle = hexA(c.color, 0.6);
-        g.fillText(fitText(g, f.meta.artist || "", safe.w * 0.9), W / 2, safe.y + u * 86);
-        g.restore();
-      }
-      // progress through the song, like a music player: bar, knob, times, controls
-      const last = f.lines[f.lines.length - 1];
-      if (c.progress && last) {
-        const end = WM.songDuration > 0 ? WM.songDuration : Math.max(last.end || 0, last.start + 3);
-        const k = clamp(t / end);
-        const bw = safe.w * 0.86;
-        const bx = (W - bw) / 2;
-        const by = safe.y + safe.h - u * 150;
-        g.save();
-        const op = cuOff(c.offPlayer, safe);
-        g.translate(op.x, op.y);
-        g.fillStyle = hexA(c.color, 0.28);
-        rrect(g, bx, by - u * 3, bw, u * 6, u * 3);
-        g.fill();
-        g.fillStyle = c.color;
-        rrect(g, bx, by - u * 3, Math.max(u * 6, bw * k), u * 6, u * 3);
-        g.fill();
-        g.beginPath();
-        g.arc(bx + bw * k, by, u * 12, 0, Math.PI * 2);
-        g.fill();
-        g.font = `500 ${u * 22}px Inter, sans-serif`;
-        g.fillStyle = hexA(c.color, 0.7);
-        g.textBaseline = "top";
-        g.textAlign = "left";
-        g.fillText(fmt(Math.min(t, end)), bx, by + u * 18);
-        g.textAlign = "right";
-        g.fillText("-" + fmt(Math.max(0, end - t)), bx + bw, by + u * 18);
-        // shuffle · previous · pause · next · repeat
-        const cy = by + u * 92;
-        const cx = W / 2;
-        g.fillStyle = c.color;
-        g.beginPath();
-        g.arc(cx, cy, u * 40, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = c.bg === "solid" || c.bg === "gradient" || c.bg === "animated" ? c.bg1 : "#000000";
-        g.fillRect(cx - u * 12, cy - u * 15, u * 8, u * 30);
-        g.fillRect(cx + u * 4, cy - u * 15, u * 8, u * 30);
-        g.fillStyle = c.color;
-        [-1, 1].forEach((d) => {
-          const x = cx + d * u * 120;
-          g.beginPath();
-          g.moveTo(x - d * u * 12, cy - u * 15);
-          g.lineTo(x + d * u * 10, cy);
-          g.lineTo(x - d * u * 12, cy + u * 15);
-          g.closePath();
-          g.fill();
-          g.fillRect(x + d * u * 10 - (d > 0 ? 0 : u * 5), cy - u * 15, u * 5, u * 30);
-        });
-        g.strokeStyle = hexA(c.color, 0.75);
-        g.lineWidth = u * 3.5;
-        g.lineCap = "round";
-        g.lineJoin = "round";
-        // shuffle: two crossing arrows
-        const sx = cx - u * 230;
-        g.beginPath();
-        g.moveTo(sx - u * 16, cy - u * 10);
-        g.bezierCurveTo(sx, cy - u * 10, sx, cy + u * 10, sx + u * 16, cy + u * 10);
-        g.moveTo(sx - u * 16, cy + u * 10);
-        g.bezierCurveTo(sx, cy + u * 10, sx, cy - u * 10, sx + u * 16, cy - u * 10);
-        g.moveTo(sx + u * 10, cy - u * 16);
-        g.lineTo(sx + u * 16, cy - u * 10);
-        g.lineTo(sx + u * 10, cy - u * 4);
-        g.moveTo(sx + u * 10, cy + u * 4);
-        g.lineTo(sx + u * 16, cy + u * 10);
-        g.lineTo(sx + u * 10, cy + u * 16);
-        g.stroke();
-        // repeat: a rounded loop with an arrow
-        const rx = cx + u * 230;
-        rrect(g, rx - u * 17, cy - u * 11, u * 34, u * 22, u * 8);
-        g.stroke();
-        g.beginPath();
-        g.moveTo(rx + u * 2, cy - u * 17);
-        g.lineTo(rx + u * 8, cy - u * 11);
-        g.lineTo(rx + u * 2, cy - u * 5);
-        g.stroke();
-        g.restore();
-      }
-      if (c.handle) {
-        g.save();
-        const oh = cuOff(c.offHandle, safe);
-        g.translate(oh.x, oh.y);
-        g.textAlign = c.progress ? "left" : "right";
-        g.textBaseline = "bottom";
-        g.font = `600 ${u * 26 * ((c.handleSize || 100) / 100)}px Inter, sans-serif`;
-        g.fillStyle = hexA(c.color, c.progress ? 0.85 : 0.7);
-        g.fillText(c.handle, c.progress ? (W - safe.w * 0.86) / 2 : safe.x + safe.w - u * 20, safe.y + safe.h - (c.progress ? u * 182 : u * 24));
-        g.restore();
-      }
+      cuExtras(g, f, c, u);
       const L = f.lines[f.current];
       if (!L || !L.words.length) return;
       g.save();
@@ -6163,6 +6169,35 @@
     g.strokeText = s;
   }
 
+  // ---------- Personalizado's options on any style ----------
+  // Capital letters, a realistic effect, title and artist, the music player
+  // and the signature, kept per style with its text colours.
+  const casedCache = new WeakMap();
+  /** The lines with every word in capitals or lower case (layouts measure them as shown). */
+  function casedLines(lines, mode) {
+    let m = casedCache.get(lines);
+    if (!m) casedCache.set(lines, (m = {}));
+    if (m[mode]) return m[mode];
+    const tf = mode === "upper" ? upper : (x) => x.toLocaleLowerCase("es");
+    return (m[mode] = lines.map((L) => ({ ...L, text: tf(L.text || ""), words: L.words.map((w) => ({ ...w, text: tf(w.text) })) })));
+  }
+  /** The extras' settings for a style, in Personalizado's terms. */
+  function extrasCfg(id, sc) {
+    const off = (WM.StyleOffsets && WM.StyleOffsets[id]) || {};
+    // on the paper styles the extras are in ink
+    const ink = id === "minimal" || id === "editorial" || id === "diario" ? "#2a2622" : "#ffffff";
+    return { font: "montserrat", upper: true, color: sc.main || ink, bg: "solid", bg1: "#000000", showMeta: !!sc.meta, progress: !!sc.progress, handle: sc.handle || "", handleSize: sc.handleSize || 100, offMeta: off.offMeta, offPlayer: off.offPlayer, offHandle: off.offHandle };
+  }
+  Object.values(PRESETS).forEach((p) => {
+    if (p.id === "custom") return;
+    const own = p.boxes;
+    p.boxes = function (W, H, safe, meta) {
+      const base = own ? own.call(this, W, H, safe, meta) : [];
+      const sc = WM.StyleColors && WM.StyleColors[this.id];
+      return sc && (sc.meta || sc.progress || sc.handle) ? base.concat(cuExtraBoxes(W, H, safe, meta, extrasCfg(this.id, sc))) : base;
+    };
+  });
+
   // every draw runs with the user's typeface (or the style's own)
   Object.values(PRESETS).forEach((p) => {
     const draw = p.draw;
@@ -6173,8 +6208,21 @@
       styleColors = (WM.StyleColors && WM.StyleColors[this.id]) || null;
       // a canvas shared between styles must not carry one style's tracking into the next
       if ("letterSpacing" in g) g.letterSpacing = "0px";
+      const sc = this.id !== "custom" ? styleColors : null;
+      if (sc && sc.case) f = { ...f, lines: casedLines(f.lines, sc.case) };
       try {
-        return draw.call(this, g, f);
+        const out = draw.call(this, g, f);
+        if (sc && (sc.fx || sc.meta || sc.progress || sc.handle)) {
+          g.save();
+          if (sc.fx && WM.Fx) WM.Fx.paint(g, f.W, f.H, sc.fx, sc.fxAmount || 80, f.t, f.pulse());
+          if (sc.meta || sc.progress || sc.handle) {
+            g.__keepColor = true;
+            cuExtras(g, f, extrasCfg(this.id, sc), f.safe.w / 825);
+            g.__keepColor = false;
+          }
+          g.restore();
+        }
+        return out;
       } finally {
         lyricFamily = null;
         curFrame = null;
