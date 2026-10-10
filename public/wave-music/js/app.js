@@ -214,6 +214,7 @@
     fetch(`${WM.ModalSync.mediaUrl()}/`).catch(() => {});
     setTimeout(() => {
       ["snow", "leak"].forEach((id) => WM.Fx.load(id).catch(() => {}));
+      Object.keys(WM.STYLE_SAMPLES).forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
     }, 2500);
   }
 
@@ -2581,7 +2582,8 @@
     // another style's example clip never shows here
     if (!styleBg.has(id) && WM.BgVideo.sample && WM.BgVideo.sample !== id) WM.BgVideo.clear();
     if (!styleBg.has(id) && WM.Themes.get(id).video && !ownFootage() && WM.BgVideo.sample !== id) {
-      if (AUTO_SAMPLE.includes(id) && WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
+      // a style with its own footage opens on it
+      if (WM.STYLE_SAMPLES[id]) $("btn-bgs").onclick();
     }
     updateBgv();
     updateChatOpts();
