@@ -13060,14 +13060,28 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       if ("letterSpacing" in g) g.letterSpacing = "0px";
       const sc = this.id !== "custom" ? styleColors : null;
       if (sc && sc.case) f = { ...f, lines: casedLines(f.lines, sc.case) };
+      // with the title on top or the player below, the style is drawn a little
+      // smaller in the room left between them, so the lyric never runs into them
+      const full = f;
+      if (sc && (sc.meta || sc.progress)) {
+        const sf = f.safe;
+        const u0 = sf.w / 825;
+        const top = sf.y + (sc.meta ? u0 * 150 : 0);
+        const bottom = sf.y + sf.h - (sc.progress ? u0 * 215 : 0);
+        // about 80% of its size, centred in the room between them
+        const k = 0.8;
+        const w = sf.w * k;
+        const h = sf.h * k;
+        f = { ...f, safe: { x: sf.x + (sf.w - w) / 2, y: (top + bottom - h) / 2, w, h } };
+      }
       try {
         const out = draw.call(this, g, f);
         if (sc && (sc.fx || sc.meta || sc.progress || sc.handle)) {
           g.save();
-          if (sc.fx && WM.Fx) WM.Fx.paint(g, f.W, f.H, sc.fx, sc.fxAmount || 80, f.t, f.pulse());
+          if (sc.fx && WM.Fx) WM.Fx.paint(g, full.W, full.H, sc.fx, sc.fxAmount || 80, full.t, full.pulse());
           if (sc.meta || sc.progress || sc.handle) {
             g.__keepColor = true;
-            cuExtras(g, f, extrasCfg(this.id, sc), f.safe.w / 825);
+            cuExtras(g, full, extrasCfg(this.id, sc), full.safe.w / 825);
             g.__keepColor = false;
           }
           g.restore();
