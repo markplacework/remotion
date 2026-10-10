@@ -213,7 +213,6 @@
     // wake the media service right away: the first example then starts fast
     fetch(`${WM.ModalSync.mediaUrl()}/`).catch(() => {});
     setTimeout(() => {
-      ["nieve", "lluvia", "otono", "tormenta", "live", "noticiero", "broadcast", "stream"].forEach((s) => WM.BgVideo.prefetch(s).catch(() => {}));
       ["snow", "leak"].forEach((id) => WM.Fx.load(id).catch(() => {}));
     }, 2500);
   }
@@ -2472,13 +2471,13 @@
   // each one fills whole rows of the 4-column grid
   const STYLE_CATS = [
     ["todos", "Todos", null],
-    ["populares", "Populares", ["custom", "kinetic", "cinematic", "aurora", "karaoke", "notes", "live", "lluvia"]],
-    ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
+    ["populares", "Populares", ["custom", "kinetic", "cinematic", "neon", "aurora", "karaoke", "lluvia", "minimal"]],
     ["clima", "Clima", ["lluvia", "nieve", "tormenta", "otono"]],
-    ["deportes", "Deportes", ["adrenalina", "street", "broadcast", "kinetic"]],
-    ["retro", "Retro", ["vhs", "vinilo", "neon"]],
-    ["elegantes", "Elegantes", ["cinematic", "minimal", "diario", "couture", "blackout", "vinilo", "aurora", "otono"]],
-    ["redes", "Redes", ["notes", "recorte", "karaoke", "stream"]],
+    ["deportes", "Deportes", ["adrenalina", "street", "kinetic", "blackout"]],
+    ["retro", "Retro", ["vinilo", "neon", "couture", "otono"]],
+    ["elegantes", "Elegantes", ["cinematic", "minimal", "couture", "blackout", "vinilo", "aurora", "otono", "nieve"]],
+    ["redes", "Redes", ["karaoke", "kinetic", "street", "custom"]],
+    // Saved, not shown: ["envivo", "En vivo", ["live", "noticiero", "broadcast", "stream"]],
   ];
   // on phones "Todos" opens with 8 styles and grows four (one row) per tap
   var shownCount = 8; // var: chooseStyle may run before this line
