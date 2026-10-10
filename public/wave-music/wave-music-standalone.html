@@ -3818,6 +3818,19 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
   width: 100%;
   box-sizing: border-box;
 }
+.opt-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+#tc-case .chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 </style>
   </head>
   <body>
@@ -4438,11 +4451,11 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
                 <button type="button" class="chip" data-v="marker">Resaltador</button>
               </div>
               <label class="cu-color" id="tc-effect-color-row" hidden><input type="color" id="tc-effect-color" value="#000000" /><span>Color del efecto</span></label>
-              <span class="opt-label">Letras</span>
-              <div class="chips grid3" id="tc-case" role="group" aria-label="Mayúsculas">
+              <span class="opt-label">Letras <span id="tc-case-lock" class="opt-lock" hidden><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Bloqueado en este estilo</span></span>
+              <div class="chips grid3" id="tc-case" role="group" aria-label="Mayúsculas y minúsculas">
                 <button type="button" class="chip" data-v="">Original</button>
-                <button type="button" class="chip" data-v="upper">MAYÚSCULAS</button>
-                <button type="button" class="chip" data-v="lower">minúsculas</button>
+                <button type="button" class="chip" data-v="upper">Mayúsculas</button>
+                <button type="button" class="chip" data-v="lower">Minúsculas</button>
               </div>
               <span class="opt-label">Efecto</span>
               <div class="chips grid3" id="tc-fx" role="group" aria-label="Efecto"></div>
@@ -19592,6 +19605,8 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
       /* kept for this visit */
     }
   }
+  // measured: these styles draw the same lettering whatever the case asked for
+  const CASE_LOCKED = ["kinetic", "cinematic", "neon", "couture", "blackout", "adrenalina", "street", "lluvia", "nieve", "tormenta", "kararetro"];
   function paintColors() {
     const id = preview.theme.preset;
     const c = (id && WM.StyleColors[id]) || {};
@@ -19600,7 +19615,13 @@ if (typeof module === "object" && typeof module.exports === "object") Object.ass
     $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
     $("tc-effect-color").value = c.effectColor || "#000000";
     $("tc-effect-color-row").hidden = !c.effect || c.effect === "glow";
-    $("tc-case").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.case || "")));
+    // styles whose lettering is part of the design (always capitals, or always lower case)
+    const caseLocked = CASE_LOCKED.includes(id);
+    $("tc-case-lock").hidden = !caseLocked;
+    $("tc-case").querySelectorAll("button").forEach((b) => {
+      b.setAttribute("aria-pressed", !caseLocked && b.dataset.v === (c.case || ""));
+      b.disabled = caseLocked;
+    });
     $("tc-fx").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === (c.fx || "none")));
     $("tc-fx-amount").hidden = !c.fx;
     $("tc-fx-amount").querySelector("input").value = c.fxAmount || 80;

@@ -2280,6 +2280,8 @@
       /* kept for this visit */
     }
   }
+  // measured: these styles draw the same lettering whatever the case asked for
+  const CASE_LOCKED = ["kinetic", "cinematic", "neon", "couture", "blackout", "adrenalina", "street", "lluvia", "nieve", "tormenta", "kararetro"];
   function paintColors() {
     const id = preview.theme.preset;
     const c = (id && WM.StyleColors[id]) || {};
@@ -2288,7 +2290,13 @@
     $("tc-effect").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.effect || "")));
     $("tc-effect-color").value = c.effectColor || "#000000";
     $("tc-effect-color-row").hidden = !c.effect || c.effect === "glow";
-    $("tc-case").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === (c.case || "")));
+    // styles whose lettering is part of the design (always capitals, or always lower case)
+    const caseLocked = CASE_LOCKED.includes(id);
+    $("tc-case-lock").hidden = !caseLocked;
+    $("tc-case").querySelectorAll("button").forEach((b) => {
+      b.setAttribute("aria-pressed", !caseLocked && b.dataset.v === (c.case || ""));
+      b.disabled = caseLocked;
+    });
     $("tc-fx").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.fx === (c.fx || "none")));
     $("tc-fx-amount").hidden = !c.fx;
     $("tc-fx-amount").querySelector("input").value = c.fxAmount || 80;
