@@ -410,7 +410,7 @@
 
       g.save();
       place(g, f);
-      this.drawTitle(g, f, u);
+      // (the opening title card, drawTitle, is kept but no longer shown)
       const ly = this.drawLyric(g, f, u);
       // anamorphic flare through the lyric: on every new line and on the beat
       if (ly != null) {
