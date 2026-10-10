@@ -848,7 +848,7 @@
       <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <div class="export-head">
           <h3 id="export-title">Descargar video</h3>
-          <span class="export-spec">9:16 · 1080 × 1920 · sin mockup</span>
+          <span class="export-spec" id="export-spec">9:16 · 1080 × 1920 · sin mockup</span>
         </div>
 
         <div class="export-step" data-export="setup">
@@ -856,8 +856,12 @@
             <input id="export-audio" type="checkbox" checked />
             <span>Incluir el audio de la canción</span>
           </label>
+          <label class="check" id="export-mockup-row">
+            <input id="export-mockup" type="checkbox" />
+            <span>Incluir el teléfono (mockup) alrededor del video</span>
+          </label>
           <p class="export-note">
-            El video se graba en tiempo real, así que tarda lo mismo que la canción (<span id="export-dur">00:00</span>).
+            Tarda como mucho lo que dura la canción (<span id="export-dur">00:00</span>), y en muchos estilos bastante menos.
             Dejá esta pestaña abierta y visible mientras tanto.
           </p>
           <div class="export-actions">

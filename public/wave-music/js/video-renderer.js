@@ -123,7 +123,9 @@
       const theme = WM.Themes.get(style.theme);
       if (theme.kind === "motion") {
         await WM.Presets.loadFonts(style.font);
-        return new MotionRenderer(timeline, theme, style);
+        // "with the phone": the device frame around the video
+        const frame = style.mockup ? await loadImage(WM.ASSETS.frame).catch(() => null) : null;
+        return new MotionRenderer(timeline, theme, style, frame);
       }
       const bg = theme.background.type === "wallpaper" ? await loadImage(backgroundSrc) : null;
       if (theme.kind === "lyrics" && document.fonts) {
@@ -419,7 +421,7 @@
    * same frame() the preview uses — the export matches the preview exactly.
    */
   class MotionRenderer {
-    constructor(timeline, theme, style) {
+    constructor(timeline, theme, style, frame = null) {
       this.preset = WM.Presets.get(theme.preset);
       this.lines = WM.Motion.prepare(timeline, WM.Motion.modeFor(this.preset));
       this.meta = style.meta || {};
@@ -434,16 +436,106 @@
       this.canvas.height = 1920;
       this.g = this.canvas.getContext("2d");
       this.safe = { x: 140, y: 230, w: 800, h: 1310 }; // = preview.js MOTION_SAFE.video
+      // with the phone: the video is drawn apart, then set inside the frame
+      this.frame = frame;
+      if (frame) {
+        this.scene = document.createElement("canvas");
+        this.scene.width = 1080;
+        this.scene.height = 1920;
+        this.sg = this.scene.getContext("2d");
+        this.blur = document.createElement("canvas");
+        this.blur.width = 27;
+        this.blur.height = 48;
+      }
     }
     /** offline: the frame is drawn exactly at t, the footage seeked to it (not playing). */
     get offline() {
       return true;
     }
     draw(t, state, playing = true) {
-      this.g.setTransform(1, 0, 0, 1, 0, 0);
+      const g = this.frame ? this.sg : this.g;
+      g.setTransform(1, 0, 0, 1, 0, 0);
       if (WM.Fx) WM.Fx.sync(t, playing, true);
-      this.preset.draw(this.g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, playing, true) : null, textScale: this.textScale, font: this.font }));
+      this.preset.draw(g, WM.Motion.frame({ lines: this.lines, t, W: 1080, H: 1920, safe: this.safe, energy: WM.Energy.current, meta: this.meta, offset: this.offset, video: this.video ? WM.BgVideo.at(t, playing, true) : null, textScale: this.textScale, font: this.font }));
+      if (this.frame) this.phone();
       return this.canvas;
+    }
+    /**
+     * The video inside the phone (the same frame as the preview's mockup),
+     * over a soft, blurred and darkened copy of itself.
+     */
+    phone() {
+      const g = this.g;
+      const W = 1080;
+      const H = 1920;
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalCompositeOperation = "source-over";
+      g.globalAlpha = 1;
+      // the backdrop: the video itself, tiny and stretched back up (a cheap blur)
+      const b = this.blur.getContext("2d");
+      b.drawImage(this.scene, 0, 0, this.blur.width, this.blur.height);
+      g.imageSmoothingEnabled = true;
+      g.imageSmoothingQuality = "high";
+      g.drawImage(this.blur, 0, 0, W, H);
+      g.fillStyle = "rgba(6,6,12,0.55)";
+      g.fillRect(0, 0, W, H);
+      // the phone (stage units: the mockup's crop of the frame image)
+      const SW = 800;
+      const SH = 1751;
+      const k = Math.min((W * 0.9) / SW, (H * 0.92) / SH);
+      g.save();
+      g.translate((W - SW * k) / 2, (H - SH * k) / 2);
+      g.scale(k, k);
+      // the screen: the video filling it, as a phone plays it
+      const sx = 37;
+      const sy = 31;
+      const sw = 726;
+      const sh = 1690;
+      g.save();
+      g.beginPath();
+      g.roundRect(sx, sy, sw, sh, 92);
+      g.clip();
+      g.fillStyle = "#000";
+      g.fillRect(sx, sy, sw, sh);
+      const s = Math.max(sw / W, sh / H);
+      g.drawImage(this.scene, sx + (sw - W * s) / 2, sy + (sh - H * s) / 2, W * s, H * s);
+      // status bar: time, signal, wifi, battery
+      g.fillStyle = "#fff";
+      g.font = "600 30px Inter, -apple-system, 'Segoe UI', sans-serif";
+      g.textBaseline = "middle";
+      g.textAlign = "left";
+      g.fillText(WM.clockNow ? WM.clockNow() : "", sx + 78, sy + 57);
+      const ix = sx + sw - 64;
+      const iy = sy + 57;
+      g.beginPath();
+      g.roundRect(ix - 46, iy - 11, 42, 22, 6);
+      g.strokeStyle = "rgba(255,255,255,0.5)";
+      g.lineWidth = 2;
+      g.stroke();
+      g.beginPath();
+      g.roundRect(ix - 43, iy - 8, 36, 16, 4);
+      g.fill();
+      const wx = ix - 70;
+      g.lineWidth = 3.4;
+      g.strokeStyle = "#fff";
+      g.lineCap = "round";
+      [13, 8.5, 4].forEach((r) => {
+        g.beginPath();
+        g.arc(wx, iy + 9, r, Math.PI * 1.25, Math.PI * 1.75);
+        g.stroke();
+      });
+      g.beginPath();
+      g.arc(wx, iy + 9, 1.8, 0, Math.PI * 2);
+      g.fill();
+      [4, 7, 9.5, 12].forEach((h, i) => g.fillRect(ix - 130 + i * 9, iy + 11 - h * 2 + 2, 6, h * 2 - 2));
+      // home indicator
+      g.beginPath();
+      g.roundRect(300, 1690, 200, 8, 4);
+      g.fill();
+      g.restore();
+      // the device frame on top
+      g.drawImage(this.frame, -26, -46, 853, 1843);
+      g.restore();
     }
     dispose() {
       if (this.video) WM.BgVideo.exporting = false;

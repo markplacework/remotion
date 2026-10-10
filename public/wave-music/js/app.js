@@ -1192,6 +1192,11 @@
     if (!audio.loaded || !timeline) return;
     audio.pause();
     $("export-dur").textContent = T.format(audio.duration);
+    // the phone around the video: for the animated styles (the chat ones have their own)
+    $("export-mockup-row").hidden = preview.theme.kind !== "motion";
+    const spec = () => ($("export-spec").textContent = "9:16 · 1080 × 1920 · " + ($("export-mockup").checked && preview.theme.kind === "motion" ? "con mockup" : "sin mockup"));
+    $("export-mockup").onchange = spec;
+    spec();
     exportStep("setup");
     $("export").hidden = false;
     $("export-start").focus();
@@ -1218,6 +1223,7 @@
           offset: preview.draggable ? preview.offset : null,
           textScale: preview.theme.kind === "motion" ? preview.textScale : 1,
           font: preview.theme.kind === "motion" ? preview.font : null,
+          mockup: preview.theme.kind === "motion" && $("export-mockup").checked,
         },
         signal: exportCtl.signal,
         onCanvas: (c) => $("export-canvas").appendChild(c),
@@ -1249,7 +1255,7 @@
         .replace(/[^a-zA-Z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase() || "wave-music";
-    const res = await WM.Exporter.saveFile(exported.blob, slug + "-lyric-video." + exported.ext);
+    const res = await WM.Exporter.saveFile(exported.blob, slug + "-lyric-video" + ($("export-mockup").checked && preview.theme.kind === "motion" ? "-mockup" : "") + "." + exported.ext);
     if (res.ok) {
       toast("Video guardado");
       $("export").hidden = true;
