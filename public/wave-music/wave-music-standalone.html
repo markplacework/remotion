@@ -7122,76 +7122,6 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
       g.restore();
     }
   }
-  /**
-   * Low smoke rolling in from the floor (the filmed clip over soft rising
-   * puffs), lit by the light shafts: where a beam crosses the smoke it
-   * glows warm, as in a real stage haze.
-   */
-  let cineSmokeCv = null;
-  let cineBeamCv = null;
-  function cineFloorSmoke(g, W, H, t, u, pulse) {
-    const w = Math.round(W / 2);
-    const h = Math.round(H / 2);
-    const mk = (c) => {
-      if (!c) c = document.createElement("canvas");
-      if (c.width !== w || c.height !== h) {
-        c.width = w;
-        c.height = h;
-      }
-      return c;
-    };
-    cineSmokeCv = mk(cineSmokeCv);
-    cineBeamCv = mk(cineBeamCv);
-    // 1. the smoke, half size, on black
-    const o = cineSmokeCv.getContext("2d");
-    o.globalCompositeOperation = "source-over";
-    o.globalAlpha = 1;
-    o.fillStyle = "#000";
-    o.fillRect(0, 0, w, h);
-    o.globalCompositeOperation = "screen";
-    for (let i = 0; i < 9; i++) {
-      const life = ((t * 0.05 + rand(i * 3.7)) % 1 + 1) % 1;
-      const x = w * (rand(i * 1.3) * 1.2 - 0.1) + Math.sin(t * 0.15 + i) * u * 30;
-      const y = h * (1.05 - life * 0.38);
-      const r = (u / 2) * (220 + rand(i * 5.1) * 180) * (0.8 + life * 0.6);
-      const a = 0.24 * Math.sin(life * Math.PI);
-      const grd = o.createRadialGradient(x, y, 0, x, y, r);
-      grd.addColorStop(0, `rgba(215,210,205,${a})`);
-      grd.addColorStop(0.5, `rgba(215,210,205,${a * 0.45})`);
-      grd.addColorStop(1, "rgba(215,210,205,0)");
-      o.fillStyle = grd;
-      o.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-    if (WM.Fx) WM.Fx.paint(o, w, h, "smoke", 100, t);
-    // only in the lower part of the frame
-    o.globalCompositeOperation = "source-over";
-    const m = o.createLinearGradient(0, 0, 0, h);
-    m.addColorStop(0, "rgba(0,0,0,1)");
-    m.addColorStop(0.45, "rgba(0,0,0,0.85)");
-    m.addColorStop(1, "rgba(0,0,0,0)");
-    o.fillStyle = m;
-    o.fillRect(0, 0, w, h);
-    g.save();
-    g.globalCompositeOperation = "screen";
-    g.globalAlpha = 0.85;
-    g.drawImage(cineSmokeCv, 0, 0, W, H);
-    // 2. the beams, bright, kept only where there is smoke: the lit haze
-    const b = cineBeamCv.getContext("2d");
-    b.globalCompositeOperation = "source-over";
-    b.fillStyle = "#000";
-    b.fillRect(0, 0, w, h);
-    b.globalCompositeOperation = "lighter";
-    cineShafts(b, w, h, t, pulse, 0.9, 0.7);
-    b.globalCompositeOperation = "multiply";
-    b.drawImage(cineSmokeCv, 0, 0);
-    // multiply darkens: brighten it back up before adding it on
-    b.globalCompositeOperation = "lighter";
-    b.drawImage(cineBeamCv, 0, 0);
-    g.globalCompositeOperation = "lighter";
-    g.globalAlpha = 0.75;
-    g.drawImage(cineBeamCv, 0, 0, W, H);
-    g.restore();
-  }
   const cinematic = {
     id: "cinematic",
     label: "Cinematic",
@@ -7262,10 +7192,6 @@ body:not([data-view="karaoke"]) #styles button.kara-only {
         g.fill();
       }
       g.globalCompositeOperation = "source-over";
-      // real fog drifting through the light (fx.js)
-      if (WM.Fx) WM.Fx.paint(g, W, H, "fog", 75, t);
-      // and smoke rolling in from the floor
-      cineFloorSmoke(g, W, H, t, u, pulse);
 
       g.save();
       place(g, f);
