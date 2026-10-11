@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wave Music Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Figtree:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-mark" src="assets/logo-mark.jpg" alt="" />
+        <img class="brand-word" src="assets/logo-word.jpg" alt="Wave Music" />
+        <span class="badge">Prueba v0.1</span>
+      </div>
+      <button id="btn-demo" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        Iniciar demo
+      </button>
+    </header>
+
+    <main class="layout">
+      <!-- ========== Editor ========== -->
+      <section class="editor">
+        <div class="card" data-step="1">
+          <div class="card-head"><span class="num">1</span><h2>Audio</h2></div>
+          <label class="audio-pick">
+            <input id="file-audio" type="file" accept="audio/*" hidden />
+            <span class="audio-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+            </span>
+            <span class="audio-text">
+              <strong id="audio-name">Sin audio</strong>
+              <small id="audio-meta">mp3 · wav · m4a</small>
+            </span>
+            <span class="link">Cargar</span>
+          </label>
+        </div>
+
+        <div class="card" data-step="2">
+          <div class="card-head">
+            <span class="num">2</span><h2>Letra</h2><span id="line-count" class="hint"></span>
+          </div>
+          <textarea
+            id="lyrics"
+            rows="7"
+            spellcheck="false"
+            placeholder="Pegá la letra acá, una línea por burbuja.&#10;&#10;También acepta formato LRC: [00:12.30] línea"
+          ></textarea>
+        </div>
+
+        <div class="card" data-step="3">
+          <div class="card-head"><span class="num">3</span><h2>Sincronización</h2></div>
+          <div class="fields">
+            <label class="field grow">
+              <span>Método</span>
+              <select id="sync-mode"></select>
+            </label>
+            <label class="field" id="field-interval">
+              <span>Cada (s)</span>
+              <input id="sync-interval" type="number" min="0.5" step="0.5" value="3" />
+            </label>
+            <label class="field" id="field-offset">
+              <span>Inicio (s)</span>
+              <input id="sync-offset" type="number" min="0" step="0.5" value="0" />
+            </label>
+          </div>
+          <div id="ai-row" class="ai-row" hidden>
+            <span id="ai-key-state"></span>
+            <button id="ai-key-change" class="btn-link" hidden>Cambiar clave</button>
+          </div>
+          <button id="btn-generate" class="btn btn-ghost wide" disabled>Generar sincronización de prueba</button>
+        </div>
+
+        <div class="card" data-step="4">
+          <div class="card-head">
+            <span class="num">4</span><h2>Ajuste manual</h2><span id="sync-source" class="hint">—</span>
+          </div>
+
+          <div id="adjust" class="adjust disabled">
+            <div class="sel">
+              <div class="sel-info">
+                <span id="sel-num" class="sel-num">1</span>
+                <span id="sel-text" class="sel-text"></span>
+              </div>
+              <span id="sel-start" class="sel-start">00:00.00</span>
+            </div>
+
+            <div class="segmented scope" id="scope" role="group" aria-label="Qué mover">
+              <button data-scope="line" aria-pressed="true">Esta línea</button>
+              <button data-scope="all" aria-pressed="false">Todas las líneas</button>
+            </div>
+
+            <div class="adj">
+              <div class="adj-head">
+                <span id="adj-label">Desplazamiento</span>
+                <span id="adj-value" class="adj-value">0 ms</span>
+              </div>
+              <div class="adj-control">
+                <button class="adj-step" data-step="-0.01" aria-label="Adelantar 10 ms">−</button>
+                <div id="adj-slider"></div>
+                <button class="adj-step" data-step="0.01" aria-label="Atrasar 10 ms">+</button>
+              </div>
+              <div class="adj-scale"><span>← Antes</span><span>0</span><span>Después →</span></div>
+            </div>
+
+            <div class="adjust-actions">
+              <button id="btn-listen" class="btn btn-ghost">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                Escuchar
+              </button>
+              <button id="btn-undo" class="btn btn-ghost" disabled>Deshacer</button>
+              <button id="btn-reset" class="btn-link" disabled>Restablecer todo</button>
+            </div>
+            <p class="shortcuts">Doble clic en la línea vuelve a 0 · <kbd>[</kbd> <kbd>]</kbd> 10 ms · <kbd>Shift</kbd> 100 ms · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer</p>
+          </div>
+
+          <div id="ts-list" class="ts-list"></div>
+        </div>
+
+        <div class="card" data-step="5">
+          <div class="card-head"><span class="num">5</span><h2>Estilo</h2></div>
+          <div id="styles" role="group" aria-label="Estilo">
+            <div class="style-group-head"><span>Animados</span></div>
+            <div id="styles-pro" class="styles"></div>
+            <div class="style-group-head"><span>Apps reales</span><span class="pro-badge">PRO</span></div>
+            <div id="styles-classic" class="styles"></div>
+          </div>
+          <div id="spotify-opts" class="style-opts" hidden>
+            <span class="opt-label">Color de fondo</span>
+            <div id="sp-colors" class="swatches" role="group" aria-label="Color de fondo"></div>
+          </div>
+          <div id="video-opts" class="style-opts" hidden>
+            <span class="opt-label">Fondo propio</span>
+            <div class="bgv-row">
+              <button id="btn-bgv" class="btn btn-ghost">Subir video</button>
+              <button id="btn-bgi" class="btn btn-ghost">Subir imagen</button>
+              <button id="bgv-clear" class="btn-link" hidden>Quitar</button>
+            </div>
+            <span id="bgv-name" class="bgv-name"></span>
+            <p class="opt-hint">El video se repite en loop y sigue a la canción; la imagen tiene un zoom lento. Sale en el video descargado. Mejor en vertical (9:16).</p>
+            <input id="file-bgv" type="file" accept="video/*" hidden />
+            <input id="file-bgi" type="file" accept="image/*" hidden />
+          </div>
+          <div id="text-opts" class="style-opts" hidden>
+            <div class="fields">
+              <label class="field grow">
+                <span>Tipografía</span>
+                <select id="text-font"></select>
+              </label>
+            </div>
+            <div class="fields">
+              <label id="text-mode-field" class="field grow">
+                <span>Animación del texto</span>
+                <select id="text-mode">
+                  <option value="line">Por frase (línea completa)</option>
+                  <option value="word">Palabra por palabra</option>
+                </select>
+              </label>
+            </div>
+            <div class="text-size">
+              <span class="opt-label">Tamaño del texto</span>
+              <input id="text-size" type="range" min="60" max="130" step="5" value="100" aria-label="Tamaño del texto" />
+              <span id="text-size-val" class="text-size-val">100%</span>
+            </div>
+          </div>
+          <div id="meta-opts" class="style-opts" hidden>
+            <div class="fields">
+              <label class="field grow"><span>Canción</span><input id="sp-title" type="text" placeholder="Título de la canción" /></label>
+            </div>
+            <div class="fields">
+              <label class="field grow"><span>Artista</span><input id="sp-artist" type="text" placeholder="Artista" /></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" data-step="6">
+          <div class="card-head"><span class="num">6</span><h2>Descargar</h2><span class="hint">9:16 · 1080 × 1920</span></div>
+          <p class="card-note">El video final, sin el teléfono, con tu ajuste de tiempos y el audio de la canción.</p>
+          <button id="btn-export" class="btn btn-primary wide btn-export" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
+            Descargar video
+          </button>
+        </div>
+      </section>
+
+      <!-- ========== Preview ========== -->
+      <section class="preview">
+        <div class="preview-body">
+        <div class="preview-main">
+          <div id="stage-host" class="stage-host is-empty">
+            <!-- First-time hint; tapping it opens full screen -->
+            <button id="full-hint" class="full-hint" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+              <span id="full-hint-text">Tocá para ver en pantalla completa</span>
+            </button>
+            <!-- Player overlay: hover (desktop) / tap (touch) shows it -->
+            <div id="stage-ui" class="stage-ui">
+              <button id="ui-play" class="ui-play" aria-label="Reproducir o pausar">
+                <svg class="i-play" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                <svg class="i-pause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+              </button>
+              <button id="ui-full" class="ui-full" aria-label="Ver en pantalla completa">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+                Pantalla completa
+              </button>
+            </div>
+            <div class="empty-cta">
+              <img class="empty-logo" src="assets/logo.png" alt="Wave Music" />
+              <p>Audio + letra + sincronización</p>
+              <button id="btn-demo-empty" class="btn btn-primary">Iniciar demo</button>
+            </div>
+          </div>
+        </div>
+        <div class="preview-side">
+          <div class="framing">
+            <div class="segmented" role="group" aria-label="Encuadre">
+              <button data-framing="mockup" aria-pressed="true" title="Solo para la vista previa: el video descargado no incluye el teléfono">Mockup</button>
+              <button data-framing="video" aria-pressed="false" title="El video sin el teléfono. La descarga es 9:16 (1080 × 1920) completa">Video final</button>
+            </div>
+            <button id="btn-center" class="full-btn" aria-label="Centrar el texto" title="Centrar el texto" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></svg>
+            </button>
+            <button id="btn-full" class="full-btn" aria-label="Ver en pantalla completa" title="Pantalla completa">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5" /><path d="M20 9V4h-5" /><path d="M4 15v5h5" /><path d="M20 15v5h-5" /></svg>
+            </button>
+          </div>
+        <div id="transport" class="transport disabled">
+
+          <div class="now"><span class="now-dot"></span><span id="now-line"></span></div>
+          <div class="scrub-wrap">
+            <div class="track"><div id="progress" class="progress"></div></div>
+            <div id="markers" class="markers"></div>
+            <input id="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
+          </div>
+          <div class="controls">
+            <span id="time-cur" class="time">00:00</span>
+            <div class="buttons">
+              <button id="btn-restart" class="icon-btn" title="Inicio">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z" /></svg>
+              </button>
+              <button id="btn-back" class="icon-btn" title="−5s (←)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+              </button>
+              <button id="btn-play" class="play-btn" title="Reproducir (espacio)">
+                <svg class="i-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                <svg class="i-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+              </button>
+              <button id="btn-fwd" class="icon-btn" title="+5s (→)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
+              </button>
+              <span class="icon-btn ghost"></span>
+            </div>
+            <span id="time-dur" class="time right">00:00</span>
+          </div>
+        </div>
+        </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Pantalla completa: the stage is moved in here while open -->
+    <div id="full" class="full" hidden>
+      <div class="full-top">
+        <div class="full-title">
+          <img src="assets/logo-mark.jpg" alt="" />
+          <span id="full-name">Wave Music</span>
+        </div>
+        <button id="full-close" class="full-close" aria-label="Salir de pantalla completa">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+      <div id="full-stage" class="full-stage"></div>
+      <div class="full-bar">
+        <button id="full-play" class="play-btn small" aria-label="Reproducir o pausar">
+          <svg class="i-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          <svg class="i-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+        </button>
+        <span id="full-cur" class="time">00:00</span>
+        <input id="full-scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Posición" />
+        <span id="full-dur" class="time">00:00</span>
+      </div>
+    </div>
+
+    <div id="modalcfg" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="modalcfg-title">
+        <div class="export-head">
+          <h3 id="modalcfg-title">IA precisa (Modal)</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">Nuestro servicio separa la voz de la música y ubica cada palabra de tu letra sobre la voz sola. Pegá el token del servicio.</p>
+          <label class="field aikey-field">
+            <span>URL del servicio</span>
+            <input id="modalcfg-url" type="url" placeholder="https://…--wave-music-sync-syncer-web.modal.run" autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="field aikey-field">
+            <span>Token</span>
+            <input id="modalcfg-token" type="password" placeholder="token del servicio" autocomplete="off" spellcheck="false" />
+          </label>
+          <p id="modalcfg-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">Se guarda solo en este navegador. La primera canción tarda más (el servicio arranca la GPU); después, unos segundos por canción.</p>
+          <div class="export-actions">
+            <button id="modalcfg-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="modalcfg-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export dialog: setup -> recording -> ready -->
+    <div id="aikey" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="aikey-title">
+        <div class="export-head">
+          <h3 id="aikey-title">Sincronizar con IA</h3>
+          <span class="export-spec">Versión de prueba</span>
+        </div>
+        <div class="export-step">
+          <p class="export-note">La IA escucha la canción y ubica cada línea y cada palabra de tu letra en el tiempo exacto. Pegá tu API key de OpenAI para usarla.</p>
+          <label class="field aikey-field">
+            <span>API key de OpenAI</span>
+            <input id="aikey-input" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="check">
+            <input id="aikey-remember" type="checkbox" />
+            <span>Recordar en este navegador</span>
+          </label>
+          <p id="aikey-error" class="aikey-error" hidden></p>
+          <p class="export-note aikey-small">La clave se usa solo desde tu navegador para hablar con OpenAI y no se guarda en ningún servidor. Cuesta unos centavos por canción. En la versión final esto va a ir en el servidor (Supabase).</p>
+          <div class="export-actions">
+            <button id="aikey-cancel" class="btn btn-ghost">Cancelar</button>
+            <button id="aikey-ok" class="btn btn-primary">Sincronizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="export" class="export" hidden>
+      <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
+        <div class="export-head">
+          <h3 id="export-title">Descargar video</h3>
+          <span class="export-spec">9:16 · 1080 × 1920 · sin mockup</span>
+        </div>
+
+        <div class="export-step" data-export="setup">
+          <label class="check">
+            <input id="export-audio" type="checkbox" checked />
+            <span>Incluir el audio de la canción</span>
+          </label>
+          <p class="export-note">
+            El video se graba en tiempo real, así que tarda lo mismo que la canción (<span id="export-dur">00:00</span>).
+            Dejá esta pestaña abierta y visible mientras tanto.
+          </p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cancelar</button>
+            <button id="export-start" class="btn btn-primary">Exportar video</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="recording" hidden>
+          <div id="export-canvas" class="export-canvas"></div>
+          <div class="export-bar"><div id="export-progress"></div></div>
+          <div class="export-meta"><span id="export-time">00:00 / 00:00</span><span>Grabando…</span></div>
+          <div class="export-actions">
+            <button id="export-cancel" class="btn btn-ghost">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="export-step" data-export="ready" hidden>
+          <div class="export-ready">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            <div>
+              <strong>Tu video está listo</strong>
+              <span id="export-info"></span>
+            </div>
+          </div>
+          <div class="export-actions">
+            <button class="btn btn-ghost" data-export-close>Cerrar</button>
+            <button id="export-save" class="btn btn-primary">Guardar video</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Each concept lives in its own module -->
+    <script src="js/demo.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/ai-sync.js"></script>
+    <script src="js/modal-sync.js"></script>
+    <script src="js/timestamps.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/adjust.js"></script>
+    <script src="js/adjust-slider.js"></script>
+    <script src="js/bubbles.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/motion.js"></script>
+    <script src="js/presets.js"></script>
+    <script src="js/chrome.js"></script>
+    <script src="js/bgvideo.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/video-renderer.js"></script>
+    <script src="js/exporter.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
