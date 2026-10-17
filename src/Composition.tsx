@@ -48,16 +48,38 @@ export const WapiVideoComposition = () => {
         fps={B44_ZOCALOS_FPS}
         width={B44_ZOCALOS_WIDTH}
         height={B44_ZOCALOS_HEIGHT}
-        defaultProps={{ video: "/b44/video.mp4" }}
+        defaultProps={{
+          video: "/b44/video.mp4",
+          // Timings from a word-level Whisper transcription of the voice.
+          subtitles: [
+            { from: 0, to: 1.65, text: "¿Querés revender zapatillas?", highlight: ["zapatillas"] },
+            { from: 1.8, to: 4.05, text: "Tenemos modelos que te van a encantar.", highlight: ["encantar"] },
+            { from: 4.15, to: 5.5, text: "Hacé clic en el enlace", highlight: ["enlace"] },
+            { from: 5.55, to: 7.95, text: "y solicitá nuestro catálogo mayorista.", highlight: ["catálogo"] },
+          ],
+        }}
       />
       <Composition
         id="B44Zocalos2"
         component={B44Zocalos}
-        durationInFrames={B44_ZOCALOS_DURATION}
+        // +0.6s so the exit sound effect, cut off at 8s in the source clip,
+        // can ring out (see video2-audio.wav).
+        durationInFrames={B44_ZOCALOS_DURATION + Math.round(0.6 * B44_ZOCALOS_FPS)}
         fps={B44_ZOCALOS_FPS}
         width={B44_ZOCALOS_WIDTH}
         height={B44_ZOCALOS_HEIGHT}
-        defaultProps={{ video: "/b44/video2.mp4" }}
+        defaultProps={{
+          video: "/b44/video2.mp4",
+          audio: "/b44/video2-audio.wav",
+          // Timings from a word-level Whisper transcription of the voice.
+          subtitles: [
+            { from: 0, to: 1.1, text: "Dejá de scrollear", highlight: ["scrollear"] },
+            { from: 1.2, to: 2.8, text: "En B44 te ofrecemos", highlight: ["B44"] },
+            { from: 2.85, to: 4.6, text: "los mejores productos para revender.", highlight: ["revender"] },
+            { from: 4.7, to: 5.95, text: "Hacé clic en el enlace", highlight: ["enlace"] },
+            { from: 6.0, to: 7.95, text: "y solicitá nuestro catálogo mayorista.", highlight: ["catálogo"] },
+          ],
+        }}
       />
       <Composition
         id="B44Zocalos3"
