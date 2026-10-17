@@ -7,13 +7,10 @@ export const B44_ZOCALOS_HEIGHT = 1920;
 
 const VIDEO_URL = staticFile("/b44/video.mp4");
 const MARCAS_URL = staticFile("/b44/marcas.png");
-const ICONOS_URL = staticFile("/b44/iconos.png");
 
-// Both bands share the same height so they read as a matching pair.
 const BAND_HEIGHT = 170;
 // The clip is nudged down so the top band only covers the ceiling and
-// never clips the gold B44 sign; what is lost at the bottom is jeans,
-// which the bottom band hides anyway.
+// never clips the gold B44 sign; what is lost at the bottom is jeans.
 const VIDEO_OFFSET = 70;
 
 const GOLD = "linear-gradient(90deg, #8a6417 0%, #f5d27a 50%, #8a6417 100%)";
@@ -59,10 +56,9 @@ const Marquee: React.FC<StripProps> = ({ src, naturalWidth, naturalHeight, conte
   );
 };
 
-const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> = ({ position, children }) => {
+const Band: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const frame = useCurrentFrame();
   const slide = interpolate(frame, [0, 10], [BAND_HEIGHT, 0], { extrapolateRight: "clamp" });
-  const isTop = position === "top";
 
   return (
     <div
@@ -71,15 +67,15 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
         left: 0,
         right: 0,
         height: BAND_HEIGHT,
-        [isTop ? "top" : "bottom"]: 0,
-        transform: `translateY(${isTop ? -slide : slide}px)`,
+        top: 0,
+        transform: `translateY(${-slide}px)`,
         background: "#0b0b0b",
         overflow: "hidden",
         boxShadow: "0 0 30px rgba(0,0,0,0.6)",
       }}
     >
       {children}
-      <div style={{ position: "absolute", left: 0, right: 0, [isTop ? "bottom" : "top"]: 0, height: 5, background: GOLD }} />
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 5, background: GOLD }} />
     </div>
   );
 };
@@ -91,11 +87,8 @@ export const B44Zocalos: React.FC = () => {
         src={VIDEO_URL}
         style={{ position: "absolute", top: VIDEO_OFFSET, width: "100%", height: "100%", objectFit: "cover" }}
       />
-      <Band position="top">
+      <Band>
         <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={100} speed={4} />
-      </Band>
-      <Band position="bottom">
-        <Marquee src={ICONOS_URL} naturalWidth={1851} naturalHeight={360} contentHeight={128} speed={-3} />
       </Band>
     </AbsoluteFill>
   );
