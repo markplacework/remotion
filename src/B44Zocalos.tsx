@@ -12,10 +12,6 @@ const MARCAS_URL = staticFile("/b44/marcas.png");
 // the top band only grazes the rim of the gold B44 sign and leaves its
 // "VENTA MAYORISTA" lettering visible.
 const BAND_HEIGHT = 150;
-// TikTok and Reels cover roughly the bottom 250-400px with the caption,
-// username and CTA, so the bottom band sits above that, just under the
-// sneaker, instead of flush with the edge.
-const BOTTOM_BAND_LIFT = 260;
 
 const GOLD = "linear-gradient(90deg, #8a6417 0%, #f5d27a 50%, #8a6417 100%)";
 
@@ -62,10 +58,8 @@ const Marquee: React.FC<StripProps> = ({ src, naturalWidth, naturalHeight, conte
 
 const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> = ({ position, children }) => {
   const frame = useCurrentFrame();
+  const slide = interpolate(frame, [0, 10], [BAND_HEIGHT, 0], { extrapolateRight: "clamp" });
   const isTop = position === "top";
-  const slide = interpolate(frame, [0, 10], [isTop ? BAND_HEIGHT : BAND_HEIGHT + BOTTOM_BAND_LIFT, 0], {
-    extrapolateRight: "clamp",
-  });
 
   return (
     <div
@@ -74,7 +68,7 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
         left: 0,
         right: 0,
         height: BAND_HEIGHT,
-        [isTop ? "top" : "bottom"]: isTop ? 0 : BOTTOM_BAND_LIFT,
+        [isTop ? "top" : "bottom"]: 0,
         transform: `translateY(${isTop ? -slide : slide}px)`,
         background: "#0b0b0b",
         overflow: "hidden",
@@ -82,10 +76,7 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
       }}
     >
       {children}
-      {/* Gold trim on every edge that borders the video; the lifted bottom
-          band floats over the clip, so it gets both. */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 5, background: GOLD }} />
-      {!isTop && <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 5, background: GOLD }} />}
+      <div style={{ position: "absolute", left: 0, right: 0, [isTop ? "bottom" : "top"]: 0, height: 5, background: GOLD }} />
     </div>
   );
 };
