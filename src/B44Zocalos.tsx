@@ -5,7 +5,6 @@ export const B44_ZOCALOS_DURATION = 8 * B44_ZOCALOS_FPS;
 export const B44_ZOCALOS_WIDTH = 1080;
 export const B44_ZOCALOS_HEIGHT = 1920;
 
-const VIDEO_URL = staticFile("/b44/video.mp4");
 const MARCAS_URL = staticFile("/b44/marcas.png");
 
 // Both bands share the same height so they read as a matching pair. At 150px
@@ -81,10 +80,10 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
   );
 };
 
-export const B44Zocalos: React.FC = () => {
+export const B44Zocalos: React.FC<{ video: string }> = ({ video }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <OffthreadVideo src={VIDEO_URL} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <OffthreadVideo src={staticFile(video)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       <Band position="top">
         <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={88} speed={4} />
       </Band>

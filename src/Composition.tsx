@@ -48,6 +48,16 @@ export const WapiVideoComposition = () => {
         fps={B44_ZOCALOS_FPS}
         width={B44_ZOCALOS_WIDTH}
         height={B44_ZOCALOS_HEIGHT}
+        defaultProps={{ video: "/b44/video.mp4" }}
+      />
+      <Composition
+        id="B44Zocalos2"
+        component={B44Zocalos}
+        durationInFrames={B44_ZOCALOS_DURATION}
+        fps={B44_ZOCALOS_FPS}
+        width={B44_ZOCALOS_WIDTH}
+        height={B44_ZOCALOS_HEIGHT}
+        defaultProps={{ video: "/b44/video2.mp4" }}
       />
       <Composition
         id="WapiVideo"
