@@ -84,14 +84,13 @@ export const WapiVideoComposition = () => {
       <Composition
         id="B44Zocalos3"
         component={B44Zocalos}
-        // +0.6s so the exit sound effect, cut off at 8s in the source clip,
-        // can ring out (see video3-audio.wav).
-        durationInFrames={B44_ZOCALOS_DURATION + Math.round(0.6 * B44_ZOCALOS_FPS)}
+        durationInFrames={B44_ZOCALOS_DURATION}
         fps={B44_ZOCALOS_FPS}
         width={B44_ZOCALOS_WIDTH}
         height={B44_ZOCALOS_HEIGHT}
         defaultProps={{
           video: "/b44/video3.mp4",
+          // The clip's audio with the closing sound effect faded out.
           audio: "/b44/video3-audio.wav",
           // Timings from a word-level Whisper transcription of the voice.
           subtitles: [
