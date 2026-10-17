@@ -8,10 +8,10 @@ export const B44_ZOCALOS_HEIGHT = 1920;
 const VIDEO_URL = staticFile("/b44/video.mp4");
 const MARCAS_URL = staticFile("/b44/marcas.png");
 
-const BAND_HEIGHT = 170;
-// The clip is nudged down so the top band only covers the ceiling and
-// never clips the gold B44 sign; what is lost at the bottom is jeans.
-const VIDEO_OFFSET = 70;
+// Both bands share the same height so they read as a matching pair. At 150px
+// the top band only grazes the rim of the gold B44 sign and leaves its
+// "VENTA MAYORISTA" lettering visible.
+const BAND_HEIGHT = 150;
 
 const GOLD = "linear-gradient(90deg, #8a6417 0%, #f5d27a 50%, #8a6417 100%)";
 
@@ -56,9 +56,10 @@ const Marquee: React.FC<StripProps> = ({ src, naturalWidth, naturalHeight, conte
   );
 };
 
-const Band: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> = ({ position, children }) => {
   const frame = useCurrentFrame();
   const slide = interpolate(frame, [0, 10], [BAND_HEIGHT, 0], { extrapolateRight: "clamp" });
+  const isTop = position === "top";
 
   return (
     <div
@@ -67,15 +68,15 @@ const Band: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         left: 0,
         right: 0,
         height: BAND_HEIGHT,
-        top: 0,
-        transform: `translateY(${-slide}px)`,
+        [isTop ? "top" : "bottom"]: 0,
+        transform: `translateY(${isTop ? -slide : slide}px)`,
         background: "#0b0b0b",
         overflow: "hidden",
         boxShadow: "0 0 30px rgba(0,0,0,0.6)",
       }}
     >
       {children}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 5, background: GOLD }} />
+      <div style={{ position: "absolute", left: 0, right: 0, [isTop ? "bottom" : "top"]: 0, height: 5, background: GOLD }} />
     </div>
   );
 };
@@ -83,12 +84,12 @@ const Band: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 export const B44Zocalos: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <OffthreadVideo
-        src={VIDEO_URL}
-        style={{ position: "absolute", top: VIDEO_OFFSET, width: "100%", height: "100%", objectFit: "cover" }}
-      />
-      <Band>
-        <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={100} speed={4} />
+      <OffthreadVideo src={VIDEO_URL} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <Band position="top">
+        <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={88} speed={4} />
+      </Band>
+      <Band position="bottom">
+        <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={88} speed={-4} />
       </Band>
     </AbsoluteFill>
   );
