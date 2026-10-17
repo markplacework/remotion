@@ -36,9 +36,19 @@ import {
   FAKE_CHAT_SOLO_PHONE_WIDTH,
 } from "./FakeChatSoloPhone";
 
+import { B44Zocalos, B44_ZOCALOS_DURATION, B44_ZOCALOS_FPS, B44_ZOCALOS_HEIGHT, B44_ZOCALOS_WIDTH } from "./B44Zocalos";
+
 export const WapiVideoComposition = () => {
   return (
     <>
+      <Composition
+        id="B44Zocalos"
+        component={B44Zocalos}
+        durationInFrames={B44_ZOCALOS_DURATION}
+        fps={B44_ZOCALOS_FPS}
+        width={B44_ZOCALOS_WIDTH}
+        height={B44_ZOCALOS_HEIGHT}
+      />
       <Composition
         id="WapiVideo"
         component={WapiVideo}
