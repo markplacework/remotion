@@ -107,12 +107,18 @@ export const WapiVideoComposition = () => {
         height={B44_ZOCALOS_HEIGHT}
         defaultProps={{
           video: "/b44/video4.mp4",
-          // Timings from a word-level Whisper transcription of the voice.
+          // The clip's voice says "B" in English, so it is replaced with an
+          // ElevenLabs take (video4-voz-elevenlabs.mp3). Each sentence is
+          // slowed to 0.9x and placed where the presenter's mouth moves; the
+          // clip's own closing sound effect is kept from 7.8s.
+          audio: "/b44/video4-audio.wav",
+          // Timings from a word-level Whisper transcription of the new voice,
+          // mapped through the same shift and stretch.
           subtitles: [
-            { from: 0, to: 1.8, text: "Calidad y buenos precios", highlight: ["Calidad", "precios"] },
-            { from: 1.85, to: 4.1, text: "es lo que ofrecemos en B44.", highlight: ["B44"] },
-            { from: 4.3, to: 5.95, text: "Hacé clic en el enlace", highlight: ["enlace"] },
-            { from: 6.0, to: 7.9, text: "y solicitá nuestro catálogo.", highlight: ["catálogo"] },
+            { from: 0, to: 1.6, text: "Calidad y buenos precios", highlight: ["Calidad", "precios"] },
+            { from: 1.62, to: 4.15, text: "es lo que ofrecemos en B44.", highlight: ["B44"] },
+            { from: 4.55, to: 5.8, text: "Hacé clic en el enlace", highlight: ["enlace"] },
+            { from: 5.82, to: 7.85, text: "y solicitá nuestro catálogo.", highlight: ["catálogo"] },
           ],
         }}
       />
