@@ -1,5 +1,5 @@
 import { CineSubtitles, type CineLine } from "./components/CineSubtitles";
-import { AbsoluteFill, Img, OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, Freeze, Img, OffthreadVideo, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 
 export const B44_ZOCALOS_FPS = 24;
 export const B44_ZOCALOS_DURATION = 8 * B44_ZOCALOS_FPS;
@@ -81,10 +81,29 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
   );
 };
 
-export const B44Zocalos: React.FC<{ video: string; subtitles?: CineLine[] }> = ({ video, subtitles }) => {
+type B44ZocalosProps = {
+  video: string;
+  subtitles?: CineLine[];
+  // A remixed soundtrack that replaces the clip's own audio. It may run past
+  // the clip (e.g. to let a sound effect ring out); the last frame is held
+  // for those extra frames.
+  audio?: string;
+};
+
+const VIDEO_STYLE = { width: "100%", height: "100%", objectFit: "cover" } as const;
+
+export const B44Zocalos: React.FC<B44ZocalosProps> = ({ video, subtitles, audio }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <OffthreadVideo src={staticFile(video)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <Sequence durationInFrames={B44_ZOCALOS_DURATION}>
+        <OffthreadVideo src={staticFile(video)} muted={Boolean(audio)} style={VIDEO_STYLE} />
+      </Sequence>
+      <Sequence from={B44_ZOCALOS_DURATION}>
+        <Freeze frame={B44_ZOCALOS_DURATION - 1}>
+          <OffthreadVideo src={staticFile(video)} muted style={VIDEO_STYLE} />
+        </Freeze>
+      </Sequence>
+      {audio && <Audio src={staticFile(audio)} />}
       {subtitles && <CineSubtitles lines={subtitles} bottom={BAND_HEIGHT + 90} />}
       <Band position="top">
         <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={88} speed={4} />
