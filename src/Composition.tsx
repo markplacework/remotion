@@ -60,6 +60,23 @@ export const WapiVideoComposition = () => {
         defaultProps={{ video: "/b44/video2.mp4" }}
       />
       <Composition
+        id="B44Zocalos3"
+        component={B44Zocalos}
+        durationInFrames={B44_ZOCALOS_DURATION}
+        fps={B44_ZOCALOS_FPS}
+        width={B44_ZOCALOS_WIDTH}
+        height={B44_ZOCALOS_HEIGHT}
+        defaultProps={{
+          video: "/b44/video3.mp4",
+          // Timings from a word-level Whisper transcription of the voice.
+          subtitles: [
+            { from: 0, to: 1.9, text: "¿Buscás calzado para revender?", highlight: ["revender"] },
+            { from: 2.2, to: 5.1, text: "Pedí el catálogo mayorista de B44", highlight: ["B44"] },
+            { from: 5.3, to: 7.9, text: "y descubrí todos nuestros modelos.", highlight: ["modelos"] },
+          ],
+        }}
+      />
+      <Composition
         id="WapiVideo"
         component={WapiVideo}
         durationInFrames={WAPI_VIDEO_DURATION}

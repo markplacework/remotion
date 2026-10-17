@@ -1,3 +1,4 @@
+import { CineSubtitles, type CineLine } from "./components/CineSubtitles";
 import { AbsoluteFill, Img, OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
 
 export const B44_ZOCALOS_FPS = 24;
@@ -80,10 +81,11 @@ const Band: React.FC<{ position: "top" | "bottom"; children: React.ReactNode }> 
   );
 };
 
-export const B44Zocalos: React.FC<{ video: string }> = ({ video }) => {
+export const B44Zocalos: React.FC<{ video: string; subtitles?: CineLine[] }> = ({ video, subtitles }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <OffthreadVideo src={staticFile(video)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {subtitles && <CineSubtitles lines={subtitles} bottom={BAND_HEIGHT + 90} />}
       <Band position="top">
         <Marquee src={MARCAS_URL} naturalWidth={1972} naturalHeight={174} contentHeight={88} speed={4} />
       </Band>
