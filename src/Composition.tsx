@@ -90,8 +90,6 @@ export const WapiVideoComposition = () => {
         height={B44_ZOCALOS_HEIGHT}
         defaultProps={{
           video: "/b44/video3.mp4",
-          // The clip's audio with the closing sound effect faded out.
-          audio: "/b44/video3-audio.wav",
           // Timings from a word-level Whisper transcription of the voice.
           subtitles: [
             { from: 0, to: 1.9, text: "¿Buscás calzado para revender?", highlight: ["revender"] },
