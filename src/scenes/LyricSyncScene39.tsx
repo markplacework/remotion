@@ -20,14 +20,21 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background-alt.png");
 // then narrowed each on/off transition with a few extra frames. Video
 // is short (60.9s container, but the captioned content itself fades to
 // black and loops back to a TikTok splash screen around 56s) and its
-// 8 lines include one repeated line near the end, which is kept as its
+// 9 lines include one repeated line near the end, which is kept as its
 // own bubble since the burned-in captions repeat it too.
+//
+// "Pero es inútil negarlo" was missed on the first pass -- it sits in a
+// short gap (13-16s) between two other lines that looked blank at the
+// coarser 2fps sampling interval used at first; the user flagged it and
+// a closer re-check of that gap found it. Re-checked every other gap
+// the same way afterwards; no other lines were missed.
 //
 // Seconds -> frames at 30fps (the project's own fps), rounded to the
 // nearest frame (timing precision here is roughly +/-0.75s, since it's
 // read off 2fps frame on/off transitions, same as LyricSync35):
 //   "Me despierto pensando"             0.50s ->   15
 //   "Si hoy te voy a ver"               6.25s ->  188
+//   "Pero es inútil negarlo"           13.25s ->  398
 //   "Tú me estás atrapando otra vez"   17.75s ->  533
 //   "Eres un ángel maldito"            25.75s ->  773
 //   "Eres la dama más cruel"           33.25s ->  998
@@ -35,12 +42,13 @@ const BACKGROUND_SRC = staticFile("/fake-chat/background-alt.png");
 //   "Contigo solo puedo perder"        45.75s -> 1373
 //   "Tú me estás atrapando otra vez"   50.75s -> 1523
 //
-// No burn/delete effect -- plain conversation, 8 lines. Uses
+// No burn/delete effect -- plain conversation, 9 lines. Uses
 // AutoScrollChatLog with the shared lyric-sync layout defaults (locked
 // in after Scene9).
 export const BUBBLES: DarkBubble[] = [
   { from: "me", text: "Me despierto pensando", timestamp: "00:04", atFrame: 15 },
   { from: "me", text: "Si hoy te voy a ver", timestamp: "00:04", atFrame: 188 },
+  { from: "me", text: "Pero es inútil negarlo", timestamp: "00:04", atFrame: 398 },
   { from: "me", text: "Tú me estás atrapando otra vez", timestamp: "00:05", atFrame: 533 },
   { from: "me", text: "Eres un ángel maldito", timestamp: "00:05", atFrame: 773 },
   { from: "me", text: "Eres la dama más cruel", timestamp: "00:06", atFrame: 998 },
