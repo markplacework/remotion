@@ -337,6 +337,13 @@ import {
   LYRIC_SYNC_36_SPOTIFY_HEIGHT,
   LYRIC_SYNC_36_SPOTIFY_WIDTH,
 } from "./LyricSync36Spotify";
+import {
+  SiTuNoEstas,
+  SI_TU_NO_ESTAS_DURATION,
+  SI_TU_NO_ESTAS_FPS,
+  SI_TU_NO_ESTAS_HEIGHT,
+  SI_TU_NO_ESTAS_WIDTH,
+} from "./SiTuNoEstas";
 
 export const WapiVideoComposition = () => {
   return (
@@ -740,6 +747,14 @@ export const WapiVideoComposition = () => {
         fps={LYRIC_SYNC_36_SPOTIFY_FPS}
         width={LYRIC_SYNC_36_SPOTIFY_WIDTH}
         height={LYRIC_SYNC_36_SPOTIFY_HEIGHT}
+      />
+      <Composition
+        id="SiTuNoEstas"
+        component={SiTuNoEstas}
+        durationInFrames={SI_TU_NO_ESTAS_DURATION}
+        fps={SI_TU_NO_ESTAS_FPS}
+        width={SI_TU_NO_ESTAS_WIDTH}
+        height={SI_TU_NO_ESTAS_HEIGHT}
       />
     </>
   );
