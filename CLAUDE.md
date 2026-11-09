@@ -33,6 +33,9 @@ Fixed references — always use these, never the old ones:
 - Lyrics text exactly as the user wrote it, one bubble per line, all
   `from: "me"` unless told otherwise.
 
-Rendering in the cloud container: pass
-`--browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`
-(Remotion can't download its own browser here).
+Rendering in the cloud container: pass `--browser-executable=<path>`
+pointing at the preinstalled headless shell (Remotion can't download its
+own browser here). The version folder changes between containers, so
+look it up instead of hardcoding it:
+`find /opt/pw-browsers -name 'chrome-headless-shell' -o -name headless_shell -type f`
+(e.g. `.../chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`).
